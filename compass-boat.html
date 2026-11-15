@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compass boat scene</title>
+<style>
+  :root { --brass:#e8d5a3; --ink:#dfeaf0; --glass:rgba(6,18,28,.55); --ease-out:cubic-bezier(0.23,1,0.32,1); }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:#06121c; overflow:hidden; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); }
+  canvas { display:block; width:100%; height:100%; }
+  .brand { position:fixed; top:20px; left:24px; letter-spacing:.42em; text-transform:lowercase; color:var(--brass); font-weight:500; font-size:15px; }
+  .hud { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); width:min(92vw,520px);
+    background:var(--glass); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(232,213,163,.18); border-radius:20px; padding:16px 18px; display:grid; gap:12px; }
+  .row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .days { font-size:34px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1; }
+  .days small { font-size:13px; font-weight:400; opacity:.7; margin-left:6px; }
+  .tier { font-size:13px; color:var(--brass); text-align:right; }
+  input[type=range] { width:100%; accent-color:var(--brass); }
+  button { all:unset; cursor:pointer; font-size:13px; padding:8px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.18);
+    transition:transform 160ms var(--ease-out), border-color .15s ease, color .15s ease; }
+  button:active { transform:scale(0.97); }
+  button:focus-visible { outline:2px solid var(--brass); outline-offset:2px; }
+  @media (hover:hover) and (pointer:fine) { button:hover { border-color:var(--brass); color:var(--brass); } }
+  .btns { display:flex; gap:8px; }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+</head>
+<body>
+<div class="brand">compass</div>
+<div class="hud">
+  <div class="row">
+    <div class="days"><span id="days">0</span><small>day streak</small></div>
+    <div class="tier" id="tier"></div>
+  </div>
+  <input id="slider" type="range" min="0" max="100" value="0" aria-label="Streak days">
+  <div class="btns">
+    <button id="add" type="button">+1 day</button>
+    <button id="break" type="button">Break streak</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- Renderer / scene / camera ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 400);
+const CAM_BASE = new THREE.Vector3(0, 2.8, 14);
+camera.position.copy(CAM_BASE);
+
+// ---------- Shared wave function (JS mirror of the GLSL one) ----------
+function waveH(x, z, t, a) {
+  return a * (Math.sin(x * 0.35 + t * 0.9) * 0.55
+            + Math.sin(z * 0.5 - t * 1.3 + x * 0.2) * 0.8
+            + Math.sin(x * 0.9 + z * 0.7 + t * 1.7) * 0.25);
+}
+
+// ---------- Palettes: storm (c=0) -> golden calm (c=1) ----------
+const C = (h) => new THREE.Color(h);
+const P = {
+  skyTop:    [C('#070d14'), C('#2a78ad')],
+  skyBottom: [C('#31434f'), C('#f7cf94')],
+  deep:      [C('#0d2230'), C('#0b4f6b')],
+  shallow:   [C('#2d4c5e'), C('#3db3b0')],
+  sun:       [C('#8da0ad'), C('#ffd89a')],
+};
+const tmp = new THREE.Color();
+const mix = (k, c) => tmp.copy(P[k][0]).lerp(P[k][1], c);
+
+// ---------- Sky dome ----------
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: new THREE.Color() }, bottom: { value: new THREE.Color() } },
+  vertexShader: `varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);} `,
+  fragmentShader: `uniform vec3 top; uniform vec3 bottom; varying vec3 vP;
+    void main(){ float h = clamp(normalize(vP).y*1.6+0.05,0.0,1.0); gl_FragColor = vec4(mix(bottom, top, pow(h,0.7)),1.0);} `,
+});
+const sky = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), skyMat);
+scene.add(sky);
+
+// Sun disc + soft halo
+const sunMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+const sun = new THREE.Mesh(new THREE.CircleGeometry(7, 48), sunMat);
+sun.position.set(0, 0, -120);
+scene.add(sun);
+const haloMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, fog: false, depthWrite: false });
+const halo = new THREE.Mesh(new THREE.CircleGeometry(20, 48), haloMat);
+halo.position.set(0, 0, -121);
+scene.add(halo);
+
+// Stars (storm/dusk only — fade out as calm rises... shown faintly at low c between clouds)
+// kept out of the first pass on purpose.
+
+// ---------- Ocean ----------
+const oceanUniforms = {
+  t: { value: 0 }, amp: { value: 0.8 }, c: { value: 0 },
+  deep: { value: new THREE.Color() }, shallow: { value: new THREE.Color() },
+  horizon: { value: new THREE.Color() }, sunCol: { value: new THREE.Color() },
+  sunDir: { value: new THREE.Vector3(0, 0.2, -1).normalize() },
+  camPos: { value: camera.position },
+};
+const ocean = new THREE.Mesh(
+  new THREE.PlaneGeometry(260, 260, 220, 220).rotateX(-Math.PI / 2),
+  new THREE.ShaderMaterial({
+    uniforms: oceanUniforms,
+    vertexShader: `
+      uniform float t; uniform float amp; varying vec3 vW; varying float vH;
+      float h(vec2 p){ return amp*(sin(p.x*0.35+t*0.9)*0.55 + sin(p.y*0.5-t*1.3+p.x*0.2)*0.8 + sin(p.x*0.9+p.y*0.7+t*1.7)*0.25); }
+      void main(){
+        vec3 w = (modelMatrix*vec4(position,1.0)).xyz;
+        float hh = h(w.xz); w.y += hh; vW = w; vH = hh;
+        gl_Position = projectionMatrix*viewMatrix*vec4(w,1.0);
+      }`,
+    fragmentShader: `
+      uniform float amp; uniform float c; uniform vec3 deep; uniform vec3 shallow; uniform vec3 horizon; uniform vec3 sunCol;
+      uniform vec3 sunDir; uniform vec3 camPos; varying vec3 vW; varying float vH;
+      void main(){
+        vec3 n = normalize(cross(dFdx(vW), dFdy(vW))); if(n.y<0.0) n = -n;
+        vec3 v = normalize(camPos - vW);
+        float fres = pow(1.0 - max(dot(n,v),0.0), 3.0);
+        float crest = smoothstep(-0.4, 1.0, vH/max(amp,0.001));
+        vec3 col = mix(deep, shallow, crest*0.9);
+        col = mix(col, horizon, clamp(fres*0.85,0.0,1.0));
+        vec3 hv = normalize(sunDir + v);
+        float spec = pow(max(dot(n,hv),0.0), mix(60.0,240.0,c)) * mix(0.5,1.6,c);
+        col += sunCol * spec;
+        float foam = smoothstep(0.62, 0.95, vH/max(amp,0.001)) * (1.0 - c*0.75);
+        col = mix(col, vec3(0.88,0.93,0.96), foam*0.8);
+        float d = length(vW - camPos);
+        float fog = 1.0 - exp(-d*d*0.00011);
+        col = mix(col, horizon, clamp(fog,0.0,1.0));
+        gl_FragColor = vec4(col,1.0);
+      }`,
+    extensions: { derivatives: true },
+  })
+);
+ocean.position.z = -60;
+scene.add(ocean);
+
+// ---------- Boat (front view, bow-on) ----------
+const boat = new THREE.Group();
+const woodMat = new THREE.MeshStandardMaterial({ color: 0x6b4a2f, roughness: 0.85, flatShading: true });
+const trimMat = new THREE.MeshStandardMaterial({ color: 0xd9b66f, roughness: 0.6, flatShading: true });
+const sailMat = new THREE.MeshStandardMaterial({ color: 0xf1e8d3, roughness: 0.95, side: THREE.DoubleSide, flatShading: true });
+
+// Hull: front profile (V-ish) extruded along the boat's length; bow tapered via a wedge cap.
+const hullShape = new THREE.Shape();
+hullShape.moveTo(-1.35, 0.55); hullShape.lineTo(-0.95, -0.45); hullShape.lineTo(0.95, -0.45); hullShape.lineTo(1.35, 0.55);
+hullShape.lineTo(1.2, 0.55); hullShape.lineTo(0.85, -0.3); hullShape.lineTo(-0.85, -0.3); hullShape.lineTo(-1.2, 0.55); hullShape.closePath();
+// solid hull body instead of hollow outline:
+const body = new THREE.Shape();
+body.moveTo(-1.35, 0.55); body.lineTo(-0.9, -0.5); body.lineTo(0.9, -0.5); body.lineTo(1.35, 0.55); body.closePath();
+const hull = new THREE.Mesh(new THREE.ExtrudeGeometry(body, { depth: 3.4, bevelEnabled: true, bevelSize: 0.08, bevelThickness: 0.08, bevelSegments: 1 }), woodMat);
+hull.position.z = -1.7;
+// Taper the bow (toward the camera, +z): pinch width and lift the keel so it reads as a prow
+{
+  const pos = hull.geometry.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const z = pos.getZ(i);
+    if (z > 1.3) {
+      const k = 1 - Math.min(1, (z - 1.3) / 2.1) * 0.88;
+      pos.setX(i, pos.getX(i) * k);
+      pos.setY(i, 0.55 + (pos.getY(i) - 0.55) * (0.35 + 0.65 * k));
+    }
+  }
+  hull.geometry.computeVertexNormals();
+}
+boat.add(hull);
+// Gunwale trim
+const trim = new THREE.Mesh(new THREE.BoxGeometry(2.85, 0.09, 3.5), trimMat);
+trim.position.set(0, 0.58, -0.1); trim.scale.set(1, 1, 0.9);
+boat.add(trim);
+
+// Mast + sails + pennant
+const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 4.0, 8), trimMat);
+mast.position.set(0, 2.5, 0.2);
+boat.add(mast);
+
+const sailGeo = new THREE.BufferGeometry();
+sailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+  0, 0.0, 0,   0, 3.4, 0,   1.9, 0.2, 0,
+]), 3));
+sailGeo.computeVertexNormals();
+const sail = new THREE.Mesh(sailGeo, sailMat);
+sail.position.set(0.04, 0.7, 0.2);
+sail.rotation.y = -0.55;
+boat.add(sail);
+const jib = new THREE.Mesh(sailGeo, sailMat);
+jib.scale.set(-0.7, 0.8, 1);
+jib.position.set(-0.04, 0.8, 0.25);
+jib.rotation.y = 0.5;
+boat.add(jib);
+
+const pennant = new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+  0, 0, 0,  0, 0.32, 0,  0.8, 0.16, 0,
+]), 3)), new THREE.MeshBasicMaterial({ color: 0xe5654b, side: THREE.DoubleSide }));
+pennant.position.set(0.05, 4.2, 0.2);
+boat.add(pennant);
+
+// Lantern at the bow
+const lanternMat = new THREE.MeshBasicMaterial({ color: 0xffc46b });
+const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 12), lanternMat);
+lantern.position.set(0, 0.9, 2.55);
+boat.add(lantern);
+const lanternLight = new THREE.PointLight(0xffb55a, 0, 14, 1.6);
+lanternLight.position.copy(lantern.position);
+boat.add(lanternLight);
+
+boat.position.set(0, 0, 0);
+scene.add(boat);
+
+// ---------- Lights ----------
+const hemi = new THREE.HemisphereLight(0xaac4d6, 0x10202b, 0.7);
+scene.add(hemi);
+const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+sunLight.position.set(0, 12, -30);
+scene.add(sunLight);
+
+// ---------- Streak state ----------
+let targetDays = 0;       // what the user set
+let shownC = 0;           // damped calm value 0..1 actually rendered
+let shake = 0;            // streak-break camera shake
+const slider = document.getElementById('slider');
+const daysEl = document.getElementById('days');
+const tierEl = document.getElementById('tier');
+const calmFromDays = (d) => 1 - Math.exp(-d / 28); // fast early gains, slow late gains
+const tierFor = (d) => d === 0 ? 'Storm. Start again'
+  : d < 3 ? 'Rough seas' : d < 7 ? 'Finding wind' : d < 21 ? 'Steady sailing'
+  : d < 50 ? 'Fair weather' : d < 100 ? 'Golden hour' : 'Becalmed at sunrise';
+function setDays(d, broke = false) {
+  targetDays = Math.max(0, Math.min(100, d));
+  slider.value = targetDays;
+  daysEl.textContent = targetDays;
+  tierEl.textContent = tierFor(targetDays);
+  if (broke && !reduce) shake = 1;
+}
+slider.addEventListener('input', () => setDays(+slider.value));
+document.getElementById('add').addEventListener('click', () => setDays(targetDays + 1));
+document.getElementById('break').addEventListener('click', () => setDays(0, true));
+setDays(0);
+window.__setDays = setDays; // for testing
+
+// Mouse parallax (camera drifts a little; disabled for reduced motion)
+const mouse = { x: 0, y: 0 };
+if (!reduce) addEventListener('pointermove', (e) => {
+  mouse.x = (e.clientX / innerWidth - 0.5) * 2; mouse.y = (e.clientY / innerHeight - 0.5) * 2;
+});
+
+// ---------- Loop ----------
+const clock = new THREE.Clock();
+const look = new THREE.Vector3();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime * (reduce ? 0.35 : 1);
+
+  // Damped approach to the target; storms arrive faster than calm returns
+  const targetC = calmFromDays(targetDays);
+  const rate = targetC < shownC ? 5.0 : 1.6;
+  shownC += (targetC - shownC) * (1 - Math.exp(-rate * dt));
+  const c = shownC;
+
+  // Weather
+  const amp = THREE.MathUtils.lerp(0.95, 0.16, c);
+  oceanUniforms.t.value = t; oceanUniforms.amp.value = amp; oceanUniforms.c.value = c;
+  oceanUniforms.deep.value.copy(mix('deep', c));
+  oceanUniforms.shallow.value.copy(mix('shallow', c));
+  const horizon = mix('skyBottom', c).clone();
+  oceanUniforms.horizon.value.copy(horizon);
+  oceanUniforms.sunCol.value.copy(mix('sun', c));
+  skyMat.uniforms.top.value.copy(mix('skyTop', c));
+  skyMat.uniforms.bottom.value.copy(horizon);
+
+  // Sun rises with calm
+  const sunY = THREE.MathUtils.lerp(-8, 14, c);
+  sun.position.y = sunY; halo.position.y = sunY;
+  sunMat.color.copy(mix('sun', c));
+  haloMat.color.copy(mix('sun', c)); haloMat.opacity = THREE.MathUtils.lerp(0.05, 0.28, c);
+  sunLight.color.copy(mix('sun', c)); sunLight.intensity = THREE.MathUtils.lerp(0.25, 1.4, c);
+  hemi.intensity = THREE.MathUtils.lerp(0.35, 0.8, c);
+  oceanUniforms.sunDir.value.set(0, sunY + 6, -120).normalize();
+
+  // Boat rides the same wave field the shader draws
+  const bx = 0, bz = 0 - 0.0;
+  const h0 = waveH(bx, bz, t, amp);
+  const dx = waveH(bx + 0.6, bz, t, amp) - waveH(bx - 0.6, bz, t, amp);
+  const dz = waveH(bx, bz + 1.2, t, amp) - waveH(bx, bz - 1.2, t, amp);
+  boat.position.y = h0 - 0.1;
+  boat.rotation.z = -Math.atan2(dx, 1.2) * 1.2 + Math.sin(t * 0.7) * 0.02;
+  boat.rotation.x = Math.atan2(dz, 2.4) * 0.9;
+  boat.rotation.y = Math.sin(t * 0.3) * 0.04;
+  sail.rotation.y = -0.55 + Math.sin(t * 1.1) * 0.04 * (1 + (1 - c));
+  pennant.rotation.y = Math.sin(t * 5) * (0.25 + (1 - c) * 0.4);
+
+  // Lantern gets brighter as it gets darker
+  lanternLight.intensity = THREE.MathUtils.lerp(9, 1.5, c);
+  lanternMat.color.setScalar(1).multiplyScalar(1); lanternMat.color.set(0xffc46b);
+
+  // Camera: parallax + break shake
+  shake = Math.max(0, shake - dt * 1.6);
+  const sx = (Math.random() - 0.5) * 0.35 * shake * shake;
+  const sy = (Math.random() - 0.5) * 0.25 * shake * shake;
+  camera.position.set(CAM_BASE.x + mouse.x * 0.6 + sx, CAM_BASE.y - mouse.y * 0.25 + sy, CAM_BASE.z);
+  look.set(mouse.x * 0.3, 2.0 + h0 * 0.3, 0);
+  camera.lookAt(look);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+frame();
+
+addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>

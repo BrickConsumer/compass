@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compass intro</title>
+<style>
+  :root {
+    --bg: #06121c;
+    --brass: #e8d5a3;
+    --brass-dim: #8f8057;
+    --needle-n: #e5654b;
+    --needle-s: #d9e4ea;
+    --ink: #cfe0e8;
+
+    /* Motion tokens (animate skill) */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    /* Settling spring with a single soft overshoot, for the needle only */
+    --spring-settle: linear(0, 0.2 6%, 0.62 15%, 0.95 25%, 1.1 34%, 1.12 40%, 1.06 48%, 0.98 58%, 0.99 68%, 1.005 80%, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(ellipse at 50% 40%, #0b2233 0%, var(--bg) 65%);
+    color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .stage { display: grid; justify-items: center; gap: 28px; padding: 16px; cursor: pointer; }
+  svg { width: min(56vw, 320px); height: auto; overflow: visible; }
+
+  /* ---------- Initial (pre-animation) state ---------- */
+  .ring-outer { fill: none; stroke: var(--brass); stroke-width: 2.5; stroke-linecap: round;
+    stroke-dasharray: 1; stroke-dashoffset: 1; transform: rotate(-90deg); transform-origin: 100px 100px; }
+  .ring-inner { fill: none; stroke: var(--brass-dim); stroke-width: 1; opacity: 0; }
+  .tick { stroke: var(--brass); stroke-width: 1.5; stroke-linecap: round; opacity: 0; }
+  .tick.major { stroke-width: 2.5; }
+  .cardinal { fill: var(--brass); opacity: 0; transform: scale(0.9); transform-box: fill-box; transform-origin: center; }
+  .needle { opacity: 0; transform: rotate(-160deg); transform-origin: 100px 100px; }
+  .pin { fill: var(--bg); stroke: var(--brass); stroke-width: 2; opacity: 0; transform: scale(0.9); transform-box: fill-box; transform-origin: center; }
+  .word { opacity: 0; transform: translateY(8px); font-size: 22px; letter-spacing: 0.42em; text-indent: 0.42em;
+    text-transform: lowercase; color: var(--brass); font-weight: 500; }
+  button { all: unset; cursor: pointer; font-size: 13px; color: var(--brass-dim); padding: 8px 14px;
+    border: 1px solid #1d3547; border-radius: 999px; transition: color .15s ease, border-color .15s ease; }
+  button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { button:hover { color: var(--brass); border-color: var(--brass-dim); } }
+
+  /* ---------- Timeline (total ≈ 2.3s; rare moment, so longer is allowed) ---------- */
+  .play .ring-outer { animation: draw 900ms var(--ease-out) 0ms forwards; }
+  .play .ring-inner { animation: fade 400ms var(--ease-out) 500ms forwards; }
+  .play .tick       { animation: fade 260ms var(--ease-out) calc(450ms + var(--i) * 14ms) forwards; }
+  .play .cardinal   { animation: pop 380ms var(--ease-out) calc(850ms + var(--i) * 70ms) forwards; }
+  .play .needle     { animation: swing 1100ms var(--spring-settle), fade 200ms var(--ease-out); animation-delay: 1000ms; animation-fill-mode: forwards; }
+  .play .pin        { animation: pop 300ms var(--ease-out) 1200ms forwards; }
+  .play .word       { animation: rise 500ms var(--ease-out) 1700ms forwards; }
+
+  @keyframes draw  { to { stroke-dashoffset: 0; } }
+  @keyframes fade  { to { opacity: 1; } }
+  @keyframes pop   { to { opacity: 1; transform: scale(1); } }
+  @keyframes rise  { to { opacity: 1; transform: translateY(0); } }
+  @keyframes swing { from { transform: rotate(-160deg); } to { transform: rotate(0deg); } }
+  /* `fade` is combined with `swing`; opacity reaches 1 in the first 200ms */
+
+  /* Reduced motion: fewer, gentler. Keep a short fade, drop draw/rotate/scale/translate. */
+  @media (prefers-reduced-motion: reduce) {
+    .play .ring-outer { animation: none; stroke-dashoffset: 0; opacity: 0; animation: fade 300ms ease forwards; }
+    .play .tick, .play .ring-inner, .play .cardinal, .play .pin, .play .word { animation: fade 300ms ease forwards; animation-delay: 0ms; transform: none; }
+    .play .needle { animation: fade 300ms ease forwards; animation-delay: 0ms; transform: rotate(0deg); }
+  }
+</style>
+</head>
+<body>
+<main class="stage" id="stage" aria-label="Compass logo intro">
+  <svg viewBox="0 0 200 200" role="img" aria-label="Compass logo">
+    <circle class="ring-outer" cx="100" cy="100" r="88" pathLength="1"/>
+    <circle class="ring-inner" cx="100" cy="100" r="78"/>
+    <g id="ticks"></g>
+    <!-- cardinal diamonds: N E S W -->
+    <g id="cardinals"></g>
+    <!-- needle -->
+    <g class="needle">
+      <polygon points="100,34 108,100 92,100" fill="var(--needle-n)"/>
+      <polygon points="100,166 108,100 92,100" fill="var(--needle-s)"/>
+    </g>
+    <circle class="pin" cx="100" cy="100" r="6"/>
+  </svg>
+  <div class="word">compass</div>
+  <button id="replay" type="button">Replay</button>
+</main>
+
+<script>
+  const NS = 'http://www.w3.org/2000/svg';
+  const ticks = document.getElementById('ticks');
+  for (let i = 0; i < 36; i++) {
+    const major = i % 9 === 0;           // every 90°
+    const r1 = 78, r2 = major ? 66 : (i % 3 === 0 ? 70 : 73);
+    const a = (i * 10 - 90) * Math.PI / 180;
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', 100 + r1 * Math.cos(a)); l.setAttribute('y1', 100 + r1 * Math.sin(a));
+    l.setAttribute('x2', 100 + r2 * Math.cos(a)); l.setAttribute('y2', 100 + r2 * Math.sin(a));
+    l.setAttribute('class', 'tick' + (major ? ' major' : ''));
+    l.style.setProperty('--i', i);
+    ticks.appendChild(l);
+  }
+  const card = document.getElementById('cardinals');
+  [[100, 14], [186, 100], [100, 186], [14, 100]].forEach(([x, y], i) => {
+    const d = document.createElementNS(NS, 'polygon');
+    const s = 6;
+    d.setAttribute('points', `${x},${y - s} ${x + s},${y} ${x},${y + s} ${x - s},${y}`);
+    d.setAttribute('class', 'cardinal');
+    d.style.setProperty('--i', i);
+    card.appendChild(d);
+  });
+
+  const stage = document.getElementById('stage');
+  function play() {
+    stage.classList.remove('play');
+    void stage.offsetWidth;              // restart animations
+    stage.classList.add('play');
+  }
+  play();
+  stage.addEventListener('click', play);
+</script>
+</body>
+</html>
