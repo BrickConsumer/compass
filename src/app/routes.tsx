@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router';
+import { HabitsPage } from '../features/habits/HabitsPage';
 import { HomePage } from '../features/home/HomePage';
 import { LookdevPage } from '../features/lookdev/LookdevPage';
 import { PlacePage } from '../features/places/Places';
@@ -13,7 +14,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/voyage', element: <VoyagePage /> },
       { path: '/study', element: <PlacePage place="study" /> },
-      { path: '/habits', element: <PlacePage place="habits" /> },
+      { path: '/habits', element: <HabitsPage /> },
       { path: '/review', element: <PlacePage place="review" /> },
       { path: '/pages', element: <PlacePage place="pages" /> },
       { path: '/settings', element: <SettingsPage /> },

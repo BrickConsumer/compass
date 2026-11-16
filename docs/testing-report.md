@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | Date | 16 November 2026 |
-| Build | Branch `home-motion`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, and the motion and editor work in section 7 |
+| Build | Branch `habits`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, the motion and editor work in section 7, and Habits in section 8 |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 113 unit tests pass and 32 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 130 unit tests pass and 39 browser tests pass.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -49,9 +49,9 @@ Updated screenshots are in [screenshots/home/](screenshots/home/).
 
 | Check | Tool | Result |
 |---|---|---|
-| Type-check and production build | `npm run build` | Passes. Main bundle 156 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
-| Unit tests | `npm test` (Vitest) | 113 of 113 pass |
-| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 32 of 32 pass, three runs in a row |
+| Type-check and production build | `npm run build` | Passes. Main bundle 159 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
+| Unit tests | `npm test` (Vitest) | 130 of 130 pass |
+| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 39 of 39 pass, three runs in a row |
 | Screenshots and state capture | Playwright scripts, six widths and nine states | No console errors in any capture |
 | Contrast, text size, touch targets | A script run inside the live page at 390 and 1440 | Section 4 |
 | Frame rate | The same, at phone size with the processor slowed four times | Section 5 |
@@ -257,7 +257,34 @@ Built on 16 November, from the Home spec (sections 7, 13 and 14). This finishes 
 - Unit tests: where the popover sits in six cases, including a window too small for it.
 - No console errors or warnings.
 
-## 8. Built differently from the approved spec
+## 8. Habits
+
+Built on 16 November. The rules are in [habits-spec.md](habits-spec.md). Where habits sit on Home was decided by Oliver from the mock, and Oliver accepted the Habits page as a first version on 16 November. Josh and Aditya have not reviewed either.
+
+### What was built
+
+| | Behaviour |
+|---|---|
+| **Habits** | Named by the user, for every day or chosen weekdays. A habit can be ticked for the day or any day after, never for a day still to come. |
+| **On Home** | A line of its own between the week and the lists from 1280 px wide. Below that, a grid at the foot of the day's sheet. It follows the selected day, shows up to six, and shows nothing on a day with no habits. |
+| **The Habits page** | The week as a grid of round ticks, a count for each habit and for the week, and earlier weeks as the record. Add, rename, choose days, delete with Undo. |
+| **Miles** | One for each tick, once for each habit and day, up to 8 a day. Unticking takes nothing back. |
+| **Never** | No streaks, no red, no reminders, and no effect on the sea. |
+
+### Checked
+
+- Browser tests: the line sits between the week and the sheet on a wide screen and on the first screen; a tick counts, logs one mile once, and survives a reload; a day ahead cannot be ticked; the grid is at the foot of the sheet at 1024 px and on a phone, with no sideways scroll; the Habits page counts each habit and keeps earlier weeks; habits can be added, renamed, given days and deleted with Undo; a day with no habits shows nothing.
+- Unit tests: which habits fall on a day, a habit's week, counting only the days that have come, choosing days, the mile for a tick, the daily limit, and the store's actions.
+- The task editor was moved onto a frame it now shares with the habit editor. Its own browser tests still pass unchanged.
+
+### Calls made here that the founders can overrule
+
+- **The limit of 8 miles a day from habits.** The art direction gives one mile a tick and no limit.
+- **A new habit starts today.** Days before it was made are not counted, so its record starts clean, and they cannot be ticked.
+- **Earlier weeks can still be ticked,** so a forgotten tick can be put right.
+- **The page shows one week at a time.** There is no view across many weeks yet.
+
+## 9. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -271,11 +298,11 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 9. Known limitations
+## 10. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
 - The storm's breaking crests look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
-- Dark theme, the night scene, Habits, Study, Weekly review, My pages, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
+- Dark theme, the night scene, Study, Weekly review, My pages, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
 - Tested in Chrome only. Safari and Firefox have not been opened.

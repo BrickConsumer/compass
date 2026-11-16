@@ -48,12 +48,18 @@ The boat only motivates if earning something is noticed. These are all in the ap
 
 Recommended as the first new destination, ahead of Study, for three reasons. It is the smallest. It gives people a reason to open Compass on a day with no tasks. And the mileage rule for it already exists (one mile a tick).
 
-- Habits the user defines, for every day or chosen weekdays.
-- Today's habits shown on Home, without becoming a second task list.
-- History and a weekly consistency summary.
-- No streak counter, in line with the art direction.
+**Built on 16 November.** The rules are in [habits-spec.md](habits-spec.md).
 
-**Decision needed first:** where today's habits sit on Home. This changes an approved layout, so it needs a mock and a founder's sign-off before any build.
+- ~~Habits the user defines, for every day or chosen weekdays.~~ Built.
+- ~~Today's habits shown on Home, without becoming a second task list.~~ Built, as decided.
+- ~~History and a weekly consistency summary.~~ Built one week at a time: a count for each habit in each week, and earlier weeks as the record. A view across many weeks is not built.
+- ~~No streak counter, in line with the art direction.~~ There is none.
+
+Not built: reordering habits, pausing one without deleting it, and a view of consistency across many weeks.
+
+**Where today's habits sit on Home: decided by Oliver on 16 November.** A line of its own between the week and the lists from 1280 px wide; at the foot of the day's sheet below that, tablets and phones included. Josh and Aditya have not weighed in. The mock is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b.
+
+**Built to the recommendation, and still open to change:** the ticks belong to the selected day, habits log miles and do not change the sea, and up to six show on Home.
 
 ## Stage 5. Study
 

@@ -2,16 +2,11 @@ import { Link } from 'react-router';
 
 interface Place { title: string; lead: string; will: string[]; examples?: { label: string; items: string[] } }
 
-const PLACES: Record<'study' | 'habits' | 'review' | 'pages', Place> = {
+const PLACES: Record<'study' | 'review' | 'pages', Place> = {
   study: {
     title: 'Study', lead: 'A page for each subject, with its tasks, assessments and notes in one place.',
     will: ['Editable subject pages', 'Tasks and assessments by subject', 'Recurring study sessions', 'Notes and preparation tasks'],
     examples: { label: 'Subjects in the sample data', items: ['Biology', 'Economics', 'English', 'Mathematics', 'Chinese'] },
-  },
-  habits: {
-    title: 'Habits', lead: 'The things you want to do most days, tracked without streak pressure.',
-    will: ['Habits you define yourself', 'Daily or selected-weekday tracking', 'A record of what you have done', 'A weekly summary of consistency'],
-    examples: { label: 'Habits people often start with', items: ['Read for 20 minutes', 'Complete daily revision', 'Exercise', 'Plan tomorrow'] },
   },
   review: {
     title: 'Weekly review', lead: 'A few minutes at the end of the week to look back and set what matters next.',

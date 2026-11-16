@@ -8,6 +8,7 @@ import type { ISODate } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { useToday } from '../../state/useToday';
 import { SegmentedProgress } from '../../ui/SegmentedProgress';
+import { HabitsToday } from '../habits/HabitsToday';
 import { DaySheet } from './DaySheet';
 import { HomeWindow } from './HomeWindow';
 import { ComingUp, NextWeek, WeekList } from './SideLists';
@@ -78,6 +79,9 @@ export function HomePage() {
           <SegmentedProgress done={weekProgress.done} total={weekProgress.total} className="[&>span]:w-2" />
         </p>
       </div>
+
+      {/* where there is room for it, the day's habits take a line of their own; narrower screens show them at the foot of the day's sheet */}
+      <HabitsToday layout="line" date={selected} today={today} className="order-4 mt-1 max-xl:hidden" />
 
       <div className="order-5 grid items-start gap-x-8 gap-y-9 pt-3 lg:flex-1 lg:grid-cols-[1.25fr_1fr] xl:grid-cols-[1.32fr_1fr_0.86fr]">
         <DaySheet date={selected} today={today} tasks={dayTasks} subjects={subjects} assessment={assessments.find((a) => a.date === selected)}

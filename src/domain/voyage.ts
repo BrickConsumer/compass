@@ -2,7 +2,7 @@ import { type StageId, STAGE_ORDER, STAGES } from '../features/voyage/boat/specs
 import type { ISODate, LogEntry, Task } from './types';
 
 /** Starting values, to be tuned with real use (art direction, section 13). */
-export const MILES = { task: 2, highPriority: 3, dayClear: 3, dailyTaskCap: 40 } as const;
+export const MILES = { task: 2, highPriority: 3, dayClear: 3, dailyTaskCap: 40, habit: 1, dailyHabitCap: 8 } as const;
 
 export const STAGE_GATES: Record<StageId, { miles: number; days: number }> = {
   dinghy: { miles: 0, days: 0 }, sloop: { miles: 250, days: 10 }, cutter: { miles: 1000, days: 40 }, schooner: { miles: 3000, days: 120 },
@@ -93,4 +93,17 @@ export function awardsFor(task: Task, tasksAfter: Task[], log: LogEntry[], today
     if (cleared && !log.some((e) => e.id === id)) out.push({ id, date: today, source: 'day-clear', sourceId: task.date, miles: MILES.dayClear });
   }
   return out;
+}
+
+/**
+ * The log entry earned by ticking a habit for a day, or null if there is nothing to earn.
+ * A habit earns once for each day. Habit miles stop at a daily limit, so a long list of habits cannot be farmed.
+ * The entry is dated the day the tick is made, which is the day at sea.
+ */
+export function habitAward(habitId: string, date: ISODate, log: LogEntry[], today: ISODate): LogEntry | null {
+  const id = `habit:${habitId}:${date}`;
+  if (log.some((e) => e.id === id)) return null;
+  const earnedToday = log.filter((e) => e.date === today && e.source === 'habit').reduce((s, e) => s + e.miles, 0);
+  if (earnedToday + MILES.habit > MILES.dailyHabitCap) return null;
+  return { id, date: today, source: 'habit', sourceId: `${habitId}:${date}`, miles: MILES.habit };
 }

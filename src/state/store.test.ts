@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { todayISO } from '../domain/dates';
+import { addDaysISO, todayISO } from '../domain/dates';
+import { habitProgress } from '../domain/habits';
 import { daysAtSea, milesLogged } from '../domain/voyage';
 import { useCompass } from './store';
 
@@ -76,5 +77,52 @@ describe('store', () => {
     expect(s().tasks).toEqual([]);
     expect(milesLogged(s().log)).toBe(0);
     expect(s().boat.stage).toBe('dinghy');
+  });
+
+  it('starts with the four sample habits, two ticked today', () => {
+    expect(s().habits.map((h) => h.name)).toEqual(['Read for 20 minutes', 'Complete daily revision', 'Exercise', 'Plan tomorrow']);
+    expect(habitProgress(s().habits, s().ticks, todayISO())).toEqual({ done: 2, total: 4 });
+  });
+
+  it('ticking a habit logs one mile once, and unticking takes nothing back', () => {
+    const start = milesLogged(s().log), days = daysAtSea(s().log);
+    s().toggleHabit('hab-read', todayISO());
+    expect(habitProgress(s().habits, s().ticks, todayISO()).done).toBe(3);
+    expect(milesLogged(s().log)).toBe(start + 1);
+    expect(daysAtSea(s().log)).toBe(days + 1);
+    s().toggleHabit('hab-read', todayISO());
+    expect(habitProgress(s().habits, s().ticks, todayISO()).done).toBe(2);
+    expect(milesLogged(s().log)).toBe(start + 1);
+    s().toggleHabit('hab-read', todayISO());
+    expect(milesLogged(s().log)).toBe(start + 1);
+  });
+
+  it('a day still to come cannot be ticked, nor a day the habit is not for', () => {
+    const before = s().ticks.length;
+    s().toggleHabit('hab-read', addDaysISO(todayISO(), 1));
+    // exercise is for today, two days on and four days on: tomorrow is not one of its days
+    s().updateHabit('hab-move', { days: [(new Date().getDay() + 3) % 7] });
+    s().toggleHabit('hab-move', addDaysISO(todayISO(), -1));
+    expect(s().ticks).toHaveLength(before);
+  });
+
+  it('adds a habit with a clean name, refuses an empty one, and keeps at least one day', () => {
+    expect(s().addHabit('   ')).toBeNull();
+    const id = s().addHabit('  Stretch   for ten minutes ')!;
+    const made = () => s().habits.find((h) => h.id === id)!;
+    expect(made()).toMatchObject({ name: 'Stretch for ten minutes', days: [0, 1, 2, 3, 4, 5, 6], createdOn: todayISO() });
+    s().updateHabit(id, { days: [1, 3] });
+    expect(made().days).toEqual([1, 3]);
+    s().updateHabit(id, { days: [], name: '  ' });
+    expect(made()).toMatchObject({ name: 'Stretch for ten minutes', days: [1, 3] });
+  });
+
+  it('deleting a habit removes its record, and Undo brings both back', () => {
+    const ticks = s().ticks.length, removed = s().deleteHabit('hab-revise')!;
+    expect(s().habits).toHaveLength(3);
+    expect(s().ticks.length).toBeLessThan(ticks);
+    s().restoreHabit(removed);
+    expect(s().habits).toHaveLength(4);
+    expect(s().ticks).toHaveLength(ticks);
   });
 });
