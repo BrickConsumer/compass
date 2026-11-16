@@ -1,11 +1,12 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackSide, Color, DirectionalLight, Group, HemisphereLight, Mesh, type MeshBasicMaterial, type PerspectiveCamera, Plane, PlaneGeometry, ShaderMaterial,
   SphereGeometry, Vector3,
 } from 'three';
 import { type BoatColours, sheer, STAGES, type StageId, tallOf } from '../boat/specs';
 import { type DayContext, lightFor, mixHex, sceneState } from '../light';
+import { frameWatch, qualityFor, type Quality, startingQuality, stepDown, type Tier, TIERS } from '../tier';
 import { buildBoat } from './boat/buildBoat';
 import { buildGull, buildPort, flat, lighthouseParts, seeded, skyline, treeLine } from './scenery';
 import { WAVES_GLSL, waveHeight } from './waves';
@@ -129,10 +130,15 @@ export interface SceneProps extends DayContext {
   colours: BoatColours;
   /** Hold a still frame: paused by the user, or reduced motion. */
   still: boolean;
+  /** Nobody can see the window (scrolled away, or the tab is hidden): draw nothing at all. */
+  asleep?: boolean;
+  /** Force a performance tier, for the look review. Left out, the device and its frame rate decide. */
+  tier?: Tier;
+  onTier?: (tier: Tier) => void;
   onReady?: () => void;
 }
 
-function World({ stage, progress, colours, still, missedYesterday, onReady }: SceneProps) {
+function World({ stage, progress, colours, still, missedYesterday, onReady, asleep, shadows }: SceneProps & { shadows: boolean }) {
   const { camera, size, gl, invalidate } = useThree();
   const spec = STAGES[stage], target = useMemo(() => sceneState(progress, { missedYesterday }), [progress, missedYesterday]);
   const cur = useRef({ p: target.progress, wind: target.wind, fill: target.sailFill, amp: target.waveHeight, speed: target.speed, storm: target.storm, time: 2, travel: 0 });
@@ -183,7 +189,8 @@ function World({ stage, progress, colours, still, missedYesterday, onReady }: Sc
     const gulls = Array.from({ length: 7 }, (_, i) => { const g = buildGull(gullPaint, 5 + i * 3); g.base.set((R() - 0.4) * 1.1, 0.25 + R() * 0.7, -(6 + R() * 70)); g.span = 0.5 + R() * 0.7; return g; });
     const hemi = new HemisphereLight('#ffffff', '#1c5676', 1.15);
     const key = new DirectionalLight('#ffffff', 2.1), back = new DirectionalLight('#ffe4a6', 1.0);
-    key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.04;
+    // set from the start, so the first frame compiles the right materials; the effect below follows later changes
+    key.castShadow = shadows; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.04;
     return { sky, sea, rain, islands, gulls, gullPaint, hemi, key, back };
   }, []);
 
@@ -221,7 +228,9 @@ function World({ stage, progress, colours, still, missedYesterday, onReady }: Sc
     invalidate();
   }, [camera, size, spec, target.inPort, world, invalidate]);
 
-  useEffect(() => { invalidate(); }, [target, boats, still, invalidate]);
+  // a light that casts no shadow skips the shadow pass, and the materials recompile without it
+  useEffect(() => { world.key.castShadow = shadows; }, [world, shadows]);
+  useEffect(() => { invalidate(); }, [target, boats, still, asleep, shadows, invalidate]);
 
   useFrame((_, delta) => {
     const c = cur.current, dt = Math.min(delta, 0.05), f = frame.current;
@@ -313,12 +322,46 @@ function World({ stage, progress, colours, still, missedYesterday, onReady }: Sc
   );
 }
 
+/**
+ * Sets the pace while the sea is moving. On a capped tier it asks for a frame 30 times a second.
+ * On every tier it times the frames and reports when they have stayed slow.
+ */
+function Pace({ fps, slowMs, onSlow }: { fps: number; slowMs: number; onSlow?: () => void }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    if (!fps) return;
+    let id = 0, last = 0;
+    // a little under the interval, so a 60 Hz display gives every second frame and not every third
+    const tick = (now: number) => { id = requestAnimationFrame(tick); if (now - last >= 1000 / fps - 4) { last = now; invalidate(); } };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [fps, invalidate]);
+  const watch = useMemo(() => frameWatch(slowMs), [slowMs]);
+  const clock = useRef({ start: 0, last: 0 });
+  useFrame(() => {
+    const now = performance.now(), c = clock.current, delta = now - c.last;
+    if (!c.start) c.start = now;
+    c.last = now;
+    // the first moments are spent compiling shaders, which says nothing about the device
+    if (now - c.start > 1500 && onSlow && watch(delta)) onSlow();
+  });
+  return null;
+}
+
+const touchDevice = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 /** The live 3D scene. Loaded lazily; the still image stands in until its first frame. */
-export default function Scene(props: SceneProps) {
-  const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+export default function Scene({ tier: forced, onTier, ...props }: SceneProps) {
+  const [touch] = useState(touchDevice);
+  const [found, setFound] = useState<Quality>(() => startingQuality(touch));
+  const quality = forced ? qualityFor(forced) : found, settings = TIERS[quality.tier];
+  useEffect(() => { onTier?.(quality.tier); }, [quality.tier, onTier]);
+  const moving = !props.asleep && !props.still;
   return (
-    <Canvas flat shadows="percentage" dpr={[1, coarse ? 1.5 : 2]} frameloop={props.still ? 'demand' : 'always'} gl={{ antialias: true, powerPreference: 'high-performance' }} camera={{ fov: FOV }}>
-      <World {...props} />
+    <Canvas flat shadows="percentage" dpr={[1, quality.maxDpr]} frameloop={props.asleep ? 'never' : props.still || settings.fps ? 'demand' : 'always'}
+      gl={{ antialias: true, powerPreference: touch ? 'default' : 'high-performance' }} camera={{ fov: FOV }}>
+      <World {...props} shadows={settings.shadows} />
+      {moving && <Pace key={`${quality.tier}-${quality.maxDpr}`} fps={settings.fps} slowMs={settings.slowMs} onSlow={forced ? undefined : () => setFound(stepDown)} />}
     </Canvas>
   );
 }

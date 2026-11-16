@@ -388,6 +388,7 @@ The scene shows the selected day, using the rule in the art direction, section 1
 | Frame rate | Display rate | Capped at 30 |
 
 - Rendering stops when the window is off screen, folded, or the tab is hidden.
+- **As built, 16 November:** both tiers exist and the scene sleeps when unseen. The table above differs from the build in three places (the water has no mesh, both tiers mirror the boat, the high tier's shadow map is 2048 px), and the low tier also drops to one device pixel if it still cannot keep up. Details and measurements are in [testing-report.md](testing-report.md), section 5.
 - Budgets: at most 60,000 triangles and 40 draw calls. The 3D chunk loads after first interaction is possible. Everything else, including React, the router and Motion, stays under 200 kB compressed.
 - **Phone pass bar:** the low tier holds 30 frames a second with the processor throttled four times in Chrome, and is then checked by a founder on a real phone. Both results go in the testing report.
 
