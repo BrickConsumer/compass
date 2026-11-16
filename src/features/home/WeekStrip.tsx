@@ -30,7 +30,9 @@ export function WeekStrip({ weekStart, selected, today, marks, assessments, onSe
   const focusDay = (date: ISODate) => { onSelect(date); window.setTimeout(() => row.current?.querySelector<HTMLButtonElement>(`[data-date="${date}"]`)?.focus(), 90); };
   const onKey = (e: React.KeyboardEvent) => {
     const step: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, PageUp: -7, PageDown: 7 };
-    if (e.key in step) { e.preventDefault(); focusDay(addDaysISO(selected, step[e.key]!)); }
+    // move from the day that has focus, which is the selected day unless focus was put elsewhere
+    const from = (e.target as HTMLElement).closest<HTMLElement>('[data-date]')?.dataset.date ?? selected;
+    if (e.key in step) { e.preventDefault(); focusDay(addDaysISO(from, step[e.key]!)); }
     else if (e.key === 'Home') { e.preventDefault(); focusDay(days[0]!); }
     else if (e.key === 'End') { e.preventDefault(); focusDay(days[6]!); }
   };
@@ -44,16 +46,20 @@ export function WeekStrip({ weekStart, selected, today, marks, assessments, onSe
         const name = [longDate(date), isToday ? 'today' : '', m.total ? `${m.done} of ${m.total} tasks done` : 'nothing planned', due ? due.title : '', on ? 'selected' : ''].filter(Boolean).join(', ');
         return (
           <button key={date} type="button" data-date={date} tabIndex={on ? 0 : -1} aria-pressed={on} aria-current={isToday ? 'date' : undefined} aria-label={name} onClick={() => onSelect(date)}
-            className={`relative flex h-[68px] cursor-pointer flex-col justify-between rounded-[14px] px-0 py-2 text-left transition-colors duration-[140ms] max-sm:items-center sm:h-[86px] sm:rounded-lg sm:px-3.5 sm:py-2.5 ${on ? 'bg-surface-inverse text-text-inverse outline-marine-300' : 'hover:bg-surface-well'}`}>
-            <span className={`flex w-full justify-between text-[12.5px] font-semibold max-sm:justify-center ${on ? 'text-[#C5D2DE]' : isToday ? 'text-marine-600' : 'text-text-muted'}`}>
+            className={`relative flex h-[68px] cursor-pointer flex-col justify-between rounded-[14px] px-0 py-2 text-left transition-colors duration-[140ms] max-sm:items-center sm:h-[86px] sm:rounded-lg sm:px-3.5 sm:py-2.5 lg:px-5 ${on ? 'bg-surface-inverse text-text-inverse outline-marine-300' : 'hover:bg-surface-well'}`}>
+            <span className={`flex w-full justify-between text-[12.5px] font-semibold max-sm:justify-center ${on ? 'text-paper-0/75' : isToday ? 'text-marine-600' : 'text-text-muted'}`}>
               <span><span className="sm:hidden">{weekdayShort(date)[0]}</span><span className="max-sm:hidden">{weekdayShort(date)}</span></span>
               {isToday && <span className="max-lg:hidden">Today</span>}
             </span>
-            <span className="font-display text-[22px] font-medium leading-none sm:text-[28px]">{dayOfMonth(date)}</span>
+            <span className="flex items-center gap-2 font-display text-[22px] font-medium leading-none sm:text-[28px]">
+              {dayOfMonth(date)}
+              {/* between phone and wide screens there is no room for the title, so the diamond sits beside the date */}
+              {due && <span aria-hidden="true" className="hidden size-[7px] rotate-45 bg-brass-500 sm:max-xl:block" />}
+            </span>
             <Marks {...m} inverse={on} />
             {due && (
-              <span className={`absolute bottom-2.5 right-3 flex max-w-[58%] items-center gap-1.5 text-[12.5px] font-semibold max-lg:right-2 max-sm:bottom-auto max-sm:right-1.5 max-sm:top-1.5 ${on ? 'text-brass-300' : 'text-brass-700'}`}>
-                <span aria-hidden="true" className="size-[7px] shrink-0 rotate-45 bg-brass-500" /><span className="truncate max-lg:hidden">{due.title.slice(0, 12)}</span>
+              <span className={`absolute bottom-2.5 right-5 flex h-[7px] max-w-[58%] items-center gap-1.5 text-[12.5px] font-semibold max-sm:bottom-auto max-sm:right-1.5 max-sm:top-2 sm:max-xl:hidden ${on ? 'text-brass-300' : 'text-brass-700'}`}>
+                <span aria-hidden="true" className="size-[7px] shrink-0 rotate-45 bg-brass-500" /><span className="truncate max-xl:hidden">{due.title.slice(0, 12)}</span>
               </span>
             )}
           </button>

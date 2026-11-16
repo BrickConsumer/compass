@@ -6,7 +6,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 
 - **Compass**: a calm student planner whose distinctive feature is a sailboat that develops as you make progress.
 - **Founders:** Josh, Oliver and Aditya. Oliver is driving these sessions.
-- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, branch `main`, remote `github.com/BrickConsumer/compass`.
+- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Work is on branch `phase-1-home`, which is pushed. `main` still holds only the first commit.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 
@@ -19,9 +19,9 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 | C. Home screen spec | Done and **approved** |
 | D. Build the Home prototype | **Built and working.** All 13 required interactions verified in a browser. |
 | The boat's look review | Two rounds done. **Parked by Oliver** ("we will look at the boat later"). |
-| E. Visual refinement | Partly done during the build. A full pass is still owed. |
+| E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it yet. Findings and fixes are in `docs/testing-report.md`, section 2. |
 
-**Nothing is committed.** Everything since the first commit is uncommitted in the working tree. The two prototypes were moved with `git mv`, so those renames are staged.
+**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is the commit after it on the same branch: the fixes in `src/`, two changes to the browser tests, new screenshots, and the two new documents. **The Phase E commit has not been pushed.**
 
 ## 3. Decisions
 
@@ -68,11 +68,13 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
   - components, the boat, light, progression and motion;
   - references, and the token source in section 17.
 - `docs/home-screen-spec.md`: layout at every width, the data model, calendar, task, progress and window behaviour, accessibility, states.
+- `docs/testing-report.md`: the functional testing report against the brief's section 11, the Phase E findings, measured contrast and targets, and where the build differs from the spec.
+- `docs/next-stages.md`: recommended next stages, and the decisions the founders owe.
 - `docs/superpowers/plans/2026-11-16-foundation-and-boat-lookdev.md`: build plan 1.
 - `docs/superpowers/plans/2026-11-16-home-planner.md`: build plan 2.
 - `docs/art-direction/*.png`: images of the original review boards.
 - `docs/screenshots/lookdev/`: the second boat review, covering sailing, golden hour, port, storm and the four boats.
-- `docs/screenshots/home/`: Home at 375, 390, 768, 1024 and 1440, the new-task sheet, the task editor, and the voyage view.
+- `docs/screenshots/home/`: Home at 375, 390, 768, 1024 and 1440, the new-task sheet, the task editor, and the voyage view. Retaken after Phase E.
 - **Review boards page:** https://claude.ai/artifact/9hqgFfz74FdZkBYdgJCCXm. It is private, so Josh and Aditya need it shared from its Share menu. It still shows the older side-on boat.
 
 ## 5. The code
@@ -112,6 +114,10 @@ Runs 59 unit tests, all passing.
 npm run build
 ```
 Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D chunk is 256 kB compressed and lazily loaded.
+```bash
+PW_CHANNEL=chrome npm run test:e2e
+```
+Runs 15 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
@@ -194,16 +200,11 @@ Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D ch
 ## 7. Not verified, not built, known issues
 
 ### Not run or measured
-- **Browser test files:** `tests/e2e/home.spec.ts` and `tests/e2e/lookdev.spec.ts` were never run with the test runner. It needs its own browser, so ask before running this (about 100 MB):
-  ```bash
-  npx playwright install chromium
-  ```
-  Then run:
-  ```bash
-  npm run test:e2e
-  ```
-- **Performance on a real phone** has not been measured. The scene is heavier now, with shadows, the port and the figures.
-- **No manual screen-reader pass** and no in-app contrast audit. The token contrasts were calculated, not checked in the app.
+- **Performance on a real phone** has not been measured. A laptop figure exists (60 frames a second at phone size with the processor slowed four times) and is only indicative.
+- **The low performance tier in the spec is mostly not built.** Touch devices get a lower pixel density and nothing else, and the scene keeps drawing when scrolled out of view.
+- **No manual screen-reader pass.** Contrast, text size and touch targets were measured by script in the running app and pass.
+- **Only Chrome has been tested.**
+- The full list of places where the build differs from the spec is in `docs/testing-report.md`, section 6.
 
 ### Known rough edges in the boat
 - The storm's breaking crests still look like patches.
@@ -219,13 +220,13 @@ Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D ch
 - Recurring tasks.
 - Accounts and sync.
 
-### Still owed from the brief's deliverables (section 13)
-- A full Phase E visual refinement pass.
-- A written functional testing report.
-- A list of recommended next stages.
+### The brief's deliverables (section 13)
+All eleven now exist. The last three (the Phase E pass, the testing report and the next-stages list) were done on 16 November.
 
 ## 8. Working notes
 
+- **The Playwright MCP may refuse with "Browser is already in use"** when another chat still holds its browser. Screenshots and checks can be run instead with a small Node script that requires `node_modules/playwright` and launches `chromium.launch({ channel: 'chrome' })`. This is how the Phase E captures were made.
+- **The browser tests start typing the moment the page loads.** The shortcuts are not listening for the first few milliseconds, so tests wait for `#day-title` first.
 - **Playwright MCP blocks `file:` URLs.** Serve pages over http on 127.0.0.1. For retina screenshots, create a new browser context with `deviceScaleFactor: 2`.
 - **The MCP writes a `.playwright-mcp/` folder** into the repo; it is in `.gitignore`.
 - **A harmless warning:** "THREE.Clock deprecated", from React Three Fiber.
@@ -233,8 +234,10 @@ Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D ch
 
 ## 9. Suggested next steps
 
-1. **Commit the work** once the founders approve.
-2. **Run the browser test files** after installing the test browser.
-3. **Phase E:** review Home at all widths against the art direction, fix what is found, and write the testing report and next-stages list.
-4. **Boat look review round three**, when Oliver is ready.
-5. **Measure phone performance** and tune the low tier.
+The full list is in `docs/next-stages.md`.
+
+1. **Push the Phase E commit** when Oliver says so, then open a pull request from `phase-1-home` to `main`.
+2. **A founder opens Home on a real phone,** and in Safari.
+3. **Build the low performance tier** and stop the scene drawing when it is out of view.
+4. **Finish the reward loop:** the plate announcing what was earned, and the motion in the spec.
+5. **Boat look review round three**, when Oliver is ready.

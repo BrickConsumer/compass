@@ -28,19 +28,22 @@ export function useHeldOrder(tasks: Task[], holdMs = 600): Task[] {
   }, [tasks, held]);
 }
 
+/** Small counts are spelled out, as the voice asks: "All five done". */
+const NUMBER_WORDS: Record<number, string> = { 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten' };
+
 interface Props { date: ISODate; today: ISODate; tasks: Task[]; subjects: Subject[]; assessment?: Assessment; carried: Task[]; onEdit: (id: string) => void }
 
 /** The one raised sheet: the selected day's tasks, its progress, and anything still open from earlier in the week. */
 export function DaySheet({ date, today, tasks, subjects, assessment, carried, onEdit }: Props) {
   const ordered = useHeldOrder(tasks), p = progress(tasks), isToday = date === today;
-  const count = p.total === 0 ? 'Nothing planned' : p.done === p.total ? (p.total === 1 ? 'Done' : `All ${p.total} done`) : `${p.done} of ${p.total} done`;
+  const count = p.total === 0 ? 'Nothing planned' : p.done === p.total ? (p.total === 1 ? 'Done' : `All ${NUMBER_WORDS[p.total] ?? p.total} done`) : `${p.done} of ${p.total} done`;
   const moveCarried = () => {
     const before = useCompass.getState().moveToDate(carried.map((t) => t.id), today);
     toast(`Moved ${carried.length === 1 ? '1 task' : `${carried.length} tasks`} to today.`, { label: 'Undo', run: () => useCompass.getState().restoreTasks(before) });
   };
   const sameDay = carried.length > 0 && carried.every((t) => t.date === carried[0]!.date);
   return (
-    <section aria-labelledby="day-title" className="flex flex-col rounded-t-xl bg-surface-sheet px-5 pb-2 pt-[18px] shadow-sheet ring-1 ring-line max-sm:-mx-4 max-sm:rounded-t-[26px] lg:min-h-[420px]">
+    <section aria-labelledby="day-title" className="flex flex-col rounded-t-xl bg-surface-sheet px-5 pb-2 pt-[18px] shadow-sheet ring-1 ring-line max-sm:-mx-4 max-sm:rounded-t-[26px] sm:max-lg:rounded-b-xl lg:-mb-10 lg:min-h-[420px] lg:self-stretch lg:pb-12">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="day-title" className="text-[25px] leading-[1.2]">{sheetTitle(date, today)}<span className="sr-only">, {longDate(date)}</span></h2>
         <p className="text-[13.5px] font-semibold text-text-muted">{count}</p>
@@ -54,7 +57,7 @@ export function DaySheet({ date, today, tasks, subjects, assessment, carried, on
           <button type="button" onClick={moveCarried} className="min-h-9 cursor-pointer rounded-[9px] font-semibold underline underline-offset-[3px]">{carried.length === 1 ? 'Move it to today' : 'Move them to today'}</button>
         </p>
       )}
-      {p.total === 0 && <p className="mt-4 text-[15px] text-text-muted">Nothing planned for {isToday ? 'today' : weekdayLong(date)}. Add a task, or spend the day in port.</p>}
+      {p.total === 0 && <p className="mt-4 text-pretty text-[15px] text-text-muted">Nothing planned for {isToday ? 'today' : weekdayLong(date)}. Add a task, or spend the day in port.</p>}
       <ul className="mt-2">
         {ordered.map((t) => <TaskRow key={t.id} task={t} subject={subjects.find((s) => s.id === t.subjectId)} onEdit={onEdit} />)}
       </ul>

@@ -29,7 +29,7 @@ export function TaskRow({ task, subject, onEdit, number, small = false }: Props)
         aria-keyshortcuts="Space P Delete"
         className={`flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 rounded-[9px] text-left font-medium outline-offset-0 ${small ? 'text-[14.5px]' : 'text-[15.5px]'} max-sm:text-[16px] ${done ? 'text-text-muted line-through decoration-[rgb(14_36_58/0.35)]' : ''}`}>
         {number !== undefined && <span aria-hidden="true" className="w-4 shrink-0 font-display text-[17px] font-semibold text-brass-700 no-underline">{number}</span>}
-        <span className={small ? 'line-clamp-2 py-1.5 leading-[1.3]' : 'truncate'}>{task.title}</span>
+        <span className={small ? 'line-clamp-2 py-1.5 leading-[1.3] text-balance' : 'truncate'}>{task.title}</span>
       </button>
       <span className="flex items-center gap-1 pl-2 text-[13px] text-text-muted">
         <button type="button" onClick={() => cycle(task.id)} title="Change priority (P)"

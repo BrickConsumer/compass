@@ -23,7 +23,7 @@ export function HomeWindow({ progress, missedYesterday }: { progress: number | n
             <span className="flex justify-between gap-4 text-[13px] font-medium text-text-muted"><span>{miles.toLocaleString('en-GB')} nautical miles logged</span><span>{days} days at sea</span></span>
             {next && <>
               <span aria-hidden="true" className="mt-1 block h-1 overflow-hidden rounded-full bg-track"><span className="block h-full rounded-full bg-brass-700" style={{ width: `${Math.min(100, (got / span) * 100)}%` }} /></span>
-              <span className="text-[13px] font-medium text-text-muted">{(next.miles - miles).toLocaleString('en-GB')} more for {next.name.toLowerCase().replace(/^a /, 'a ')}</span>
+              <span className="text-[13px] font-medium text-text-muted">{(next.miles - miles).toLocaleString('en-GB')} more for {next.phrase}</span>
             </>}
           </Link>
         )}
@@ -33,7 +33,7 @@ export function HomeWindow({ progress, missedYesterday }: { progress: number | n
           {!folded && <Link to="/voyage" className={`${round} max-sm:hidden`} aria-label="Open the voyage" title="Open the voyage (V)"><Maximize2 size={15} aria-hidden="true" /></Link>}
         </div>
       </div>
-      <Link to="/voyage" className="mt-1 flex min-h-11 items-baseline justify-between gap-3 rounded-[9px] px-1.5 pt-2 text-[13px] font-medium text-text-muted lg:hidden">
+      <Link to="/voyage" className="mt-1 flex min-h-11 items-baseline justify-between gap-3 rounded-[9px] px-1 pt-2 text-[13px] font-medium text-text-muted sm:px-3.5 lg:hidden">
         <span className="font-display text-[17px] italic text-text">{boat.name}</span><span>{miles.toLocaleString('en-GB')} nautical miles logged</span>
       </Link>
     </div>

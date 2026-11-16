@@ -8,19 +8,20 @@ export const STAGE_GATES: Record<StageId, { miles: number; days: number }> = {
   dinghy: { miles: 0, days: 0 }, sloop: { miles: 250, days: 10 }, cutter: { miles: 1000, days: 40 }, schooner: { miles: 3000, days: 120 },
 };
 
-export interface Fitting { id: string; name: string; miles: number; stage: StageId; modelled: boolean }
+/** `phrase` is how the fitting reads inside a sentence: "88 more for a name on the transom". */
+export interface Fitting { id: string; name: string; phrase: string; miles: number; stage: StageId; modelled: boolean }
 export const FITTINGS: readonly Fitting[] = [
-  { id: 'pennant', name: 'Masthead pennant', miles: 25, stage: 'dinghy', modelled: true },
-  { id: 'lantern', name: 'Bow lantern', miles: 60, stage: 'dinghy', modelled: true },
-  { id: 'sheer-stripe', name: 'Painted sheer stripe', miles: 120, stage: 'dinghy', modelled: true },
-  { id: 'portlights', name: 'Brass portlights', miles: 350, stage: 'sloop', modelled: true },
-  { id: 'transom-name', name: 'Name lettered on the transom', miles: 500, stage: 'sloop', modelled: false },
-  { id: 'dress-flags', name: 'Flags to dress ship', miles: 700, stage: 'sloop', modelled: false },
-  { id: 'ratlines', name: 'Ratlines and lazy jacks', miles: 1300, stage: 'cutter', modelled: false },
-  { id: 'stern-lantern', name: 'Stern lantern', miles: 1700, stage: 'cutter', modelled: false },
-  { id: 'tender', name: 'A tender on deck', miles: 2200, stage: 'cutter', modelled: false },
-  { id: 'topsail', name: 'A topsail', miles: 3600, stage: 'schooner', modelled: false },
-  { id: 'gilded-stripe', name: 'Gilded cove stripe', miles: 4500, stage: 'schooner', modelled: false },
+  { id: 'pennant', name: 'Masthead pennant', phrase: 'a masthead pennant', miles: 25, stage: 'dinghy', modelled: true },
+  { id: 'lantern', name: 'Bow lantern', phrase: 'a bow lantern', miles: 60, stage: 'dinghy', modelled: true },
+  { id: 'sheer-stripe', name: 'Painted sheer stripe', phrase: 'a painted sheer stripe', miles: 120, stage: 'dinghy', modelled: true },
+  { id: 'portlights', name: 'Brass portlights', phrase: 'brass portlights', miles: 350, stage: 'sloop', modelled: true },
+  { id: 'transom-name', name: 'Name lettered on the transom', phrase: 'a name on the transom', miles: 500, stage: 'sloop', modelled: false },
+  { id: 'dress-flags', name: 'Flags to dress ship', phrase: 'flags to dress ship', miles: 700, stage: 'sloop', modelled: false },
+  { id: 'ratlines', name: 'Ratlines and lazy jacks', phrase: 'ratlines and lazy jacks', miles: 1300, stage: 'cutter', modelled: false },
+  { id: 'stern-lantern', name: 'Stern lantern', phrase: 'a stern lantern', miles: 1700, stage: 'cutter', modelled: false },
+  { id: 'tender', name: 'A tender on deck', phrase: 'a tender on deck', miles: 2200, stage: 'cutter', modelled: false },
+  { id: 'topsail', name: 'A topsail', phrase: 'a topsail', miles: 3600, stage: 'schooner', modelled: false },
+  { id: 'gilded-stripe', name: 'Gilded cove stripe', phrase: 'a gilded cove stripe', miles: 4500, stage: 'schooner', modelled: false },
 ];
 
 /** The running total. It can only grow, because the log only grows. */

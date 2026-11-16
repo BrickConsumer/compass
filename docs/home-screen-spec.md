@@ -136,6 +136,12 @@ This is a different arrangement, not a smaller desktop:
 - The bottom bar, the add button and toasts respect `env(safe-area-inset-bottom)`. The header respects the top inset.
 - Other lists follow below the day's sheet in this order: Any time this week, Coming up, Next week.
 
+**Changed at the Phase E review, 16 November.** The wireframe above predates these.
+
+- The phone headline uses the short weekday, "Wed 23 September", because the full weekday wraps beside the two icon buttons. Wider screens keep "Wednesday 23 September".
+- The week controls (previous, the week's dates, next, Today) sit under the boat's name and directly above the week strip, so the order is date, sea, boat name, week controls, week strip.
+- From 1024 px the day's sheet stretches the height of the lists beside it and runs off the bottom of the page. From 640 to 1023 px, where lists sit under it, it has four rounded corners.
+
 ## 4. Component tree
 
 ```
@@ -234,7 +240,7 @@ Pure functions, unit-tested, with no React in them.
 | Today button | Selects today and returns to the current week. Disabled when already there. |
 | Week label | "9 to 15 November". Across months: "30 November to 6 December". Across years the year is added. The ISO week number is shown beside the weekly progress. |
 
-**Day cell.** Weekday, date numeral, then one mark for each day-scoped task: filled when done, outlined when open. Up to six marks, then "+2". A day with no tasks shows a short dash. An assessment adds a brass diamond and a label of at most twelve characters.
+**Day cell.** Weekday, date numeral, then one mark for each day-scoped task: filled when done, outlined when open. Up to six marks, then "+2". A day with no tasks shows a short dash. An assessment adds a brass diamond and a label of at most twelve characters. The label shows from 1280 px, where it fits. From 640 to 1279 px the diamond sits beside the date numeral, and on phones at the top right of the cell.
 
 States: default, hover, focus, selected, today, and today when selected. Each cell is a button. Its accessible name is the whole story: "Sunday 15 November, today, 3 of 5 tasks done, selected".
 
@@ -243,7 +249,7 @@ States: default, hover, focus, selected, today, and today when selected. Each ce
 | Input | Result |
 |---|---|
 | Click or tap a day | Selects it |
-| Left and right arrows, with focus in the strip | Previous and next day. Crossing the end of the week changes week. |
+| Left and right arrows, with focus in the strip | Previous and next day, counted from the day that has focus. Crossing the end of the week changes week. |
 | Home and End | First and last day of the week |
 | Page Up and Page Down, or the chevrons | Previous and next week |
 | `T` | Today |

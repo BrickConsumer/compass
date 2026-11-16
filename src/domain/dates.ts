@@ -26,6 +26,8 @@ export function weekLabel(weekStart: ISODate): string {
 
 /** "Sunday 15 November". */
 export const longDate = (iso: ISODate): string => f(d(iso), 'EEEE d MMMM');
+/** For the phone headline, where the full weekday would wrap beside the two icon buttons. */
+export const shortDate = (iso: ISODate): string => f(d(iso), 'EEE d MMMM');
 export const weekdayShort = (iso: ISODate): string => f(d(iso), 'EEE');
 export const weekdayLong = (iso: ISODate): string => f(d(iso), 'EEEE');
 export const dayOfMonth = (iso: ISODate): string => f(d(iso), 'd');

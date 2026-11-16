@@ -74,7 +74,7 @@ export function VoyagePage() {
         <section aria-labelledby="fit-title">
           <h2 id="fit-title" className="text-[25px]">Fittings</h2>
           <p className="mt-1 text-[14.5px] text-text-muted">
-            {next ? `${(next.miles - miles).toLocaleString('en-GB')} more miles for ${next.name.toLowerCase()}.` : 'Every fitting is earned.'}
+            {next ? `${(next.miles - miles).toLocaleString('en-GB')} more miles for ${next.phrase}.` : 'Every fitting is earned.'}
             {ahead ? ` The ${STAGES[ahead.id].name.toLowerCase()} needs ${ahead.miles.toLocaleString('en-GB')} more miles${ahead.days ? ` and ${ahead.days} more days at sea` : ''}.` : ''} Nothing earned is ever lost.
           </p>
           <ul className="mt-3">

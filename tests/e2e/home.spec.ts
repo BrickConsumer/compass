@@ -4,6 +4,8 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  // the page is drawn a moment before its keyboard shortcuts are listening
+  await expect(page.locator('#day-title')).toBeVisible();
 });
 
 const dayCount = (page: import('@playwright/test').Page) => page.locator('#day-title + p');
@@ -37,7 +39,7 @@ test('weeks and dates: buttons, arrow keys across a week, and T for today', asyn
 });
 
 test('tasks: add, edit, complete, reopen, change priority, delete and undo', async ({ page }) => {
-  await page.keyboard.press('n');
+  await expect(async () => { await page.keyboard.press('n'); await expect(page.locator('#composer-day')).toBeFocused({ timeout: 500 }); }).toPass();
   await page.keyboard.type('Revise Chinese characters');
   await page.keyboard.press('Enter');
   await expect(dayCount(page)).toHaveText('3 of 6 done');

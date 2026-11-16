@@ -317,7 +317,7 @@ function World({ stage, progress, colours, still, missedYesterday, onReady }: Sc
 export default function Scene(props: SceneProps) {
   const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   return (
-    <Canvas flat shadows dpr={[1, coarse ? 1.5 : 2]} frameloop={props.still ? 'demand' : 'always'} gl={{ antialias: true, powerPreference: 'high-performance' }} camera={{ fov: FOV }}>
+    <Canvas flat shadows="percentage" dpr={[1, coarse ? 1.5 : 2]} frameloop={props.still ? 'demand' : 'always'} gl={{ antialias: true, powerPreference: 'high-performance' }} camera={{ fov: FOV }}>
       <World {...props} />
     </Canvas>
   );
