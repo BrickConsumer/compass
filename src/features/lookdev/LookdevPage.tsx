@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type BoatColours, DEFAULT_COLOURS, STAGES, STAGE_ORDER, type StageId } from '../voyage/boat/specs';
+import { type BoatColours, DEFAULT_COLOURS, DRAWN_FITTINGS, STAGES, STAGE_ORDER, type StageId } from '../voyage/boat/specs';
 import { SeaWindow } from '../voyage/SeaWindow';
 import type { Tier } from '../voyage/tier';
 
@@ -38,9 +38,10 @@ export function LookdevPage() {
   const [missed, setMissed] = useState(false);
   const [use3d, setUse3d] = useState(true);
   const [tier, setTier] = useState<Tier>();
+  const [worn, setWorn] = useState<readonly string[]>(DRAWN_FITTINGS);
   const [colours, setColours] = useState<BoatColours>(DEFAULT_COLOURS);
   const progress = planned ? done / 5 : null;
-  const windowProps = { stage, progress, colours, paused, boatName: 'The Kestrel', still: !use3d, missedYesterday: missed, tier };
+  const windowProps = { stage, progress, colours, paused, boatName: 'The Kestrel', still: !use3d, missedYesterday: missed, tier, fittings: worn };
 
   return (
     <main className="mx-auto flex max-w-[1240px] flex-col gap-8 px-4 py-8 sm:px-7">
@@ -93,6 +94,15 @@ export function LookdevPage() {
             <label className="flex items-center gap-2"><input type="checkbox" checked={paused} onChange={(e) => setPaused(e.target.checked)} /> Pause the sea</label>
             <label className="flex items-center gap-2"><input type="checkbox" checked={!use3d} onChange={(e) => setUse3d(!e.target.checked)} /> Still image only</label>
           </div>
+
+          <fieldset>
+            <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Fittings earned</legend>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-[14.5px]">
+              {([['pennant', 'Masthead pennant'], ['lantern', 'Bow lantern'], ['sheer-stripe', 'Sheer stripe'], ['portlights', 'Brass portlights'], ['transom-name', 'Name on the quarter']] as const).map(([id, name]) => (
+                <label key={id} className="flex items-center gap-2"><input type="checkbox" checked={worn.includes(id)} onChange={(e) => setWorn(e.target.checked ? [...worn, id] : worn.filter((x) => x !== id))} /> {name}</label>
+              ))}
+            </div>
+          </fieldset>
 
           <fieldset>
             <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Performance</legend>

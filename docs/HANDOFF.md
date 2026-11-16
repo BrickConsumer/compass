@@ -6,7 +6,10 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 
 - **Compass**: a calm student planner whose distinctive feature is a sailboat that develops as you make progress.
 - **Founders:** Josh, Oliver and Aditya. Oliver is driving these sessions.
-- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Phase 1 is on branch `phase-1-home`, pushed, with pull request 1 open to `main`. The performance work is on branch `sea-performance`, cut from it. `main` still holds only the first commit.
+- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Three branches, each cut from the one before. `main` still holds only the first commit.
+  - `phase-1-home`: Phase 1. Pushed, with pull request 1 open to `main`.
+  - `sea-performance`: the performance work. Pushed, with pull request 2 open against `phase-1-home`.
+  - `reward-loop`: the reward loop. Local only.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 
@@ -21,7 +24,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 | The boat's look review | Two rounds done. **Parked by Oliver** ("we will look at the boat later"). |
 | E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it yet. Findings and fixes are in `docs/testing-report.md`, section 2. |
 
-**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Its first commit (`7e72a5e`, tiers and sleeping) is pushed. The draw-call work is the commit after it, approved by Oliver. **That second commit has not been pushed.**
+**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Both its commits are pushed: `7e72a5e` (tiers and sleeping) and `98a179d` (draw calls). The reward loop is one commit on `reward-loop`, approved by Oliver. **It has not been pushed and has no pull request.**
 
 ## 3. Decisions
 
@@ -31,6 +34,9 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 - **Window above the planner**, not beside it.
 - **Boat family:** dinghy, sloop, cutter, schooner, with a navy hull, ivory sails and brass trim by default.
 - **Each day's light:** dawn when nothing is done, clear day as tasks are done, golden hour when everything is done.
+
+### Changed by Oliver on 16 November, during Stage 3
+- **The boat's name is lettered on the quarter,** not the transom, which faces away from the usual view. The fitting's id is still `transom-name`, so saved voyages match.
 
 ### Changed by Oliver at the first look review
 - **The storm stays.** A *missed day* is one that had tasks planned and none completed. The next day opens in a storm (slate sky, rain, breaking crests).
@@ -42,7 +48,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 - **Gulls and more interesting terrain:** layered islands, a mountain range, a mesa, sea stacks and a distant lighthouse.
 
 ### My calls, which the founders can overrule
-- **Fittings order:** portlights at 350 miles, the transom name at 500. This makes the sample sloop at 412 miles match what is drawn.
+- **Fittings order:** portlights at 350 miles, the name on the quarter at 500. This makes the sample sloop at 412 miles match what is drawn.
 - **Earning something** shows one quiet line on the plate, not a pop-up. A new boat is offered in the voyage view, not swapped in.
 - **Completed task titles** use `deep-600`, so they stay readable on the hover background.
 - **The storm and port:** a day in port never shows the storm. The port figures have no faces.
@@ -109,7 +115,7 @@ Opens on http://localhost:5173. It is also set up in `.claude/launch.json` as "c
 ```bash
 npm test
 ```
-Runs 88 unit tests, all passing.
+Runs 102 unit tests, all passing.
 ```bash
 npm run build
 ```
@@ -117,7 +123,7 @@ Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D ch
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 21 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
+Runs 25 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
@@ -143,6 +149,7 @@ Runs 21 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
   - `progress`, `share`, `dayMarks`;
   - `carryOver`, `missedDay`, `upcomingAssessments`, `nextWeekPriorities`, `cleanTitle`.
 - `voyage.ts`: the miles rules, `STAGE_GATES`, `FITTINGS`, `awardsFor`, `earnedStage`, `nextFitting`, `nextStage`.
+  - `earnedIds`, `unseenRewards` and `announcement` drive the reward loop: what has been earned since the voyage was last opened, and the one line that says so.
 - `seed.ts`: sample data from the brief, placed around today. It starts the boat at 412 miles, 23 days at sea, sailing a sloop.
 
 **`state/`**
@@ -164,7 +171,7 @@ Runs 21 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 - `TaskRow`, `TaskComposer`, `TaskEditor` (a dialog; a bottom sheet on phones).
 
 **`features/voyage/`**
-- `boat/specs.ts`: the measurements of all four boats, shared by the 2D and 3D boats.
+- `boat/specs.ts`: the measurements of all four boats, shared by the 2D and 3D boats. `fitOut(spec, earned)` returns a boat wearing the fittings that have been earned. A boat's measurements never include fittings.
 - `light.ts`: the light table, storm light, and `sceneState(progress, { missedYesterday })`, which returns light, wind, sail fill, waves, speed, storm and in-port.
 - `tier.ts`: the two performance tiers, the rule for stepping down, and the frame-time watch. Pure and unit-tested.
   - Phones start on the low tier (no shadow map, fewer pixels, 30 frames a second).
@@ -172,6 +179,7 @@ Runs 21 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 - `poster/`: the SVG still image, used while the 3D scene loads and if WebGL is unavailable.
 - `scene/`:
   - `Scene.tsx`: sky, sea, rain and wake shaders, islands, gulls, lights and framing;
+  - `boat/lettering.ts`: the boat's name as a small text texture that the hull's own paint lays on the quarter. No extra mesh;
   - `boat/` (hull loft, materials, `buildBoat`), `scenery.ts` (port, people, gulls, silhouettes), `waves.ts`;
   - `batch.ts`: bakes parts that never move into one mesh for each material, which keeps a frame to 17 to 32 draw calls. Anything new that does not move should be built as ordinary meshes in plain paint (`solid()`), and the bake picks it up. Anything that moves must be added to the `moving` set.
 - `SeaWindow.tsx`: shows the still image first, then lazy-loads and fades in the 3D scene. It puts the scene to sleep when the window is off screen or the tab is hidden, and exposes `data-tier` and `data-asleep` for tests.
@@ -213,7 +221,8 @@ Runs 21 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 - The storm's breaking crests still look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over.
 - The still image's port shows no figures.
-- Only five fittings are drawn on the boat (pennant, lantern, sheer stripe, portlights, plus the cabin). The rest are listed as "earned, not yet drawn".
+- Five fittings are drawn on the boat: pennant, lantern, sheer stripe, portlights and the name on the quarter. The rest are listed as "earned, not yet drawn".
+- The still image does not letter the name. At its size the name would be a few pixels long.
 
 ### Not built, by plan
 - Dark theme and night scene.
@@ -239,8 +248,8 @@ All eleven now exist. The last three (the Phase E pass, the testing report and t
 
 The full list is in `docs/next-stages.md`.
 
-1. **Push the draw-call commit** on `sea-performance` when Oliver says so. Pull request 2 picks it up.
+1. **Push `reward-loop`** when Oliver says so, and open its pull request against `sea-performance`.
 2. **A founder opens Home on a real phone,** and in Safari.
 3. **Merge pull request 1,** then pull request 2.
-4. **Finish the reward loop:** the plate announcing what was earned, and the motion in the spec.
+4. **Finish Stage 3:** the motion in the spec, the shortcut list, and the editor as a popover.
 5. **Boat look review round three**, when Oliver is ready.

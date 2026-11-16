@@ -1,5 +1,5 @@
 import { useId, useMemo } from 'react';
-import { type BoatColours, STAGES, type StageId } from '../boat/specs';
+import { type BoatColours, fitOut, STAGES, type StageId } from '../boat/specs';
 import { describeScene, sceneState } from '../light';
 import { seaPoster } from './seaPoster';
 
@@ -8,6 +8,8 @@ export interface BoatPosterProps {
   /** Share of the selected day done, 0 to 1. `null` means nothing is planned. */
   progress: number | null;
   colours: BoatColours;
+  /** Ids of the fittings earned so far. */
+  fittings: readonly string[];
   boatName: string;
   /** The day before had tasks planned and none were done: today opens in a storm. */
   missedYesterday?: boolean;
@@ -21,12 +23,13 @@ export interface BoatPosterProps {
  * The still image of the boat on the sea. Shown at once while the 3D scene loads,
  * and kept if WebGL is unavailable. Drawn from the same measurements and light table as the 3D scene.
  */
-export function BoatPoster({ stage, progress, colours, boatName, missedYesterday = false, width = 1178, height = 276, className }: BoatPosterProps) {
+export function BoatPoster({ stage, progress, colours, fittings, boatName, missedYesterday = false, width = 1178, height = 276, className }: BoatPosterProps) {
   const id = 'p' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const state = useMemo(() => sceneState(progress, { missedYesterday }), [progress, missedYesterday]);
   const markup = useMemo(
-    () => seaPoster({ width, height, spec: STAGES[stage], state, colours, id }),
-    [width, height, stage, state, colours, id],
+    () => seaPoster({ width, height, spec: fitOut(STAGES[stage], fittings), state, colours, id }),
+    // the list is compared by what is in it, not by identity
+    [width, height, stage, fittings.join(), state, colours, id],
   );
   return (
     <svg

@@ -4,7 +4,7 @@ import {
   AlwaysDepth, BackSide, Color, DirectionalLight, DoubleSide, Group, HemisphereLight, Matrix4, Mesh, MeshBasicMaterial, type PerspectiveCamera, Plane, PlaneGeometry, ShaderMaterial,
   SphereGeometry, Vector3,
 } from 'three';
-import { type BoatColours, sheer, STAGES, type StageId, tallOf } from '../boat/specs';
+import { type BoatColours, fitOut, sheer, STAGES, type StageId, tallOf } from '../boat/specs';
 import { type DayContext, lightFor, mixHex, sceneState } from '../light';
 import { frameWatch, qualityFor, type Quality, startingQuality, stepDown, type Tier, TIERS } from '../tier';
 import { Batch, type Range, tint } from './batch';
@@ -129,6 +129,10 @@ export interface SceneProps extends DayContext {
   /** Share of the selected day done, or null when nothing is planned. */
   progress: number | null;
   colours: BoatColours;
+  /** Ids of the fittings earned so far. */
+  fittings: readonly string[];
+  /** Lettered on the quarter once that fitting is earned. */
+  boatName: string;
   /** Hold a still frame: paused by the user, or reduced motion. */
   still: boolean;
   /** Nobody can see the window (scrolled away, or the tab is hidden): draw nothing at all. */
@@ -139,9 +143,12 @@ export interface SceneProps extends DayContext {
   onReady?: () => void;
 }
 
-function World({ stage, progress, colours, still, missedYesterday, onReady, asleep, shadows }: SceneProps & { shadows: boolean }) {
+function World({ stage, progress, colours, fittings, boatName, still, missedYesterday, onReady, asleep, shadows }: SceneProps & { shadows: boolean }) {
   const { camera, size, gl, invalidate } = useThree();
-  const spec = STAGES[stage], target = useMemo(() => sceneState(progress, { missedYesterday }), [progress, missedYesterday]);
+  // the list is compared by what is in it, so a new array with the same fittings does not rebuild the boat
+  const worn = fittings.join();
+  const spec = useMemo(() => fitOut(STAGES[stage], fittings), [stage, worn]);
+  const target = useMemo(() => sceneState(progress, { missedYesterday }), [progress, missedYesterday]);
   const cur = useRef({ p: target.progress, wind: target.wind, fill: target.sailFill, amp: target.waveHeight, speed: target.speed, storm: target.storm, time: 2, travel: 0 });
   const ready = useRef(false);
   const waterline = useMemo(() => new Plane(new Vector3(0, 1, 0), 0), []);
@@ -218,6 +225,8 @@ function World({ stage, progress, colours, still, missedYesterday, onReady, asle
     return { rig, solidBoat, mirrorBoat, port };
   }, [spec, colours, target.inPort, waterline]);
   useEffect(() => () => { boats.solidBoat.dispose(); boats.mirrorBoat.dispose(); boats.port?.dispose(); }, [boats]);
+  // renaming the boat repaints the lettering and nothing else
+  useEffect(() => { boats.solidBoat.setName(boatName, invalidate); }, [boats, boatName, invalidate]);
 
   // frame the boat: raised camera, horizon a third of the way down
   const frame = useRef({ frameH: 10, d: 30, aspect: 4, k: 1 });

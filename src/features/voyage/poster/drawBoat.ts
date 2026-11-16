@@ -1,4 +1,4 @@
-import { type BoatSpec, type CabinSpec, type MastSpec, mastPoint, sheer } from '../boat/specs';
+import { type BoatSpec, type CabinSpec, lanternScale, type MastSpec, mastPoint, sheer } from '../boat/specs';
 
 /** Paint for the still image. A two-entry array is a gradient. */
 export interface PosterLook {
@@ -84,14 +84,14 @@ export function drawBoat(spec: BoatSpec, o: DrawOptions): DrawnBoat {
     for (let i = 0; i <= 24; i++) { const x = a + ((b - a) * i) / 24; d += (i ? 'L' : 'M') + P(x, sh(x) + off); }
     return d;
   };
-  g.push(thin(along(-0.115, 0.04 * L, 0.955 * L), lk.cove, 1.25));
+  if (spec.stripe) g.push(thin(along(-0.115, 0.04 * L, 0.955 * L), lk.cove, 1.25));
 
   // deck structures
   const cabin = (c: CabinSpec) => {
     const y0 = sh(c.a), y1 = sh(c.b);
     g.push(`<path d="M${P(c.a, y0)}L${P(c.a + 0.1, y0 + c.h)}L${P(c.b - 0.7, y1 + c.h * 0.94)}Q${P(c.b - 0.12, y1 + c.h * 0.9)} ${P(c.b, y1)}Z" fill="${lk.cabin}"/>`);
     g.push(thin(`M${P(c.a + 0.02, y0 + c.h)}L${P(c.b - 0.64, y1 + c.h * 0.94)}`, lk.roof, 2.2));
-    for (let i = 0; i < c.ports; i++) {
+    for (let i = 0; spec.portlights && i < c.ports; i++) {
       const x = c.a + 0.55 + ((c.b - c.a - 1.6) * i) / Math.max(1, c.ports - 1);
       g.push(`<circle cx="${X(x)}" cy="${Y(sh(x) + c.h * 0.5)}" r="${f1(0.085 * s)}" fill="${lk.glass}" stroke="${lk.brass}" stroke-width="${sw(1.1)}"/>`);
     }
@@ -182,9 +182,9 @@ export function drawBoat(spec: BoatSpec, o: DrawOptions): DrawnBoat {
     g.push(`<path d="M${pp(a1)}L${pp(B)}L${pp({ x: B.x, y: B.y - 0.42 })}L${pp({ x: a1.x, y: a1.y - 0.42 })}Z" fill="${lk.ensign}"/>`);
   }
   if (spec.lantern) {
-    const lx = L - (sprit ? 0.95 : 0.45), ly = sh(lx) + 0.5;
+    const k = lanternScale(spec), lx = L - (sprit ? 0.95 : 0.45 * k), ly = sh(lx) + 0.5 * k;
     g.push(thin(`M${P(lx, sh(lx))}L${P(lx, ly)}`, lk.brass, 1));
-    g.push(`<circle cx="${X(lx)}" cy="${Y(ly + 0.1)}" r="${f1(0.11 * s)}" fill="${lk.lantern}"/>`);
+    g.push(`<circle cx="${X(lx)}" cy="${Y(ly + 0.1 * k)}" r="${f1(0.11 * k * s)}" fill="${lk.lantern}"/>`);
   }
   return { id, defs: defs.join(''), body: g.join(''), sternX: X(wx0), bowX: X(wx1), X, Y };
 }

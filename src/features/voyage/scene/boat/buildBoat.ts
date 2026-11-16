@@ -2,8 +2,9 @@ import {
   BoxGeometry, BufferAttribute, BufferGeometry, CatmullRomCurve3, CylinderGeometry, ExtrudeGeometry, Group, type Material, Mesh,
   MeshStandardMaterial, type Plane, Shape, SphereGeometry, TubeGeometry, Vector3,
 } from 'three';
-import { type BoatColours, type BoatSpec, type CabinSpec, type MastSpec, mastPoint, sheer } from '../../boat/specs';
+import { type BoatColours, type BoatSpec, type CabinSpec, lanternScale, type MastSpec, mastPoint, sheer } from '../../boat/specs';
 import { deckGeometry, halfBeam, hullGeometry } from './hull';
+import { createLettering } from './lettering';
 import { bakeStatic } from '../batch';
 import { hullMaterial, paintMaterial, PAINT, reflectionMaterial, sailMaterial, solid } from './materials';
 
@@ -59,6 +60,8 @@ export interface BuiltBoat {
   group: Group;
   /** Call each frame (or once, when still). */
   update: (time: number, fill: number, wind: number) => void;
+  /** Letter the boat's name on the quarter, if she has earned it. `changed` is called when it is ready to be drawn. */
+  setName: (name: string, changed?: () => void) => void;
   dispose: () => void;
 }
 
@@ -74,6 +77,8 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
   const mirror = !!opts.mirror, furled = !!opts.furled;
   /** Meshes and groups that are animated. Everything else is baked into a few meshes at the end. */
   const moving = new Set<Group | Mesh>();
+  // the reflection is a flat tint, so only the boat herself is lettered
+  const lettering = spec.named && !mirror ? createLettering(spec, colours.hull) : null;
   const paint = (key: string, make: () => Material, flat: string): Material => {
     const k = (mirror ? 'm:' : 's:') + key;
     let m = mats.get(k);
@@ -81,7 +86,7 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     return m;
   };
   const M = {
-    hull: () => paint('hull', () => hullMaterial(colours.hull), colours.hull),
+    hull: () => paint('hull', () => hullMaterial(colours.hull, !!spec.stripe, lettering?.uniforms), colours.hull),
     deck: () => paint('deck', () => solid(PAINT.deck, 0.8), PAINT.deck),
     well: () => paint('well', () => solid(PAINT.well, 0.85), PAINT.well),
     wood: () => paint('wood', () => solid(PAINT.rail, 0.55), PAINT.rail),
@@ -153,7 +158,7 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     const roof = add(new BoxGeometry(len + 0.1, 0.06, w + 0.2), M.roof());
     roof.position.set(c.a + 0.02 + len / 2, (y0 + c.h + y1 + c.h * 0.94) / 2 + 0.03, 0);
     roof.rotation.z = slope;
-    for (let i = 0; i < c.ports; i++) {
+    for (let i = 0; spec.portlights && i < c.ports; i++) {
       const x = c.a + 0.55 + ((c.b - c.a - 1.6) * i) / Math.max(1, c.ports - 1), y = sh(x) + c.h * 0.5;
       const ring = add(new CylinderGeometry(0.105, 0.105, w + 0.1, 14), M.brass()); ring.rotation.x = Math.PI / 2; ring.position.set(x, y, 0);
       const pane = add(new CylinderGeometry(0.075, 0.075, w + 0.13, 14), M.glass()); pane.rotation.x = Math.PI / 2; pane.position.set(x, y, 0);
@@ -251,9 +256,9 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     flag(a1, 0.7, 0.42, false, M.ensign());
   }
   if (spec.lantern) {
-    const lx = L - (sprit ? 0.95 : 0.45), ly = sh(lx) + 0.5;
+    const k = lanternScale(spec), lx = L - (sprit ? 0.95 : 0.45 * k), ly = sh(lx) + 0.5 * k;
     rod(new Vector3(lx, sh(lx), 0), new Vector3(lx, ly, 0), 0.012, 0.012, M.brass(), g, 5);
-    const lamp = add(new SphereGeometry(0.11, 12, 10), M.lantern()); lamp.position.set(lx, ly + 0.1, 0);
+    const lamp = add(new SphereGeometry(0.11 * k, 12, 10), M.lantern()); lamp.position.set(lx, ly + 0.1 * k, 0);
   }
 
   let lastFill = -1;
@@ -284,5 +289,9 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     farToNear: (centre) => 0.955 * centre.z + 0.296 * centre.x - 0.06 * centre.y })) geos.push(baked.geometry);
   update(0, 0.6, 0.5);
 
-  return { group: root, update, dispose: () => { for (const x of geos) x.dispose(); for (const m of mats.values()) m.dispose(); } };
+  return {
+    group: root, update,
+    setName: (name, changed) => { if (lettering) lettering.set(name, changed); },
+    dispose: () => { for (const x of geos) x.dispose(); for (const m of mats.values()) m.dispose(); lettering?.dispose(); },
+  };
 }

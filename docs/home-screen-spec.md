@@ -364,9 +364,10 @@ The scene shows the selected day, using the rule in the art direction, section 1
 
 ### Parts
 
-- **Voyage plate**, bottom left on desktop: the boat's name in italic, then upright: "412 nautical miles logged", "23 days at sea", a thin bar, and "88 more for a name on the transom". When something has been earned since the voyage was last opened, a brass dot and one line such as "New: bow lantern" replace the last line. The whole plate is a button that opens the voyage.
+- **Voyage plate**, bottom left on desktop: the boat's name in italic, then upright: "412 nautical miles logged", "23 days at sea", a thin bar, and "88 more for a name on the quarter". When something has been earned since the voyage was last opened, a brass dot and one line such as "New: bow lantern" replace the last line. The whole plate is a button that opens the voyage.
 - **Controls**, top right: pause or resume the sea, fold or unfold the window, open the voyage. Each has a text label for assistive technology and a tooltip. The mock above shows only two of the three, and the build has all three.
 - On phones the plate becomes a text row under the window, and the controls reduce to pause.
+- **As built, 16 November:** the announcement is built as described, with the name in italic. Several fittings at once read "New: bow lantern and 1 more". A new boat reads "The cutter is ready". On phones the line replaces the miles in the text row. The boat wears only the fittings that have been earned.
 
 ### Loading and fallback
 

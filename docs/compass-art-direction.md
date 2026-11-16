@@ -143,7 +143,7 @@ B takes nothing visual from C, only its discipline: every boat stage must be rec
 | Day complete | All five done. |
 | Carry-over | 1 task from Thursday is still open. Move it to today |
 | Delete | Task deleted. Undo |
-| Next fitting | 88 more for a name on the transom |
+| Next fitting | 88 more for a name on the quarter |
 
 ## 5. Colour
 
@@ -438,7 +438,9 @@ Earned and chosen stay separate.
 | Sail colour: ivory, flax, tanbark, slate, seafoam, rose | Flags for dressing ship |
 | Pennant colour: port, brass, marine, seafoam, ivory, heather | New waters and seasonal keepsakes (later) |
 
-Phase 1 implements the name, the three colour choices, all four stages, and five fittings: masthead pennant, bow lantern, painted sheer stripe, name on the transom, and brass portlights. The later fittings are listed in the voyage view as upcoming and are not modelled yet.
+Phase 1 implements the name, the three colour choices, all four stages, and five fittings: masthead pennant, bow lantern, painted sheer stripe, the name lettered on the quarter, and brass portlights. The later fittings are listed in the voyage view as upcoming and are not modelled yet.
+
+The name was first specified on the transom. Oliver moved it to the quarter on 16 November, because the transom faces away from the usual view. It is lettered in the voyage's italic, in gold leaf on a dark hull and navy on a light one.
 
 ## 12. The sea and the light
 
@@ -526,7 +528,7 @@ A stage needs both miles and days at sea, so it cannot be reached in one binge.
 | Stage | Gate | Fittings on the way to the next stage |
 |---|---|---|
 | Dinghy | From the first day | 25 masthead pennant. 60 bow lantern. 120 painted sheer stripe. |
-| Sloop | 250 miles and 10 days at sea | 350 brass portlights. 500 name lettered on the transom. 700 flags to dress ship. |
+| Sloop | 250 miles and 10 days at sea | 350 brass portlights. 500 name lettered on the quarter. 700 flags to dress ship. |
 | Cutter | 1,000 miles and 40 days at sea | 1,300 ratlines and lazy jacks. 1,700 stern lantern. 2,200 a tender on deck. |
 | Schooner | 3,000 miles and 120 days at sea | 3,600 a topsail. 4,500 gilded cove stripe. Then new waters every 1,000. |
 
