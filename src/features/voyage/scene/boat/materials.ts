@@ -52,30 +52,64 @@ export function sailMaterial(sail: string): MeshStandardMaterial {
   return m;
 }
 
-export const solid = (color: string, roughness = 0.7, metalness = 0) => new MeshStandardMaterial({ color, roughness, metalness });
+/** Plain paint. Marked so that parts which never move can be baked into one mesh (see batch.ts). */
+export function solid(color: string, roughness = 0.7, metalness = 0, glow = 0): MeshStandardMaterial {
+  const m = new MeshStandardMaterial({ color, roughness, metalness, ...(glow ? { emissive: color, emissiveIntensity: glow } : {}) });
+  m.userData.paint = true;
+  return m;
+}
+
+/**
+ * One material for every baked part in plain paint. Colour comes from the vertex colour, and roughness,
+ * metalness and glow from the `aSurf` attribute, so it looks exactly like the separate materials it replaces.
+ */
+export function paintMaterial(): MeshStandardMaterial {
+  const m = new MeshStandardMaterial({ vertexColors: true });
+  m.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec3 aSurf;\nvarying vec3 vSurf;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSurf = aSurf;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSurf;')
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = vSurf.x;')
+      .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vSurf.y;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * vSurf.z;');
+  };
+  return m;
+}
 
 /**
  * The boat's reflection: a flat tint that wavers gently and fades with depth.
  * It writes depth so its own parts sort correctly; the sea does not, so the reflection shows through it.
+ * With no colour given it takes each part's colour from the vertex colour, for parts baked into one mesh.
  */
-export function reflectionMaterial(color: string): ShaderMaterial {
-  return new ShaderMaterial({
-    transparent: true, depthWrite: true, depthTest: true, side: DoubleSide,
-    uniforms: { uColor: { value: new Color(color) }, uWater: { value: new Color('#1c5676') }, uTime: { value: 0 }, uRipple: { value: 0.3 }, uOpacity: { value: 0.4 }, uDepth: { value: 8 } },
-    vertexShader: `uniform float uTime; uniform float uRipple; varying float vDepth;
+export function reflectionMaterial(color: string | null): ShaderMaterial {
+  const m = new ShaderMaterial({
+    transparent: true, depthWrite: true, depthTest: true, side: DoubleSide, defines: color === null ? { TINTED: '' } : {},
+    uniforms: { uColor: { value: new Color(color ?? '#ffffff') }, uWater: { value: new Color('#1c5676') }, uTime: { value: 0 }, uRipple: { value: 0.3 }, uOpacity: { value: 0.4 }, uDepth: { value: 8 } },
+    vertexShader: `uniform float uTime; uniform float uRipple; varying float vDepth; varying vec3 vTint;
+      #ifdef TINTED
+      attribute vec3 color;
+      #endif
       void main() {
+        vTint = vec3(1.0);
+        #ifdef TINTED
+        vTint = color;
+        #endif
         vec4 w = modelMatrix * vec4(position, 1.0);
         vDepth = -w.y;
         // one slow sideways waver, growing with depth, so the image holds together
         w.x += sin(w.y * 2.2 + uTime * 1.1) * 0.035 * uRipple * clamp(vDepth, 0.0, 6.0);
         gl_Position = projectionMatrix * viewMatrix * w;
       }`,
-    fragmentShader: `uniform vec3 uColor; uniform vec3 uWater; uniform float uOpacity; uniform float uDepth; varying float vDepth;
+    fragmentShader: `uniform vec3 uColor; uniform vec3 uWater; uniform float uOpacity; uniform float uDepth; varying float vDepth; varying vec3 vTint;
       void main() {
         if (vDepth < 0.0) discard;
         float fade = 1.0 - smoothstep(0.0, uDepth, vDepth);
-        gl_FragColor = vec4(mix(uWater, uColor, 0.62), uOpacity * fade);
+        gl_FragColor = vec4(mix(uWater, uColor * vTint, 0.62), uOpacity * fade);
         #include <colorspace_fragment>
       }`,
   });
+  m.userData.reflection = true;
+  return m;
 }

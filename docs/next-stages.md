@@ -26,10 +26,10 @@ The brief asks for battery efficiency on mobile, and this is where the build is 
 
 1. ~~Stop drawing when the window is scrolled out of view or the tab is hidden.~~ **Built on 16 November.**
 2. ~~Build the low tier: no shadow map, fewer pixels, 30 frames a second, chosen for touch devices and whenever frames run slow.~~ **Built on 16 November.**
-3. Bring draw calls down from about 90 to the budget of 40, by merging the boat's, the port's and the figures' small meshes by material.
+3. ~~Bring draw calls down to the budget of 40.~~ **Done on 16 November:** 17 to 32 a frame, from 50 to 457.
 4. Measure on two real phones, one recent and one about four years old, and record the numbers in the testing report.
 
-**Done when** the low tier holds 30 frames a second on the older phone and the scene uses no processor time when it cannot be seen. The second half is met. The first half waits on steps 3 and 4.
+**Done when** the low tier holds 30 frames a second on the older phone and the scene uses no processor time when it cannot be seen. The second half is met. The first half waits on step 4, which needs a founder and a phone.
 
 ## Stage 3. Finish the reward loop on Home
 

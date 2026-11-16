@@ -9,13 +9,12 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 67 unit tests pass and 20 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 88 unit tests pass and 21 browser tests pass.
 
-Three things are **not** verified or not met, and should not be read as passing:
+Two things are **not** verified, and should not be read as passing:
 
 1. **Performance on a real phone.** Only an indicative figure from a laptop exists (section 5).
 2. **A manual screen-reader pass.** Structure, names and contrast were checked by script and by reading the code, not by listening.
-3. **The draw-call budget is exceeded.** The spec allows 40 draw calls a frame. The scene makes about 88 on the low tier and 117 on the high tier (section 5).
 
 ## 2. Phase E: what the visual review found and fixed
 
@@ -51,8 +50,8 @@ Updated screenshots are in [screenshots/home/](screenshots/home/).
 | Check | Tool | Result |
 |---|---|---|
 | Type-check and production build | `npm run build` | Passes. Main bundle 136 kB compressed, 3D chunk 256 kB compressed and loaded lazily. |
-| Unit tests | `npm test` (Vitest) | 67 of 67 pass |
-| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 20 of 20 pass, three runs in a row |
+| Unit tests | `npm test` (Vitest) | 88 of 88 pass |
+| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 21 of 21 pass, three runs in a row |
 | Screenshots and state capture | Playwright scripts, six widths and nine states | No console errors in any capture |
 | Contrast, text size, touch targets | A script run inside the live page at 390 and 1440 | Section 4 |
 | Frame rate | The same, at phone size with the processor slowed four times | Section 5 |
@@ -147,9 +146,9 @@ Apple M5 laptop, headless Chrome 157, real GPU. Frames were counted from outside
 
 | Case | Result |
 |---|---|
-| Phone size (390 by 844, three times density, touch) | Low tier chosen. 30 frames a second. Canvas drawn at 537 by 276 for a 358 by 184 window. 88 draw calls a frame. |
+| Phone size (390 by 844, three times density, touch) | Low tier chosen. 30 frames a second. Canvas drawn at 537 by 276 for a 358 by 184 window. |
 | The same, scrolled until the window is out of view | 0 frames in two seconds |
-| Laptop size (1440 by 900, twice density) | High tier chosen. 60 frames a second. 117 draw calls a frame. |
+| Laptop size (1440 by 900, twice density) | High tier chosen. 60 frames a second. |
 | Every frame made to take 30 ms, as on a slow device | Steps down to the low tier within a few seconds |
 | Processor slowed four times, before this work | 60 frames a second, median frame 16.7 ms |
 
@@ -159,11 +158,31 @@ The two tiers look almost the same at window size. The low tier is slightly soft
 
 ![Low tier](screenshots/lookdev/7-tier-low.png)
 
+### Draw calls and triangles
+
+The spec's budgets are 40 draw calls and 60,000 triangles a frame. The first measurement found the scene far over the first: every plank, palm frond and limb was its own draw call. Parts that never move are now baked into one mesh for each material, the sails share one mesh, each figure is one mesh, the gulls are one mesh, and each island is one mesh.
+
+Draw calls in a frame, before and after:
+
+| Scene | High tier before | High tier now | Low tier before | Low tier now |
+|---|---|---|---|---|
+| Dinghy under sail | 59 | 20 | 50 | 17 |
+| Sloop under sail | 117 | 22 | 89 | 17 |
+| Sloop in a storm | 104 | 23 | 74 | 18 |
+| Cutter under sail | 144 | 25 | 105 | 19 |
+| Schooner under sail | 169 | 28 | 121 | 21 |
+| Sloop in port | 328 | 29 | 225 | 20 |
+| Schooner in port | 457 | 32 | 294 | 22 |
+
+- **Both budgets are met in every case.** Triangles run from 11,000 to 36,000 a frame and did not change.
+- **The picture was checked against the old one,** frame against frame with the scene paused, in nine cases. The boat, its reflection, the port and the figures match.
+- **One thing looks different, and it is a fix.** Each island's beach, and the band and lamp of the distant lighthouse, used to show in some scenes and vanish in others, because their layers sat at the same depth. They now show every time. In the picture below, each pair of rows is before, then after: golden hour, in port, a storm, and the dinghy.
+
+![Island layers, before and after](screenshots/lookdev/8-island-layers-before-after.png)
+
 ### What this does not show
 
 - **How a real phone copes.** A laptop's graphics chip is far stronger than a phone's, and none of this measures heat or battery. The spec's pass bar ends with a founder checking on a real phone. That has not happened.
-- **The draw-call budget is not met.** The spec allows 40 a frame. The scene makes 88 to 117, because the boat, the port and the figures are many small meshes. Merging them by material is the next saving, and it matters most on phones.
-- **Triangle count** has not been measured against the 60,000 budget.
 
 ## 6. Built differently from the approved spec
 
@@ -171,7 +190,6 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 
 | Spec says | Build does |
 |---|---|
-| At most 40 draw calls a frame | 88 on the low tier, 117 on the high tier |
 | The water is a mesh, 128 by 128 on the high tier and 64 by 64 on the low | The water is one flat sheet shaded per pixel, so there is no mesh to coarsen. The low tier saves by drawing fewer pixels. |
 | The high tier reflects the boat with a half-resolution pass | Both tiers use a mirrored copy of the boat, which the spec gives as the low tier's method |
 | The high tier's shadow map is 1024 px | It is 2048 px, kept from the look review |

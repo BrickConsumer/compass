@@ -4,7 +4,8 @@ import {
 } from 'three';
 import { type BoatColours, type BoatSpec, type CabinSpec, type MastSpec, mastPoint, sheer } from '../../boat/specs';
 import { deckGeometry, halfBeam, hullGeometry } from './hull';
-import { hullMaterial, PAINT, reflectionMaterial, sailMaterial, solid } from './materials';
+import { bakeStatic } from '../batch';
+import { hullMaterial, paintMaterial, PAINT, reflectionMaterial, sailMaterial, solid } from './materials';
 
 interface P2 { x: number; y: number }
 const lerp2 = (a: P2, b: P2, t: number): P2 => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
@@ -19,21 +20,27 @@ interface SailDef {
 
 const SAIL_S = 14, SAIL_T = 22;
 
-function sailGeometry(): BufferGeometry {
+const SAIL_VERTS = (SAIL_S + 1) * (SAIL_T + 1);
+
+/** One geometry holding every sail on the boat, each its own grid, so the whole suit is one draw call. */
+function sailGeometry(count: number): BufferGeometry {
   const cols = SAIL_S + 1, rows = SAIL_T + 1;
   const g = new BufferGeometry();
-  const uv = new Float32Array(cols * rows * 2), idx: number[] = [];
-  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { uv[(j * cols + i) * 2] = i / SAIL_S; uv[(j * cols + i) * 2 + 1] = j / SAIL_T; }
-  for (let j = 0; j < SAIL_T; j++) for (let i = 0; i < SAIL_S; i++) { const a = j * cols + i, b = a + 1, c = a + cols, d = c + 1; idx.push(a, b, c, b, d, c); }
-  g.setAttribute('position', new BufferAttribute(new Float32Array(cols * rows * 3), 3));
+  const uv = new Float32Array(count * SAIL_VERTS * 2), idx: number[] = [];
+  for (let n = 0; n < count; n++) {
+    const o = n * SAIL_VERTS;
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { uv[(o + j * cols + i) * 2] = i / SAIL_S; uv[(o + j * cols + i) * 2 + 1] = j / SAIL_T; }
+    for (let j = 0; j < SAIL_T; j++) for (let i = 0; i < SAIL_S; i++) { const a = o + j * cols + i, b = a + 1, c = a + cols, d = c + 1; idx.push(a, b, c, b, d, c); }
+  }
+  g.setAttribute('position', new BufferAttribute(new Float32Array(count * SAIL_VERTS * 3), 3));
   g.setAttribute('uv', new BufferAttribute(uv, 2));
   g.setIndex(idx);
   return g;
 }
 
-/** Shape a sail for a given fill: camber bellies it to leeward (-z) and the sheet lets the leech swing out. */
-function shapeSail(g: BufferGeometry, def: SailDef, fill: number): void {
-  const pos = g.getAttribute('position') as BufferAttribute, cols = SAIL_S + 1;
+/** Shape sail number `n` for a given fill: camber bellies it to leeward (-z) and the sheet lets the leech swing out. Recompute the normals afterwards. */
+function shapeSail(g: BufferGeometry, n: number, def: SailDef, fill: number): void {
+  const pos = g.getAttribute('position') as BufferAttribute, cols = SAIL_S + 1, o = n * SAIL_VERTS;
   for (let j = 0; j <= SAIL_T; j++) {
     const t = j / SAIL_T, a = def.luff(t), b = def.leech(t, fill), chord = Math.hypot(b.x - a.x, b.y - a.y);
     for (let i = 0; i <= SAIL_S; i++) {
@@ -42,11 +49,10 @@ function shapeSail(g: BufferGeometry, def: SailDef, fill: number): void {
       const swing = s * chord * def.sheet * (0.35 + 0.65 * fill);
       // a slack sail hangs with a slight sag instead of a clean curve
       const sag = (1 - fill) * 0.02 * chord * Math.sin(Math.PI * s) * Math.sin(Math.PI * t);
-      pos.setXYZ(j * cols + i, p.x, p.y - sag, -(camber + swing));
+      pos.setXYZ(o + j * cols + i, p.x, p.y - sag, -(camber + swing));
     }
   }
   pos.needsUpdate = true;
-  g.computeVertexNormals();
 }
 
 export interface BuiltBoat {
@@ -66,6 +72,8 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
   root.add(g);
   const mats = new Map<string, Material>(), geos: BufferGeometry[] = [];
   const mirror = !!opts.mirror, furled = !!opts.furled;
+  /** Meshes and groups that are animated. Everything else is baked into a few meshes at the end. */
+  const moving = new Set<Group | Mesh>();
   const paint = (key: string, make: () => Material, flat: string): Material => {
     const k = (mirror ? 'm:' : 's:') + key;
     let m = mats.get(k);
@@ -86,7 +94,7 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     sail: () => paint('sail', () => sailMaterial(colours.sail), colours.sail),
     pennant: () => paint('pennant', () => new MeshStandardMaterial({ color: colours.pennant, roughness: 0.8, side: 2 }), colours.pennant),
     ensign: () => paint('ensign', () => new MeshStandardMaterial({ color: PAINT.ensign, roughness: 0.8, side: 2 }), PAINT.ensign),
-    lantern: () => paint('lantern', () => new MeshStandardMaterial({ color: PAINT.lantern, emissive: PAINT.lantern, emissiveIntensity: 0.9, roughness: 0.4 }), PAINT.lantern),
+    lantern: () => paint('lantern', () => solid(PAINT.lantern, 0.4, 0, 0.9), PAINT.lantern),
   };
   const add = (geo: BufferGeometry, mat: Material, parent: Group = g): Mesh => { geos.push(geo); const m = new Mesh(geo, mat); m.castShadow = m.receiveShadow = !mirror; parent.add(m); return m; };
   const up = new Vector3(0, 1, 0);
@@ -161,9 +169,9 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
   }
 
   // spars, sails and rigging
-  const sails: { geo: BufferGeometry; def: SailDef }[] = [];
+  const sails: SailDef[] = [];
   const booms: { pivot: Group; sheet: number }[] = [];
-  const setSail = (def: SailDef) => { const geo = sailGeometry(); shapeSail(geo, def, 0.6); sails.push({ geo, def }); add(geo, M.sail()); };
+  const setSail = (def: SailDef) => { sails.push(def); };
 
   for (const h of spec.head) {
     const m = spec.masts[h.mast ?? 0]!;
@@ -181,6 +189,8 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     const Be: P2 = { x: T.x - m.boom, y: T.y + 0.05 * m.boom }, Cl: P2 = { x: Be.x + 0.1, y: Be.y + 0.07 };
     // the boom pivots at the mast so it can follow the sail to leeward
     const pivot = new Group(); pivot.position.set(goose.x, goose.y, 0); g.add(pivot);
+    // a furled boom is lashed amidships and never swings, so it can be baked with the rest
+    if (!furled) moving.add(pivot);
     rod(new Vector3(0, 0, 0), new Vector3(Be.x - 0.18 - goose.x, Be.y - 0.01 - goose.y, 0), 0.05, 0.04, M.spar(), pivot);
     const sheet = 0.14;
     booms.push({ pivot, sheet });
@@ -215,6 +225,8 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
   }
   const m0 = spec.masts[0]!, m1 = spec.masts[1];
   if (m1) rod(v3(mp(m0, m0.H)), v3(mp(m1, m1.H)), 0.011, 0.011, M.rig(), g, 5);
+  const sailGeo = sails.length ? sailGeometry(sails.length) : null;
+  if (sailGeo) moving.add(add(sailGeo, M.sail()));
 
   // flags and lantern
   const flags: { geo: BufferGeometry; len: number; hoist: number; taper: boolean }[] = [];
@@ -224,7 +236,7 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     const idx: number[] = [];
     for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
     geo.setIndex(idx);
-    const mesh = add(geo, mat); mesh.position.copy(at);
+    const mesh = add(geo, mat); mesh.position.copy(at); moving.add(mesh);
     flags.push({ geo, len, hoist, taper });
   };
   const tm = spec.masts.reduce((a, b) => (sh(a.x) + a.H > sh(b.x) + b.H ? a : b));
@@ -247,7 +259,7 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
   let lastFill = -1;
   const update = (time: number, fill: number, wind: number) => {
     if (Math.abs(fill - lastFill) > 0.002) {
-      for (const s of sails) shapeSail(s.geo, s.def, fill);
+      if (sailGeo) { sails.forEach((def, n) => shapeSail(sailGeo, n, def, fill)); sailGeo.computeVertexNormals(); }
       for (const b of booms) b.pivot.rotation.y = furled ? 0 : -Math.asin(Math.min(0.5, b.sheet * (0.35 + 0.65 * fill)));
       lastFill = fill;
     }
@@ -265,6 +277,11 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     }
     if (mirror) for (const m of mats.values()) { const u = (m as unknown as { uniforms?: Record<string, { value: number }> }).uniforms; if (u?.uTime) { u.uTime.value = time; u.uRipple!.value = 0.25 + 0.9 * wind; } }
   };
+  // everything that never moves becomes a few meshes: the hull, one for all plain paint, and (furled) the sailcloth
+  const shared = (key: string, material: Material) => { if (!mirror && opts.clip) material.clippingPlanes = [opts.clip]; mats.set(key, material); return material; };
+  for (const baked of bakeStatic(g, moving, { paint: () => shared('baked:paint', paintMaterial()), reflection: () => shared('baked:reflection', reflectionMaterial(null)),
+    // the boat is always seen from its starboard side, a little toward the bow and from above; its image in the water is upside down, so what is higher on the boat is further away
+    farToNear: (centre) => 0.955 * centre.z + 0.296 * centre.x - 0.06 * centre.y })) geos.push(baked.geometry);
   update(0, 0.6, 0.5);
 
   return { group: root, update, dispose: () => { for (const x of geos) x.dispose(); for (const m of mats.values()) m.dispose(); } };

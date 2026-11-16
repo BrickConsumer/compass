@@ -21,7 +21,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 | The boat's look review | Two rounds done. **Parked by Oliver** ("we will look at the boat later"). |
 | E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it yet. Findings and fixes are in `docs/testing-report.md`, section 2. |
 
-**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is one commit on `sea-performance`, approved by Oliver: performance tiers, the scene sleeping when unseen, and their tests. **It has not been pushed.**
+**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Its first commit (`7e72a5e`, tiers and sleeping) is pushed. The draw-call work is the commit after it, approved by Oliver. **That second commit has not been pushed.**
 
 ## 3. Decisions
 
@@ -109,7 +109,7 @@ Opens on http://localhost:5173. It is also set up in `.claude/launch.json` as "c
 ```bash
 npm test
 ```
-Runs 67 unit tests, all passing.
+Runs 88 unit tests, all passing.
 ```bash
 npm run build
 ```
@@ -117,7 +117,7 @@ Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D ch
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 20 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
+Runs 21 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
@@ -172,7 +172,8 @@ Runs 20 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 - `poster/`: the SVG still image, used while the 3D scene loads and if WebGL is unavailable.
 - `scene/`:
   - `Scene.tsx`: sky, sea, rain and wake shaders, islands, gulls, lights and framing;
-  - `boat/` (hull loft, materials, `buildBoat`), `scenery.ts` (port, people, gulls, silhouettes), `waves.ts`.
+  - `boat/` (hull loft, materials, `buildBoat`), `scenery.ts` (port, people, gulls, silhouettes), `waves.ts`;
+  - `batch.ts`: bakes parts that never move into one mesh for each material, which keeps a frame to 17 to 32 draw calls. Anything new that does not move should be built as ordinary meshes in plain paint (`solid()`), and the bake picks it up. Anything that moves must be added to the `moving` set.
 - `SeaWindow.tsx`: shows the still image first, then lazy-loads and fades in the 3D scene. It puts the scene to sleep when the window is off screen or the tab is hidden, and exposes `data-tier` and `data-asleep` for tests.
 - `VoyagePage.tsx`: the voyage view.
 
@@ -204,7 +205,6 @@ Runs 20 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 
 ### Not run or measured
 - **Performance on a real phone** has not been measured. Laptop figures exist and are only indicative.
-- **Draw calls are over budget:** about 88 a frame on the low tier and 117 on the high, against 40 in the spec.
 - **No manual screen-reader pass.** Contrast, text size and touch targets were measured by script in the running app and pass.
 - **Only Chrome has been tested.**
 - The full list of places where the build differs from the spec is in `docs/testing-report.md`, section 6.
@@ -239,8 +239,8 @@ All eleven now exist. The last three (the Phase E pass, the testing report and t
 
 The full list is in `docs/next-stages.md`.
 
-1. **Push `sea-performance`** when Oliver says so, and open its pull request after pull request 1 is merged.
+1. **Push the draw-call commit** on `sea-performance` when Oliver says so. Pull request 2 picks it up.
 2. **A founder opens Home on a real phone,** and in Safari.
-3. **Bring draw calls down** to the budget of 40 by merging small meshes.
+3. **Merge pull request 1,** then pull request 2.
 4. **Finish the reward loop:** the plate announcing what was earned, and the motion in the spec.
 5. **Boat look review round three**, when Oliver is ready.
