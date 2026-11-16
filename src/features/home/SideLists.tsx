@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { addDaysISO, dayOfMonth, isoWeek, relativeDay, weekdayShort, weekStartOf } from '../../domain/dates';
 import { progress } from '../../domain/tasks';
@@ -19,8 +20,10 @@ export function WeekList({ weekStart, tasks, subjects, onEdit, current }: { week
   return (
     <section aria-labelledby="week-title" className="min-w-0">
       <Heading id="week-title" title={current ? 'Any time this week' : `Any time in week ${isoWeek(weekStart)}`} aside={p.total ? `${p.done} of ${p.total}` : undefined} />
-      <ul className="mt-1.5">{ordered.map((t) => <TaskRow key={t.id} task={t} small subject={subjects.find((s) => s.id === t.subjectId)} onEdit={onEdit} />)}</ul>
-      <div className={ordered.length ? '' : '[&>form]:border-t-0'}><TaskComposer date={weekStart} scope="week" label="Add a task for the week" /></div>
+      <div key={weekStart}>
+        <ul className="relative mt-1.5"><AnimatePresence initial={false} mode="popLayout">{ordered.map((t) => <TaskRow key={t.id} task={t} small subject={subjects.find((s) => s.id === t.subjectId)} onEdit={onEdit} />)}</AnimatePresence></ul>
+        <div className={ordered.length ? '' : '[&>form]:border-t-0'}><TaskComposer date={weekStart} scope="week" label="Add a task for the week" /></div>
+      </div>
     </section>
   );
 }
@@ -62,7 +65,7 @@ export function NextWeek({ tasks, subjects, today, weekStartsOn, onEdit }: { tas
     <section aria-labelledby="next-title" className="min-w-0">
       <Heading id="next-title" title="Next week" aside={`Week ${isoWeek(next)}`} />
       {tasks.length === 0 && <p className="mt-2 text-[14.5px] text-text-muted">Nothing set for next week yet.</p>}
-      <ol className="mt-1.5">{shown.map((t, i) => <TaskRow key={t.id} task={t} small number={i + 1} subject={subjects.find((s) => s.id === t.subjectId)} onEdit={onEdit} />)}</ol>
+      <ol className="relative mt-1.5"><AnimatePresence initial={false} mode="popLayout">{shown.map((t, i) => <TaskRow key={t.id} task={t} small number={i + 1} subject={subjects.find((s) => s.id === t.subjectId)} onEdit={onEdit} />)}</AnimatePresence></ol>
       {tasks.length > 3 && <button type="button" onClick={() => setAll(!all)} className="min-h-11 cursor-pointer rounded-[9px] text-[14.5px] font-semibold text-text-link">{all ? 'Show fewer' : `${tasks.length - 3} more`}</button>}
       <div className={shown.length ? '' : '[&>form]:border-t-0'}><TaskComposer date={next} scope="week" label="Add a priority" /></div>
     </section>

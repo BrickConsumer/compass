@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { longDate, sheetTitle, weekdayLong } from '../../domain/dates';
 import { progress, sortTasks } from '../../domain/tasks';
@@ -58,10 +59,15 @@ export function DaySheet({ date, today, tasks, subjects, assessment, carried, on
         </p>
       )}
       {p.total === 0 && <p className="mt-4 text-pretty text-[15px] text-text-muted">Nothing planned for {isToday ? 'today' : weekdayLong(date)}. Add a task, or spend the day in port.</p>}
-      <ul className="mt-2">
-        {ordered.map((t) => <TaskRow key={t.id} task={t} subject={subjects.find((s) => s.id === t.subjectId)} onEdit={onEdit} />)}
-      </ul>
-      <div className={ordered.length ? '' : '[&>form]:border-t-0'}><TaskComposer id="composer-day" date={date} scope="day" hint="N" /></div>
+      {/* keyed by the day, so choosing another day swaps the list at once: only changes within a day are animated */}
+      <div key={date}>
+        <ul className="relative mt-2">
+          <AnimatePresence initial={false} mode="popLayout">
+            {ordered.map((t) => <TaskRow key={t.id} task={t} subject={subjects.find((s) => s.id === t.subjectId)} onEdit={onEdit} />)}
+          </AnimatePresence>
+        </ul>
+        <div className={ordered.length ? '' : '[&>form]:border-t-0'}><TaskComposer id="composer-day" date={date} scope="day" hint="N" /></div>
+      </div>
     </section>
   );
 }

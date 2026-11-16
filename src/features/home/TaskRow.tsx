@@ -1,12 +1,18 @@
 import { Check, Flag } from 'lucide-react';
+import * as m from 'motion/react-m';
+import type { Ref } from 'react';
+import { ENTER, EXIT, MOVE } from '../../design/motion';
 import { type Subject, SUBJECT_COLOURS, type Task } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { toast } from '../../ui/Toast';
 
-interface Props { task: Task; subject?: Subject; onEdit: (id: string) => void; number?: number; small?: boolean }
+interface Props { task: Task; subject?: Subject; onEdit: (id: string) => void; number?: number; small?: boolean; ref?: Ref<HTMLLIElement> }
 
-/** One task: a checkbox, the title (which opens the editor), then priority and subject. */
-export function TaskRow({ task, subject, onEdit, number, small = false }: Props) {
+/**
+ * One task: a checkbox, the title (which opens the editor), then priority and subject.
+ * It slides to its new place when the list re-sorts, and fades when it is added or removed.
+ */
+export function TaskRow({ task, subject, onEdit, number, small = false, ref }: Props) {
   const toggle = useCompass((s) => s.toggleTask), cycle = useCompass((s) => s.cyclePriority);
   const done = !!task.completedAt, colours = subject ? SUBJECT_COLOURS[subject.colour] : undefined;
   const remove = () => {
@@ -14,7 +20,8 @@ export function TaskRow({ task, subject, onEdit, number, small = false }: Props)
     toast('Task deleted.', { label: 'Undo', run: () => useCompass.getState().restoreTasks(gone) });
   };
   return (
-    <li className="group grid min-h-[46px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-1 border-t border-line first:border-t-0 max-sm:min-h-[54px]" data-task={task.id} data-done={done}>
+    <m.li ref={ref} layout="position" transition={MOVE} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: ENTER }} exit={{ opacity: 0, transition: EXIT }}
+      className="group grid min-h-[46px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-1 border-t border-line first:border-t-0 data-[editing=true]:bg-surface-well max-sm:min-h-[54px]" data-task={task.id} data-done={done}>
       <label className="relative -ml-[11px] grid size-11 shrink-0 cursor-pointer place-items-center">
         <input type="checkbox" checked={done} onChange={() => toggle(task.id)} aria-label={task.title}
           className="peer size-[22px] cursor-pointer appearance-none rounded-[7px] shadow-[inset_0_0_0_1.5px_var(--color-control)] transition-colors duration-[140ms] ease-[var(--ease-out)] checked:bg-positive checked:shadow-none max-sm:size-[26px]" />
@@ -45,6 +52,6 @@ export function TaskRow({ task, subject, onEdit, number, small = false }: Props)
           </span>
         )}
       </span>
-    </li>
+    </m.li>
   );
 }

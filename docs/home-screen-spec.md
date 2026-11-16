@@ -471,6 +471,8 @@ Single-letter shortcuts are off while typing in a field, and hints for them appe
 
 Everything is interruptible. A second action during a transition retargets it.
 
+**As built, 16 November:** all of the above is in, with one difference. The week strip moves 28 px in the direction of travel while it fades, where the table says a slide: a full-width sweep felt heavy for a strip that changes often. Details are in [testing-report.md](testing-report.md), section 7.
+
 ## 15. Accessibility
 
 - **Structure.** Landmarks for navigation and main. One `h1`, the date. `h2` for each list. Lists are real lists.

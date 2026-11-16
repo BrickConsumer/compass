@@ -39,8 +39,10 @@ The boat only motivates if earning something is noticed. These are all in the ap
 2. ~~"The cutter is ready" when a new boat is earned, with the choice made in the voyage view.~~ **Built on 16 November.**
 3. ~~Fittings appear on the boat when they are earned.~~ **Built on 16 November.** Before this, every boat wore a fixed set whatever had been earned.
 4. ~~Draw the remaining Phase 1 fitting, the boat's name.~~ **Built on 16 November, on the quarter.** Oliver chose the quarter over the transom, which faces away from the usual view.
-5. The motion the spec describes: the week strip sliding, a completed row moving down, the sheet following the finger. Install Motion at this point, since CSS alone will not do the last one well.
-6. The `?` list of shortcuts, and the editor as a popover on desktop.
+5. ~~The motion the spec describes: the week strip sliding, a completed row moving down, the sheet following the finger.~~ **Built on 16 November,** with Motion installed.
+6. ~~The `?` list of shortcuts, and the editor as a popover on desktop.~~ **Built on 16 November.**
+
+**Stage 3 is complete.**
 
 ## Stage 4. Habits
 
@@ -82,7 +84,7 @@ Accounts and sync, notifications, school licensing and any payment. The brief ru
 | Approve or change the Phase E fixes | Committing them |
 | Is the boat's look settled, or is there a round three? | Stage 7, and any public screenshot |
 | Habits before Study, as recommended here? | Stage 4 |
-| Keep the centred editor on desktop, or build the popover in the spec? | Stage 3 |
+| ~~Keep the centred editor on desktop, or build the popover in the spec?~~ Built as the spec has it: a popover. | Done |
 | ~~The boat's name: on the transom or on the quarter?~~ Decided: the quarter. | Done |
 | Is a plain boat with nothing earned right for a new user's first day? | Any public release |
 | Are the mileage numbers and stage gates right after a week of real use? | Stage 3, since the plate will start announcing them |
