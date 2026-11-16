@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+@import './fonts.css';
+
+/* Single source of design tokens. Mirrors docs/compass-art-direction.md, section 17. */
+@theme {
+  /* paper */
+  --color-paper-0: #FDFAF3;  --color-paper-50: #F6F0E4;  --color-paper-100: #EDE6D5;
+  --color-paper-200: #DFD7C5; --color-paper-300: #C5BDAA;
+  /* deep: ocean navy ink */
+  --color-deep-950: #04101E; --color-deep-900: #0E243A; --color-deep-800: #19334E;
+  --color-deep-700: #2A4663; --color-deep-600: #405973; --color-deep-500: #566D84;
+  --color-deep-400: #7E91A6;
+  /* marine */
+  --color-marine-800: #073964; --color-marine-700: #0D4D80; --color-marine-600: #1A619B;
+  --color-marine-500: #3379B4; --color-marine-300: #88B7DE; --color-marine-200: #BFDAF0;
+  --color-marine-100: #E0EDF8;
+  /* teal */
+  --color-teal-700: #17555C; --color-teal-600: #256F75; --color-teal-500: #398A8F;
+  --color-teal-300: #86C0C2; --color-teal-200: #BDDFDF; --color-teal-100: #E0F1F1;
+  /* seafoam: starboard, done */
+  --color-seafoam-800: #154736; --color-seafoam-700: #1C6048; --color-seafoam-600: #2E7F62;
+  --color-seafoam-500: #499F7E; --color-seafoam-300: #90D1B5; --color-seafoam-200: #BEE8D5;
+  --color-seafoam-100: #DFF4EA;
+  /* brass */
+  --color-brass-800: #5C4215; --color-brass-700: #7A5A20; --color-brass-600: #9B772E;
+  --color-brass-500: #BF9A48; --color-brass-300: #E5CB8D; --color-brass-200: #EFE0B8;
+  --color-brass-100: #F8F0DA;
+  /* port: attention */
+  --color-port-800: #6D2323; --color-port-700: #8C2D2B; --color-port-600: #AB3935;
+  --color-port-500: #CA564D; --color-port-200: #F6CFC9; --color-port-100: #FBE9E6;
+  --color-control: #718295;
+
+  /* semantic */
+  --color-surface-deck: var(--color-paper-50);
+  --color-surface-sheet: var(--color-paper-0);
+  --color-surface-well: var(--color-paper-100);
+  --color-surface-inverse: var(--color-deep-900);
+  --color-text: var(--color-deep-900);
+  --color-text-muted: var(--color-deep-600);
+  --color-text-subtle: var(--color-deep-500);
+  --color-text-inverse: var(--color-paper-0);
+  --color-text-link: var(--color-marine-600);
+  --color-line: rgb(14 36 58 / 0.12);
+  --color-line-strong: rgb(14 36 58 / 0.22);
+  --color-focus: var(--color-marine-600);
+  --color-positive: var(--color-seafoam-600);
+  --color-attention: var(--color-port-600);
+  --color-highlight: var(--color-brass-500);
+  --color-track: var(--color-paper-200);
+
+  /* type */
+  --font-display: 'Brygada 1918 Variable', 'Iowan Old Style', Palatino, Georgia, serif;
+  --font-sans: 'Hanken Grotesk Variable', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+
+  /* shape */
+  --radius-xs: 6px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 22px; --radius-2xl: 28px;
+  --shadow-sheet: 0 1px 2px rgb(14 36 58 / 0.04);
+  --shadow-float: 0 1px 2px rgb(14 36 58 / 0.12), 0 10px 26px -12px rgb(14 36 58 / 0.45);
+
+  /* motion */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --duration-press: 90ms; --duration-quick: 140ms; --duration-base: 200ms; --duration-move: 320ms;
+}
+
+@layer base {
+  html { background: var(--color-surface-deck); color: var(--color-text); font-family: var(--font-sans);
+    font-size: 16px; line-height: 1.45; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body { margin: 0; min-height: 100dvh; font-variant-numeric: tabular-nums; }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 500; text-wrap: balance; }
+  :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+}
