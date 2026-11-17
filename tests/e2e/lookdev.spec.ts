@@ -52,9 +52,12 @@ test('with reduced motion the scene holds still', async ({ browser }) => {
   const first = page.locator('[data-scene]').first();
   await expect(first).toHaveAttribute('data-scene', 'live', { timeout: 15_000 });
   await page.waitForTimeout(800);
-  const a = await first.screenshot();
+  // The picture inside the window's rounded corners. On a busy machine the browser smooths those corners a shade
+  // differently from one moment to the next, which is nothing to do with the scene.
+  const box = (await first.boundingBox())!, clip = { x: box.x + 32, y: box.y + 32, width: box.width - 64, height: box.height - 64 };
+  const a = await page.screenshot({ clip });
   await page.waitForTimeout(900);
-  const b = await first.screenshot();
+  const b = await page.screenshot({ clip });
   expect(a.equals(b)).toBe(true);
   await context.close();
 });
@@ -64,4 +67,37 @@ test('the page does not scroll sideways at phone width', async ({ page }) => {
   await page.goto('/lookdev');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('every fitting can be put on and taken off, on the live boat and the still one', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.text().includes('THREE.Clock')) errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/lookdev');
+  const first = page.locator('[data-scene]').first();
+  await expect(first).toHaveAttribute('data-scene', 'live', { timeout: 15_000 });
+  const fittings = ['Flags to dress ship', 'Ratlines and lazy jacks', 'Stern lantern', 'Tender on deck', 'Topsail', 'Gilded stripe'];
+  // the biggest boat carries all of them
+  await page.getByRole('button', { name: 'Schooner', exact: true }).click();
+  for (const name of fittings) await expect(page.getByLabel(name)).toBeChecked();
+  for (const name of fittings) await page.getByLabel(name).uncheck();
+  await expect(first).toHaveAttribute('data-scene', 'live', { timeout: 15_000 });
+  for (const name of fittings) await page.getByLabel(name).check();
+  await page.getByLabel('Nothing planned (in port)').check();
+  await expect(first).toHaveAttribute('data-scene', 'live', { timeout: 15_000 });
+  await page.waitForTimeout(600);
+  // the still image draws the flags too: one path for each flag, in the flags' own colours
+  await page.getByLabel('Still image only').check();
+  const flags = () => page.locator('[data-scene]').first().locator('path[fill="#AB3935"], path[fill="#E9C45B"], path[fill="#1A619B"], path[fill="#FCF8EE"], path[fill="#2E7F62"]').count();
+  const dressed = await flags();
+  expect(dressed).toBeGreaterThanOrEqual(12);
+  await page.getByLabel('Flags to dress ship').uncheck();
+  const undressed = await flags();
+  expect(undressed).toBeLessThan(dressed);
+  // the flags are for port: under sail the boat is the same with them earned or not
+  await page.getByLabel('Nothing planned (in port)').uncheck();
+  const atSea = await flags();
+  await page.getByLabel('Flags to dress ship').check();
+  expect(await flags()).toBe(atSea);
+  expect(errors).toEqual([]);
 });

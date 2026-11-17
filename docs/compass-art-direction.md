@@ -440,6 +440,10 @@ Earned and chosen stay separate.
 
 Phase 1 implements the name, the three colour choices, all four stages, and five fittings: masthead pennant, bow lantern, painted sheer stripe, the name lettered on the quarter, and brass portlights. The later fittings are listed in the voyage view as upcoming and are not modelled yet.
 
+**Stage 7 drew the other six,** on 17 November: flags to dress ship, ratlines and lazy jacks, the stern lantern, the tender on deck, the topsail and the gilded cove stripe. A fitting goes on every boat that has a place for it. Three need something the smaller boats lack: portlights a cabin, the tender a cabin top long enough to carry her (the cutter and the schooner), and the topsail a gaff to set it above (the schooner). The voyage view says so beside a fitting the boat being looked at cannot carry. Josh and Aditya have not yet reviewed how the six look.
+
+**The dress flags fly in port only.** Oliver decided this on 17 November. They are the one fitting that does not show at once: a boat dresses overall only at rest, with her sails furled, and under sail the flags would cross the sails. So they fly on a day with nothing planned, when the boat is moored, and the voyage view says so beside them.
+
 The name was first specified on the transom. Oliver moved it to the quarter on 16 November, because the transom faces away from the usual view. It is lettered in the voyage's italic, in gold leaf on a dark hull and navy on a light one.
 
 ## 12. The sea and the light

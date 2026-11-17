@@ -1,4 +1,7 @@
-import { type BoatSpec, type CabinSpec, lanternScale, type MastSpec, mastPoint, sheer } from '../boat/specs';
+import { type BoatSpec, type CabinSpec, DRESS_COLOURS, dressFlags, dressFly, dressLine, lanternScale, type MastSpec, mastPoint, sheer, sternLanternAt, tenderBox, topsailOf } from '../boat/specs';
+
+/** Gold leaf, for a gilded cove stripe. */
+const GOLD = '#F2CC5C';
 
 /** Paint for the still image. A two-entry array is a gradient. */
 export interface PosterLook {
@@ -84,7 +87,9 @@ export function drawBoat(spec: BoatSpec, o: DrawOptions): DrawnBoat {
     for (let i = 0; i <= 24; i++) { const x = a + ((b - a) * i) / 24; d += (i ? 'L' : 'M') + P(x, sh(x) + off); }
     return d;
   };
-  if (spec.stripe) g.push(thin(along(-0.115, 0.04 * L, 0.955 * L), lk.cove, 1.25));
+  if (spec.stripe) g.push(thin(along(-0.115, 0.04 * L, 0.955 * L), spec.gilded ? GOLD : lk.cove, spec.gilded ? 1.5 : 1.25));
+  // gold leaf has a fine second line under it
+  if (spec.gilded) g.push(thin(along(-0.158, 0.05 * L, 0.945 * L), GOLD, 0.6));
 
   // deck structures
   const cabin = (c: CabinSpec) => {
@@ -98,6 +103,14 @@ export function drawBoat(spec: BoatSpec, o: DrawOptions): DrawnBoat {
   };
   if (spec.cabin) cabin(spec.cabin);
   if (spec.cabin2) cabin(spec.cabin2);
+  // the tender, upside down on the cabin top: her transom aft, her keel uppermost, her stem curving down forward
+  const tb = spec.tender ? tenderBox(spec) : null;
+  if (tb) {
+    const x1 = tb.x + tb.len;
+    g.push(`<path d="M${P(tb.x, tb.y)}L${P(tb.x + 0.03, tb.y + tb.h * 0.84)}Q${P(tb.x + tb.len * 0.55, tb.y + tb.h * 1.12)} ${P(x1 - tb.len * 0.14, tb.y + tb.h * 0.72)}Q${P(x1 - 0.02, tb.y + tb.h * 0.4)} ${P(x1, tb.y)}Z" fill="${lk.rail}"/>`);
+    g.push(thin(`M${P(tb.x + 0.03, tb.y + tb.h * 0.84)}Q${P(tb.x + tb.len * 0.55, tb.y + tb.h * 1.12)} ${P(x1 - tb.len * 0.14, tb.y + tb.h * 0.72)}`, lk.roof, 1.4));
+    for (const u of [0.3, 0.68]) g.push(thin(`M${P(tb.x + tb.len * u, tb.y)}L${P(tb.x + tb.len * u, tb.y + tb.h * (u < 0.5 ? 0.98 : 0.9))}`, lk.rig, 0.8));
+  }
   if (spec.tiller) g.push(thin(`M${P(0.24, fS + 0.03)}L${P(1.15, sh(1.15) + 0.36)}`, lk.spar, 2));
   g.push(thin(along(0.015, 0, L), lk.rail, 2.3));
   const sprit = spec.bowsprit ?? 0;
@@ -140,6 +153,12 @@ export function drawBoat(spec: BoatSpec, o: DrawOptions): DrawnBoat {
       g.push(sailPath(`M${pp(T)}L${pp(Th)}L${pp(Pk)}Q${pp(cL)} ${pp(Cl)}Q${pp(cF)} ${pp(T)}Z`));
       for (const t of [0.2, 0.4, 0.6, 0.8]) g.push(thin(`M${pp(lerp(Th, Pk, t))}L${pp(lerp(T, Cl, t))}`, lk.seam, 0.7));
       spars.push(`M${pp({ x: Th.x + 0.14, y: Th.y - 0.1 })}L${pp({ x: Pk.x - 0.25 * Math.cos(a), y: Pk.y + 0.25 * Math.sin(a) })}`);
+      // the topsail, above the gaff
+      const ts = spec.topsail ? topsailOf(spec) : null;
+      if (ts) {
+        g.push(sailPath(`M${pp(ts.throat)}L${pp(ts.head)}L${pp(ts.peak)}Z`));
+        g.push(thin(`M${pp(lerp(ts.throat, ts.head, 0.5))}L${pp(lerp(ts.peak, ts.head, 0.5))}`, lk.seam, 0.7));
+      }
     } else {
       const Hd = mp(m, m.H - 0.22); Hd.x -= 0.06;
       const dx = Cl.x - Hd.x, dy = Cl.y - Hd.y, len = Math.hypot(dx, dy), n = { x: dy / len, y: -dx / len };
@@ -163,6 +182,21 @@ export function drawBoat(spec: BoatSpec, o: DrawOptions): DrawnBoat {
     for (const m of spec.masts) {
       const lo = mp(m, m.H * 0.6), hi = mp(m, m.H * 0.95);
       g.push(thin(`M${pp(lo)}L${P(m.x - 0.5, sh(m.x - 0.5))}M${pp(lo)}L${P(m.x + 0.32, sh(m.x + 0.32))}M${pp(hi)}L${P(m.x - 0.62, sh(m.x - 0.62))}`, lk.rig, 0.8));
+      if (spec.ratlines) {
+        // ratlines: rungs between the two lower shrouds, a step apart
+        const aft: Pt = { x: m.x - 0.5, y: sh(m.x - 0.5) }, fore: Pt = { x: m.x + 0.32, y: sh(m.x + 0.32) };
+        let d = '';
+        for (let y = aft.y + 0.55; y < lo.y - 0.35; y += 0.38) d += `M${pp(lerp(aft, lo, (y - aft.y) / (lo.y - aft.y)))}L${pp(lerp(fore, lo, (y - fore.y) / (lo.y - fore.y)))}`;
+        if (d) g.push(thin(d, lk.rig, 0.6));
+      }
+    }
+  }
+  if (spec.ratlines) {
+    // lazy jacks: two light lines from each mast to its boom
+    for (const m of spec.masts) {
+      const head = m.main === 'gaff' ? m.H * (m.gaffAt ?? 0.66) : m.H - 0.22, apex = mp(m, m.boomH + 0.52 * (head - m.boomH)), goose = mp(m, m.boomH);
+      const end: Pt = { x: goose.x - 0.07 - m.boom - 0.18, y: goose.y + 0.05 * m.boom - 0.01 };
+      g.push(thin([0.42, 0.8].map((u) => `M${pp(apex)}L${pp(lerp(goose, end, u))}`).join(''), lk.rig, 0.6));
     }
   }
   const m0 = spec.masts[0]!, m1 = spec.masts[1];
@@ -185,6 +219,22 @@ export function drawBoat(spec: BoatSpec, o: DrawOptions): DrawnBoat {
     const k = lanternScale(spec), lx = L - (sprit ? 0.95 : 0.45 * k), ly = sh(lx) + 0.5 * k;
     g.push(thin(`M${P(lx, sh(lx))}L${P(lx, ly)}`, lk.brass, 1));
     g.push(`<circle cx="${X(lx)}" cy="${Y(ly + 0.1 * k)}" r="${f1(0.11 * k * s)}" fill="${lk.lantern}"/>`);
+  }
+  if (spec.sternLantern) {
+    const at = sternLanternAt(spec), k = lanternScale(spec), y = sh(at.x);
+    g.push(thin(`M${P(at.x, y)}L${P(at.x, y + at.post)}`, lk.brass, 1));
+    g.push(`<circle cx="${X(at.x)}" cy="${Y(y + at.post + 0.09 * k)}" r="${f1(0.1 * k * s)}" fill="${lk.lantern}"/>`);
+  }
+  if (spec.dressed && o.furled) {
+    // dressed overall, which a boat is only in port: the line, then a flag every pace. A flag hangs away from the line in a calm and streams aft in a breeze.
+    const line = dressLine(spec), dress = dressFlags(spec);
+    g.push(thin('M' + line.map(pp).join('L'), lk.rig, 0.6));
+    for (const f of dress.flags) {
+      // the still image knows how full the sails are, which stands in for the wind
+      const { x: dx, y: dy } = dressFly(f.along, fill);
+      const a: Pt = { x: f.at.x - (f.along.x * dress.hoist) / 2, y: f.at.y - (f.along.y * dress.hoist) / 2 }, b: Pt = { x: f.at.x + (f.along.x * dress.hoist) / 2, y: f.at.y + (f.along.y * dress.hoist) / 2 };
+      g.push(`<path d="M${pp(a)}L${P(a.x + dx * dress.fly, a.y + dy * dress.fly)}L${P(b.x + dx * dress.fly, b.y + dy * dress.fly)}L${pp(b)}Z" fill="${DRESS_COLOURS[f.colour]}"/>`);
+    }
   }
   return { id, defs: defs.join(''), body: g.join(''), sternX: X(wx0), bowX: X(wx1), X, Y };
 }

@@ -6,7 +6,7 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
 
 - **Compass**: a calm student planner whose distinctive feature is a sailboat that develops as you make progress.
 - **Founders:** Josh, Oliver and Aditya. Oliver is driving these sessions.
-- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Nine branches, each cut from the one before. `main` still holds only the first commit.
+- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Ten branches, each cut from the one before. `main` still holds only the first commit.
   - `phase-1-home`: Phase 1. Pushed, with pull request 1 open to `main`.
   - `sea-performance`: the performance work. Pushed, with pull request 2 open against `phase-1-home`.
   - `reward-loop`: the reward loop. Pushed, with pull request 3 open against `sea-performance`.
@@ -15,7 +15,8 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
   - `study`: Stage 5, Study, with recurring study sessions. Pushed (`b83d73f`), with pull request 6 open against `habits`.
   - `weekly-review`: Stage 6, the Weekly review. Pushed (`ba9a373`), with pull request 7 open against `study`. 
   - `my-pages`: Stage 6, My pages, with two fixes to the shared editors. Pushed (`f30ff1e`, `34e3b0b`), with pull request 8 open against `weekly-review`.
-  - `ci`: a GitHub Actions workflow that builds and tests every pull request. Local only when this was written. Check `git status` and `git log` for whether it has been committed and pushed, and GitHub for whether its first run passed.
+  - `ci`: a GitHub Actions workflow that builds and tests every pull request. Pushed (`c349987`), with pull request 9 open against `my-pages` and Auto-fix on. Its first run on GitHub passed, both jobs.
+  - `boat-fittings`: the first part of Stage 7, the six fittings that were not drawn. Local only when this was written. Check `git status` and `git log`.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 
@@ -40,6 +41,9 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
 - **Window above the planner**, not beside it.
 - **Boat family:** dinghy, sloop, cutter, schooner, with a navy hull, ivory sails and brass trim by default.
 - **Each day's light:** dawn when nothing is done, clear day as tasks are done, golden hour when everything is done.
+
+### Decided by Oliver on 17 November, for Stage 7
+- **The flags to dress ship fly in port only,** on a day with nothing planned, and are stowed under sail. They are the one fitting that does not show on the boat at once.
 
 ### Decided by Oliver on 16 November, for Stage 5
 - **A study session becomes an ordinary task that repeats,** not a kind of its own and not a reminder. It counts in progress, earns miles and moves the day's light like any task.
@@ -134,20 +138,20 @@ Opens on http://localhost:5173. It is also set up in `.claude/launch.json` as "c
 ```bash
 npm test
 ```
-Runs 201 unit tests, all passing.
+Runs 225 unit tests, all passing.
 ```bash
 npm run build
 ```
-Type-checks and builds; passing. The main bundle is 173 kB compressed. The 3D chunk is 259 kB compressed and lazily loaded.
+Type-checks and builds; passing. The main bundle is 175 kB compressed. The 3D chunk is 260 kB compressed and lazily loaded.
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 70 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
+Runs 72 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed. The tests start a dev server of their own on port 5174, fresh for each run, so they never use the one open on 5173.
 
 **CI** is `.github/workflows/ci.yml`: two jobs on every pull request, one for the build and unit tests and one for the browser tests in Playwright's own Chromium.
 - A pull request is only checked if its branch holds the workflow file, so the pull requests below the `ci` branch in the stack get no checks until the stack is merged.
 - The six tests in `tests/e2e/sea.spec.ts` are skipped on CI. They measure frame rate and draw calls, which depend on a graphics card, and a CI runner has none. Run them on a real machine.
-- To run the suite as CI does: stop the dev server, then `CI=1 PW_CHANNEL=chrome npm run test:e2e`. It should report 64 passed and 6 skipped.
+- To run the suite as CI does: `CI=1 PW_CHANNEL=chrome npm run test:e2e`. It should report 66 passed and 6 skipped.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
@@ -269,7 +273,7 @@ Runs 70 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 - The storm's breaking crests still look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over.
 - The still image's port shows no figures.
-- Five fittings are drawn on the boat: pennant, lantern, sheer stripe, portlights and the name on the quarter. The rest are listed as "earned, not yet drawn".
+- All eleven fittings are drawn. Josh and Aditya have not reviewed how the six added on 17 November look.
 - The still image does not letter the name. At its size the name would be a few pixels long.
 
 ### Not built, by plan
@@ -297,6 +301,6 @@ The full list is in `docs/next-stages.md`.
 1. **Get the eight pull requests reviewed and merged, in order.** None has been reviewed. CI only checks the top of the stack. The stack is already deeper than is comfortable.
 2. **A founder opens Home on a real phone,** and in Safari.
 3. **Merge pull request 1,** then pull request 2.
-4. **Commit and push `ci`** when Oliver says so, and open its pull request against `my-pages`. Then look at its first run on GitHub: the workflow has only been checked on this machine, and the two look-review tests that need the 3D scene have never run without a graphics card. All five destinations now exist. The open decisions for My pages are in `docs/my-pages-spec.md`, section 10. Separately, a founder should look at the Weekly review page: it was built without a mock, and its open calls are in `docs/review-spec.md`, section 7.
+4. **Commit and push `boat-fittings`** when Oliver says so, and open its pull request against `ci`. The rest of Stage 7 (decorations, new waters and seasons, night and the dark theme) needs creative decisions before any of it is built.
 5. **Three rules for study sessions are still open,** each built to the recommendation in the mock at https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4 (private; share it from its Share menu): whether sessions count toward the port and the storm, when a week's tasks are made, and what changing a session does to tasks already made. The rules are in `docs/habits-spec.md`, and the mock that settled its place on Home is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b (private; share it from its Share menu). Oliver has accepted the Habits page as a first version; Josh and Aditya have not seen it.
 6. **Boat look review round three**, when Oliver is ready.

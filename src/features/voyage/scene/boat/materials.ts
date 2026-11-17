@@ -4,19 +4,22 @@ import type { LetteringUniforms } from './lettering';
 /** Fixed paint and fittings. User-chosen colours are passed in separately. */
 export const PAINT = {
   boot: '#F6F0E4', cove: '#D8B768', bottom: '#7A2F2B', deck: '#E4D6BA', well: '#BFA57A', rail: '#A8733D', cabin: '#EFE6D3', roof: '#8B5E36',
-  glass: '#16344F', brass: '#C9A552', spar: '#B88A55', rig: '#3A4A5C', lantern: '#F2D488', ensign: '#1A619B',
+  glass: '#16344F', brass: '#C9A552', spar: '#B88A55', rig: '#3A4A5C', lantern: '#F2D488', ensign: '#1A619B', gold: '#F2CC5C',
 } as const;
 
 /**
  * Hull paint with a boot stripe at the waterline and a cove stripe under the sheer, drawn in the shader so the bands stay crisp.
  * Given lettering, it also paints the boat's name on the quarter, on the outside of both sides.
+ * Gilded, the cove stripe is gold leaf, which shines, with a fine second line under it.
  */
-export function hullMaterial(hull: string, stripe = true, lettering?: LetteringUniforms): MeshStandardMaterial {
+export function hullMaterial(hull: string, stripe = true, lettering?: LetteringUniforms, gilded = false): MeshStandardMaterial {
   const m = new MeshStandardMaterial({ color: hull, roughness: 0.5, metalness: 0.05, side: DoubleSide });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uBoot = { value: new Color(PAINT.boot) };
     shader.uniforms.uCove = { value: new Color(PAINT.cove) };
     shader.uniforms.uStripe = { value: stripe ? 1 : 0 };
+    shader.uniforms.uGold = { value: new Color(PAINT.gold) };
+    shader.uniforms.uGilt = { value: gilded ? 1 : 0 };
     // the same objects the lettering holds, so a new name shows without recompiling
     Object.assign(shader.uniforms, lettering ?? { uName: { value: null }, uNameBox: { value: [0, 1, 0, 1] }, uNameInk: { value: new Color() }, uNameOn: { value: 0 } });
     shader.uniforms.uBottom = { value: new Color(PAINT.bottom) };
@@ -24,7 +27,7 @@ export function hullMaterial(hull: string, stripe = true, lettering?: LetteringU
       .replace('#include <common>', '#include <common>\nattribute vec2 aHull;\nvarying vec2 vHull;\nvarying vec3 vHullAt;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvHull = aHull;\nvHullAt = position;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vHull;\nvarying vec3 vHullAt;\nuniform vec3 uBoot;\nuniform vec3 uCove;\nuniform vec3 uBottom;\nuniform float uStripe;\nuniform sampler2D uName;\nuniform vec4 uNameBox;\nuniform vec3 uNameInk;\nuniform float uNameOn;')
+      .replace('#include <common>', '#include <common>\nvarying vec2 vHull;\nvarying vec3 vHullAt;\nuniform vec3 uBoot;\nuniform vec3 uCove;\nuniform vec3 uBottom;\nuniform vec3 uGold;\nuniform float uGilt;\nuniform float uStripe;\nuniform sampler2D uName;\nuniform vec4 uNameBox;\nuniform vec3 uNameInk;\nuniform float uNameOn;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         float aa = fwidth(vHull.x) + 0.0005;
         float boot = smoothstep(0.035 - aa, 0.035 + aa, vHull.x) * (1.0 - smoothstep(0.14 - aa, 0.14 + aa, vHull.x));
@@ -33,7 +36,10 @@ export function hullMaterial(hull: string, stripe = true, lettering?: LetteringU
         float cove = smoothstep(0.095 - ab, 0.095 + ab, vHull.y) * (1.0 - smoothstep(0.13 - ab, 0.13 + ab, vHull.y));
         diffuseColor.rgb = mix(diffuseColor.rgb, uBottom, below);
         diffuseColor.rgb = mix(diffuseColor.rgb, uBoot, boot);
+        float fine = smoothstep(0.15 - ab, 0.15 + ab, vHull.y) * (1.0 - smoothstep(0.162 - ab, 0.162 + ab, vHull.y));
+        float leaf = max(cove, fine) * uStripe * uGilt;
         diffuseColor.rgb = mix(diffuseColor.rgb, uCove, cove * uStripe);
+        diffuseColor.rgb = mix(diffuseColor.rgb, uGold, leaf);
         // the name: read stern to bow on the starboard side and bow to stern on the port side, so it is never mirrored
         float nu = (vHullAt.x - uNameBox.x) / (uNameBox.y - uNameBox.x);
         nu = vHullAt.z < 0.0 ? 1.0 - nu : nu;
@@ -42,7 +48,10 @@ export function hullMaterial(hull: string, stripe = true, lettering?: LetteringU
         // only on the outside of the planking: an open boat shows the inside of her far side
         diffuseColor.rgb = mix(diffuseColor.rgb, uNameInk, lettered * uNameOn * float(gl_FrontFacing));
         // a lighter band where the topsides catch the sky
-        diffuseColor.rgb += 0.05 * (1.0 - smoothstep(0.0, 0.45, vHull.y)) * (1.0 - boot) * (1.0 - below);`);
+        diffuseColor.rgb += 0.05 * (1.0 - smoothstep(0.0, 0.45, vHull.y)) * (1.0 - boot) * (1.0 - below);`)
+      // gold leaf is smoother and more of a mirror than paint, and holds a little light of its own so it reads at dusk
+      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(metalnessFactor, 0.55, leaf);\nroughnessFactor = mix(roughnessFactor, 0.3, leaf);')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uGold * 0.16 * leaf;');
   };
   return m;
 }

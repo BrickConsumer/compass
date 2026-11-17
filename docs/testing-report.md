@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 and 11 added on 17 November |
-| Build | Branch `my-pages`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, and My pages in section 11 |
+| Date | 16 November 2026, with sections 10 to 12 added on 17 November |
+| Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12 |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 201 unit tests pass and 70 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 225 unit tests pass and 72 browser tests pass.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -49,9 +49,9 @@ Updated screenshots are in [screenshots/home/](screenshots/home/).
 
 | Check | Tool | Result |
 |---|---|---|
-| Type-check and production build | `npm run build` | Passes. Main bundle 173 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
-| Unit tests | `npm test` (Vitest) | 201 of 201 pass |
-| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 70 of 70 pass, three runs in a row |
+| Type-check and production build | `npm run build` | Passes. Main bundle 175 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 260 kB. |
+| Unit tests | `npm test` (Vitest) | 225 of 225 pass |
+| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 72 of 72 pass, four runs in a row |
 | Screenshots and state capture | Playwright scripts, six widths and nine states | No console errors in any capture |
 | Contrast, text size, touch targets | A script run inside the live page at 390 and 1440 | Section 4 |
 | Frame rate | The same, at phone size with the processor slowed four times | Section 5 |
@@ -68,7 +68,7 @@ The browser tests had never been run before this pass. Two failed on the first r
 Added on 17 November: `.github/workflows/ci.yml` builds and tests every pull request, in two jobs. One runs the build and the unit tests. The other runs the browser tests in Playwright's own Chromium.
 
 - **The six sea tests are skipped there.** They measure frame rate, the performance tier and draw calls, which depend on a graphics card. A CI runner has none and draws in software, so the scene would step down and the numbers would mean nothing. They still run on a real machine, and the figures in section 5 come from one.
-- **Checked on this machine only, when this was written.** Run as CI runs it, the suite reports 64 passed and 6 skipped. The workflow itself had not yet run on GitHub. Two look-review tests need the 3D scene to start, which on a runner means drawing WebGL in software; the workflow allows that, and whether it works there is the first thing its first run will show.
+- **Its first run on GitHub passed, both jobs,** on 17 November. That includes the two look-review tests that need the 3D scene to start, which on a runner means drawing WebGL in software. Run as CI runs it on this machine, the suite reports 66 passed and 6 skipped.
 - **Only the top of the stack is checked.** GitHub runs a workflow for a pull request only if the branch holds the workflow file, so the earlier pull requests get no checks until they are merged.
 
 ## 4. The brief's completion criteria
@@ -390,7 +390,52 @@ A new Home browser test covers both, typing a key at a time.
 
 They are in [my-pages-spec.md](my-pages-spec.md): section 10 for the decisions built to their recommendations, and section 13 for where the build differs from the mock.
 
-## 12. Built differently from the approved spec
+## 12. The later fittings
+
+The first part of Stage 7, built on 17 November. Oliver has seen the screenshots and decided when the dress flags fly. Josh and Aditya have not reviewed it.
+
+![The schooner in port, dressed overall](screenshots/fittings/6-schooner-in-port-close.png)
+
+![The schooner under sail, with her flags stowed](screenshots/fittings/4-schooner-at-sea-close.png)
+
+### What was built
+
+The six fittings that could be earned but were not drawn. All eleven are now on the boat, in 3D and in the still image.
+
+| Fitting | How it is drawn |
+|---|---|
+| Flags to dress ship | A light line from the bow, over each masthead, to the stern, with a small flag every pace in five colours. Flown in port only, where the flags hang from the line. |
+| Ratlines and lazy jacks | Rungs across the shrouds, and two light lines each side from the mast to the boom, which swing with it |
+| Stern lantern | A brass post and a lit lamp on the starboard quarter, clear of the tiller and the ensign staff |
+| A tender on deck | A small varnished boat, upside down and lashed on the longest clear stretch of cabin top |
+| A topsail | One more sail above the gaff foresail. Stowed with the rest in port. |
+| Gilded cove stripe | The cove stripe in gold leaf, which shines, with a fine second line under it |
+
+- **A fitting goes on every boat that has a place for it.** The tender needs a long cabin top (the cutter and the schooner) and the topsail a gaff (the schooner). The voyage view now says "the sloop has no place for it" beside a fitting the boat being looked at cannot carry, in place of the old "earned, not yet drawn".
+- **No more draw calls.** Every flag on the boat (pennant, ensign and dress flags) is now one mesh, which is one fewer than before on a boat with an ensign. The rest are baked into the paint, the suit of sails or the hull's own shader. The unit test that holds the whole scene to 40 draw calls passes with every fitting on.
+- **Flags cast no shadow.** At their size the shadows read as grey patches on the sails.
+
+### Decided, and open
+
+- **Decided by Oliver on 17 November: the dress flags fly in port only.** They were first built to fly whenever they had been earned, because the art direction says a fitting appears at once. A real boat dresses only at rest, with her sails furled, and under sail the flags crossed the sails. They now fly on a day with nothing planned, and the voyage view says "flown in port, on a day with nothing planned" beside them.
+- **Open: how the six look.** Screenshots are in `docs/screenshots/fittings/`. Josh and Aditya have not seen them.
+
+### Found on the way
+
+- **The cause of the bursts of failures in sections 10 and 11.** Twice a full run had several tests fail within a moment of each other. The dev server kept open on port 5173 had crashed part-way through the run (Node exited with a fatal error under five browsers at once), and every test after that had nothing to load. The tests now start a server of their own on port 5174, fresh for each run. More than fifteen full runs since have had no burst.
+- **A tender with a broken number.** Rounding put the last station of the tender's hull a hair past her stem, where a cosine turns negative and its power is not a number. One station of her hull was nowhere. Fixed, and a unit test now checks that no point of any boat, under sail, furled or reflected, is a broken number.
+- **Two tests that failed now and then, neither through a fault in the app.**
+  - The "holds still" test compares two pictures of the scene taken a moment apart. About one time in twelve under load they differed. The only pixels that differed were on the window's rounded corners, by a single shade: the browser smooths those corners a hair differently from moment to moment when the machine is busy. The scene itself was identical. The test now compares the picture inside the corners, and 72 repeats under load have all matched. My first guess at the cause, a late typeface, was wrong.
+  - A My pages test typed before the editor had opened. It now waits for the title to be focused.
+- **The still image laid the aft flags along their line,** as slivers. The 3D boat and the still image now share one rule for how a dress flag flies, which keeps it at least 50 degrees off its line.
+
+### Checked
+
+- Unit tests, twenty-four new: every fitting is drawn; each is on the boat only once earned; the dress line and its flags on all four boats; how a flag flies; where the tender goes and that a boom clears her; the topsail; the stern lantern; which boats carry what; that the flags are flown in port and stowed under sail; no broken numbers; and the still image drawing each one.
+- Browser tests, two new: every fitting put on and taken off on the live boat and the still one, with no console errors; and the voyage view saying which fittings a boat has no place for.
+- Not checked: frame rate with every fitting on. The draw calls are no more than before, but in port the flags are moved on every frame, and that has not been timed on a phone.
+
+## 13. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -404,7 +449,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 13. Known limitations
+## 14. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.

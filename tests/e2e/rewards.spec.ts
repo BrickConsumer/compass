@@ -71,3 +71,27 @@ test('on a phone the announcement takes the place of the miles under the window'
   await expect(caption).toContainText('New: name on the quarter');
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 });
+
+test('a fitting the boat has no place for says so, and shows on a boat that has', async ({ page }) => {
+  await page.goto('/settings');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  // far enough for every fitting and every boat
+  await page.getByLabel('Nautical miles').fill('5000');
+  await page.getByLabel('Days at sea').fill('130');
+  await page.getByRole('button', { name: 'Set the voyage' }).click();
+  await page.goto('/voyage');
+  await expect(page.getByText('Every fitting is earned.')).toBeVisible();
+  await expect(page.getByText('not yet drawn')).toHaveCount(0);
+  // the flags are earned, and the list says when they are flown
+  await expect(page.locator('[data-in-port]')).toHaveText('(flown in port, on a day with nothing planned)');
+  const missing = page.locator('[data-not-carried]');
+  // the sloop has no cabin top long enough for a tender and no gaff for a topsail
+  await page.getByRole('button', { name: /^Sloop/ }).click();
+  await expect(missing).toHaveCount(2);
+  await expect(missing.first()).toHaveText('(the sloop has no place for it)');
+  await page.getByRole('button', { name: /^Cutter/ }).click();
+  await expect(missing).toHaveCount(1);
+  await page.getByRole('button', { name: /^Schooner/ }).click();
+  await expect(missing).toHaveCount(0);
+});
