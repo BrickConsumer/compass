@@ -39,7 +39,19 @@ export interface Task {
 export interface Assessment { id: string; title: string; subjectId: string; date: ISODate; kind: 'test' | 'exam' | 'presentation' | 'assignment' }
 
 /** One entry in the voyage log. The log only grows. */
-export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'habit' | 'sample'; sourceId: string; miles: number }
+export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'habit' | 'review' | 'sample'; sourceId: string; miles: number }
+
+/** A week's reflection. The week's numbers are not kept here: they are worked out from the tasks, habits and log. */
+export interface Review {
+  /** The first day of the week it is about. One review for each week. */
+  weekStart: ISODate;
+  wentWell: string;
+  gotInWay: string;
+  /** What to do differently next week. */
+  change: string;
+  /** Set when the review is first saved. Present means it is listed among earlier reviews. */
+  savedAt?: string;
+}
 
 /**
  * A study session that repeats on chosen weekdays. On each of its days it becomes an ordinary task with this name,

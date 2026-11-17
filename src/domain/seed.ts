@@ -1,6 +1,6 @@
 import { addDaysISO, weekdayOf, weekStartOf } from './dates';
 import { isDue, tickKey } from './habits';
-import type { Assessment, Boat, Habit, ISODate, LogEntry, Session, Settings, Subject, Task } from './types';
+import type { Assessment, Boat, Habit, ISODate, LogEntry, Review, Session, Settings, Subject, Task } from './types';
 
 export interface CompassData {
   subjects: Subject[];
@@ -14,6 +14,8 @@ export interface CompassData {
   sessions: Session[];
   /** One entry for each session task already made: see `madeKey`. */
   sessionsMade: string[];
+  /** Weekly reflections, at most one for each week. */
+  reviews: Review[];
   boat: Boat;
   settings: Settings;
   /** True while the data is the generated sample. */
@@ -98,10 +100,12 @@ export function seed(today: ISODate): CompassData {
     { id: 'as-2', title: 'Economics examination', subjectId: 'eco', date: d(9), kind: 'exam' },
     { id: 'as-3', title: 'English oral presentation', subjectId: 'eng', date: d(12), kind: 'presentation' },
   ];
-  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), sessions: [], sessionsMade: [], boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
+  // last week's review, already saved, so the list of earlier reviews has something in it
+  const reviews: Review[] = [{ weekStart: addDaysISO(week, -7), wentWell: 'Kept up with Biology revision most days.', gotInWay: 'Left the Economics case study too late.', change: 'Start the Economics essay on Monday.', savedAt: at(addDaysISO(week, -1), 18) }];
+  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), sessions: [], sessionsMade: [], reviews, boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
 }
 
 /** A clean start: the same subjects, nothing else, and the first boat. */
 export function empty(): CompassData {
-  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
+  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
 }

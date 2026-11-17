@@ -27,8 +27,12 @@ test('weeks and dates: buttons, arrow keys across a week, and T for today', asyn
   await page.getByRole('button', { name: 'Previous week' }).click();
   await expect(label).toHaveText(start);
   const days = page.locator('[data-date]');
-  await days.nth(1).click();
-  await expect(days.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  // a day of this week that is not today, since choosing today leaves the address clean. It is found by its date,
+  // because the week that has just slid away can still be on the page for a moment
+  const other = await page.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + (d.getDay() === 0 ? -1 : 1)); return d.toLocaleDateString('en-CA'); });
+  const day = page.locator(`[data-date="${other}"]`);
+  await day.click();
+  await expect(day).toHaveAttribute('aria-pressed', 'true');
   await expect(page).toHaveURL(/date=\d{4}-\d{2}-\d{2}/);
   await days.nth(0).focus();
   await page.keyboard.press('ArrowLeft');

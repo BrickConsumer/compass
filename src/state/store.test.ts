@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addDaysISO, todayISO } from '../domain/dates';
+import { addDaysISO, todayISO, weekStartOf } from '../domain/dates';
 import { habitProgress } from '../domain/habits';
 import { daysAtSea, milesLogged } from '../domain/voyage';
 import { useCompass } from './store';
@@ -231,6 +231,54 @@ describe('store', () => {
       s().makeSessionTasks();
       expect(s().sessions).toEqual([]);
       expect(s().tasks).toHaveLength(20);
+    });
+  });
+
+  describe("weekly reviews", () => {
+    const week = weekStartOf(todayISO(), 1), last = addDaysISO(week, -7), mine = (w: string) => s().reviews.find((r) => r.weekStart === w);
+
+    it("the sample has last week's review, already saved", () => {
+      expect(s().reviews).toHaveLength(1);
+      expect(mine(last)!.savedAt).toBeDefined();
+    });
+
+    it("a reflection is kept as it is written, before it is saved", () => {
+      s().writeReview(week, { wentWell: "Finished the essay plan." });
+      s().writeReview(week, { change: "Start earlier." });
+      expect(mine(week)).toMatchObject({ wentWell: "Finished the essay plan.", gotInWay: "", change: "Start earlier." });
+      expect(mine(week)!.savedAt).toBeUndefined();
+    });
+
+    it("saving a review logs ten miles once, and saving again changes nothing", () => {
+      const miles = milesLogged(s().log);
+      expect(s().saveReview(week)).toBe(false);
+      s().writeReview(week, { wentWell: "  " });
+      expect(s().saveReview(week)).toBe(false);
+      s().writeReview(week, { wentWell: "Finished the essay plan." });
+      expect(s().saveReview(week)).toBe(true);
+      const saved = mine(week)!.savedAt;
+      expect(saved).toBeDefined();
+      expect(milesLogged(s().log)).toBe(miles + 10);
+      s().writeReview(week, { change: "Start earlier." });
+      expect(s().saveReview(week)).toBe(true);
+      expect(mine(week)!.savedAt).toBe(saved);
+      expect(milesLogged(s().log)).toBe(miles + 10);
+    });
+
+    it("a review that is already saved earns nothing more, even with no entry in the log", () => {
+      const miles = milesLogged(s().log);
+      s().writeReview(last, { change: "One more thought." });
+      expect(s().saveReview(last)).toBe(true);
+      expect(milesLogged(s().log)).toBe(miles);
+    });
+
+    it("a week still to come cannot be written, and an old week earns no miles", () => {
+      s().writeReview(addDaysISO(week, 7), { wentWell: "Too soon." });
+      expect(mine(addDaysISO(week, 7))).toBeUndefined();
+      const miles = milesLogged(s().log), old = addDaysISO(week, -21);
+      s().writeReview(old, { wentWell: "A while ago." });
+      expect(s().saveReview(old)).toBe(true);
+      expect(milesLogged(s().log)).toBe(miles);
     });
   });
 });
