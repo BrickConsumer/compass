@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { daysAtSea, earnedFittings, earnedIds, earnedStage, FITTINGS, milesLogged, nextFitting, nextStage, STAGE_GATES, unseenRewards } from '../../domain/voyage';
 import { useCompass } from '../../state/store';
+import { DraftInput } from '../../ui/DraftField';
 import { STAGE_ORDER, STAGES, type StageId } from './boat/specs';
 import { SeaWindow } from './SeaWindow';
 
@@ -59,7 +60,7 @@ export function VoyagePage() {
             </p>
           )}
           <label className="flex max-w-sm flex-col gap-1.5 text-[13.5px] font-medium text-text-muted">Name
-            <input value={boat.name} maxLength={40} onChange={(e) => setBoat({ name: e.target.value })} className="h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]" />
+            <DraftInput value={boat.name} maxLength={40} onSave={(name) => setBoat({ name })} className="h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]" />
           </label>
           <Swatches label="Hull" options={HULLS} value={boat.hull} onChange={(hull) => setBoat({ hull })} />
           <Swatches label="Sails" options={SAILS} value={boat.sail} onChange={(sail) => setBoat({ sail })} />

@@ -4,6 +4,7 @@ import { addDaysISO, weekDays, weekdayShort, weekStartOf, dayOfMonth } from '../
 import type { ISODate, Priority } from '../../domain/types';
 import { SUBJECT_COLOURS } from '../../domain/types';
 import { useCompass } from '../../state/store';
+import { DraftArea, DraftInput } from '../../ui/DraftField';
 import { chip, EditorFrame } from '../../ui/EditorFrame';
 import { toast } from '../../ui/Toast';
 
@@ -48,11 +49,11 @@ export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew || store.addTask(draft)) close(); }}>
           <label className="flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted">Title
-            <input autoFocus required maxLength={140} value={value.title} onChange={(e) => change({ title: e.target.value })}
+            <DraftInput autoFocus required maxLength={140} value={value.title} onSave={(title) => change({ title })}
               className="h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]" />
           </label>
           <label className="flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted">Notes
-            <textarea rows={2} value={value.notes} onChange={(e) => change({ notes: e.target.value })}
+            <DraftArea rows={2} value={value.notes ?? ''} onSave={(notes) => change({ notes })}
               className="rounded-md bg-surface-sheet px-3 py-2.5 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]" />
           </label>
           <fieldset>

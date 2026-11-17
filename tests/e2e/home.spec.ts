@@ -106,3 +106,18 @@ for (const width of [375, 390, 768, 1024, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });
 }
+
+test('an editor opens ready to type, and keeps the spaces between words', async ({ page }) => {
+  const row = page.locator('section[aria-labelledby="day-title"] [data-task]').first(), id = await row.getAttribute('data-task');
+  await row.locator('button[aria-keyshortcuts]').click();
+  const title = page.getByLabel('Title', { exact: true });
+  // focus is on the title, not on the Close button that comes before it
+  await expect(title).toBeFocused();
+  await title.evaluate((el: HTMLInputElement) => el.setSelectionRange(el.value.length, el.value.length));
+  // typed a key at a time: a space at the end must still be there when the next letter arrives
+  await page.keyboard.type(' and plan it');
+  await expect(title).toHaveValue(/\S and plan it$/);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('dialog[open]')).toHaveCount(0);
+  await expect(page.locator(`[data-task="${id}"]`)).toContainText(' and plan it');
+});
