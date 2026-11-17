@@ -13,6 +13,13 @@ describe('tasks', () => {
     expect(sortTasks([a, d, c, e, b]).map((t) => t.title)).toEqual(['b', 'a', 'c', 'e', 'd']);
   });
 
+  it("puts a High subject's task first within a priority, and never above a higher priority", () => {
+    const rank = (t: Task) => ({ eng: 0, mat: 1 } as Record<string, number>)[t.subjectId ?? ''] ?? 2;
+    const a = task({ title: 'eco high task', priority: 'high', subjectId: 'eco', order: 3 }), b = task({ title: 'maths', subjectId: 'mat', order: 1 }), c = task({ title: 'english', subjectId: 'eng', order: 2 }), d = task({ title: 'none', order: 0 });
+    expect(sortTasks([d, b, c, a], rank).map((t) => t.title)).toEqual(['eco high task', 'english', 'maths', 'none']);
+    expect(sortTasks([d, b, c, a]).map((t) => t.title)).toEqual(['eco high task', 'none', 'maths', 'english']);
+  });
+
   it('counts daily and weekly progress from the same records', () => {
     const tasks = [task({ date: '2026-11-09', completedAt: 'x' }), task({ date: '2026-11-12' }), task({ date: '2026-11-15', completedAt: 'x' }), task({ scope: 'week', date: '2026-11-09' }), task({ date: '2026-11-16' })];
     expect(progress(tasksForDay(tasks, '2026-11-12'))).toEqual({ done: 0, total: 1 });

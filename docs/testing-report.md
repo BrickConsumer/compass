@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 12 added on 17 November |
-| Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12 |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November |
+| Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 225 unit tests pass and 72 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 256 unit tests pass and 115 browser tests pass. Those counts include the additions in section 13; before them it was 225 and 72, and all of those still pass unchanged.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -435,7 +435,72 @@ The six fittings that could be earned but were not drawn. All eleven are now on 
 - Browser tests, two new: every fitting put on and taken off on the live boat and the still one, with no console errors; and the voyage view saying which fittings a boat has no place for.
 - Not checked: frame rate with every fitting on. The draw calls are no more than before, but in port the flags are moved on every frame, and that has not been timed on a phone.
 
-## 13. Built differently from the approved spec
+## 13. Home and Weekly review additions
+
+Built on 17 November on the branch `home-review-additions`, to [home-and-review-additions-spec.md](home-and-review-additions-spec.md). It is the first of five pieces of Aditya's plan, which the founders keep outside this repository. Nothing in it shows until the person sets it, so the sample Home is unchanged.
+
+![Home at 1440 px with a name, a goal, a focus and links set](screenshots/additions/1-home-1440.png)
+
+### What was built
+
+- **Home:** a greeting once a name is set; the long-term goal on the boat's plate as "Bound for"; the week's High subjects named beside its progress; and, within a priority, open tasks ordered by their subject's level.
+- **Weekly review:** each area of the week rated out of 10, and each subject's level for the week after.
+- **Study:** subjects in the order of this week's levels, and a subject's level for this week on its page.
+- **Settings:** your name, the areas that are rated, and links. The voyage page holds the goal.
+- **Links:** in the rail from 1024 px, at the foot of Home below that, and in search.
+- **The saved data:** three new lists (links, areas and levels). A save from before this piece opens with nothing lost.
+
+### Checked
+
+- **Unit tests, 31 new:** which levels apply to a week and when they are carried over; starting a week's levels from the ones it carried; the order of tasks by level; ratings kept to whole numbers from 1 to 10; a review that is blank, rated or written; which addresses are web addresses and which are refused; a link's name; the greeting by the hour; the limits on names, goals, areas and links; an older save and an unreadable one; and "Clear everything".
+- **Browser tests, 43 new:** a new user seeing none of it at two widths; the greeting at three widths without the page jumping; the goal on the plate, on a phone and on the voyage page, and gone when the sea is folded; the focus line, its order of tasks, its count past four and its carried-over mark; ratings by keyboard and by pressing; saving on a rating alone; levels set in the review and in Study; areas and links added, renamed, moved, refused and removed with Undo; links in the rail, at the foot of Home, in a short window and in search; and no sideways scroll on five pages at 375, 390, 768, 1024 and 1440 px with everything set to its longest.
+- **Everything from before:** the 225 unit tests and 72 browser tests pass unchanged.
+- **As CI runs it:** 109 pass and the six sea tests are skipped, as designed.
+- **Against the mock:** the built pages were pictured and compared with the mock. The pictures are in `screenshots/additions/`, numbered, beside the mocks.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 17 November, ran the unit tests and the build, and probed the running app with saved data edited by hand. It found nothing critical. Five findings were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| A save edited by hand could put something that is not a web address into a link, and a broken entry could stop every page opening | A save's links and areas are checked again when it is opened. Only web addresses are kept, each once, six at most. |
+| Changing the week's first day from Monday to Sunday lost that week's levels, and an old record could later override a newer one | The levels move with the week when its first day changes |
+| The focus line was a label on an empty group, which some screen readers skip | It is now plain text for a screen reader |
+| A name or a goal that is one long word pushed a phone's page sideways | Those lines now wrap inside a word |
+| With six links, Search and Settings were out of sight on a short laptop screen | The foot of the rail stays put, and the places and links scroll above it |
+
+Six smaller findings were left as they are, for the founders to decide:
+
+- Undo can bring back a seventh link or area after another was added in its place.
+- "Carried over from week N." shows when the earlier week's levels were all cleared.
+- Pressing a rating with the mouse does not move the keyboard to it, so the arrow keys do nothing until it is tabbed to.
+- "Add area" with an empty box does nothing and says nothing.
+- "This week" is heard twice in Study, once as words and once as the group's name.
+- There is no test for Undo at the limit of six.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 15). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+
+### Found on the way
+
+- **While the week strip slides to another week, the page is 8 to 16 px wider than the screen** below 1024 px, for the length of the slide. This is in the build before this piece.
+- **A long assessment title is cut off on the week strip with no ellipsis.** "Legal Studies test" showed as "Legal Studie". Also in the build before this piece.
+- **A priority whose title runs to three lines shows a sliver of the third line** under "Next week". Also in the build before this piece.
+
+None of the three is fixed here.
+
+### Calls made in the build that the founders can overrule
+
+- Pressing the rating that is already set clears it, so a phone has a way back to nothing.
+- A link's address is checked when its box is left or Enter is pressed, not as it is typed.
+- "Move up" on the first item and "Move down" on the last are disabled.
+- At six links, the last row at the foot of Home reads "Change your links".
+
+The larger calls are in the specification, section 12.
+
+## 14. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -449,7 +514,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 14. Known limitations
+## 15. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.

@@ -3,11 +3,13 @@ import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { dayOfMonth, relativeDay, shortDay, weekdayShort, weekStartOf } from '../../domain/dates';
+import { byLevel, levelRank, levelsFor } from '../../domain/levels';
 import { daysSentence, subjectSessions } from '../../domain/sessions';
 import { KINDS, subjectAssessments, subjectSummary, subjectTasks, summaryLine, taskWhen } from '../../domain/study';
 import { type Assessment, SUBJECT_COLOURS, type Subject } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { useToday } from '../../state/useToday';
+import { LevelChips } from '../../ui/LevelChips';
 import { TaskComposer } from '../home/TaskComposer';
 import { type Editing, TaskEditor } from '../home/TaskEditor';
 import { TaskRow } from '../home/TaskRow';
@@ -25,6 +27,7 @@ function SubjectSheet({ subject }: { subject: Subject }) {
   const [showDone, setShowDone] = useState(false), [showPast, setShowPast] = useState(false);
   const { open, done } = subjectTasks(tasks, subject.id), { ahead, past } = subjectAssessments(assessments, subject.id, today), thisWeek = weekStartOf(today, startsOn);
   const heading = 'text-[20px] leading-[1.3]', aside = 'text-[13.5px] font-semibold text-text-muted';
+  const setLevel = useCompass((s) => s.setLevel), level = levelsFor(useCompass((s) => s.levels), thisWeek, [subject]).levels[subject.id];
   const row = (a: Assessment, faded = false) => (
     <li key={a.id} data-assessment={a.id} className="border-t border-line first:border-t-0 data-[editing=true]:bg-surface-well">
       <button type="button" onClick={() => setEditingTest({ id: a.id })} className={`grid min-h-[58px] w-full cursor-pointer grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-[9px] py-1.5 text-left outline-offset-0 hover:bg-surface-well ${faded ? 'text-text-muted' : ''}`}>
@@ -38,11 +41,18 @@ function SubjectSheet({ subject }: { subject: Subject }) {
   );
   return (
     <section aria-labelledby="subject-title" className="flex flex-col gap-7 rounded-xl bg-surface-sheet px-5 pb-5 pt-[18px] shadow-sheet ring-1 ring-line max-sm:-mx-4 max-sm:rounded-[26px]">
-      <div className="flex items-center justify-between gap-3" data-subject-head>
-        <h2 id="subject-title" className="flex min-w-0 items-center gap-3 text-[25px] leading-[1.2]">
-          <span aria-hidden="true" className="size-3 shrink-0 rounded-full" style={{ background: SUBJECT_COLOURS[subject.colour].dot }} /><span className="truncate">{subject.name}</span>
-        </h2>
-        <button type="button" onClick={() => setEditingSubject(true)} className={quiet} data-edit-subject>Edit subject</button>
+      <div>
+        <div className="flex items-center justify-between gap-3" data-subject-head>
+          <h2 id="subject-title" className="flex min-w-0 items-center gap-3 text-[25px] leading-[1.2]">
+            <span aria-hidden="true" className="size-3 shrink-0 rounded-full" style={{ background: SUBJECT_COLOURS[subject.colour].dot }} /><span className="truncate">{subject.name}</span>
+          </h2>
+          <button type="button" onClick={() => setEditingSubject(true)} className={quiet} data-edit-subject>Edit subject</button>
+        </div>
+        {/* how much the subject matters this week: the same levels the Weekly review sets for the week after it */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <p className={aside}>This week</p>
+          <LevelChips value={level} onChange={(next) => setLevel(thisWeek, subject.id, next)} label="This week" />
+        </div>
       </div>
 
       <div>
@@ -108,8 +118,10 @@ export function StudyPage() {
   const today = useToday(), { subjectId } = useParams();
   const subjects = useCompass((s) => s.subjects), tasks = useCompass((s) => s.tasks), assessments = useCompass((s) => s.assessments), add = useCompass((s) => s.addSubject);
   const [name, setName] = useState('');
+  // the subjects that matter most this week come first: High, then Medium, then the rest in their own order
+  const applied = levelsFor(useCompass((s) => s.levels), weekStartOf(today, useCompass((s) => s.settings.weekStartsOn)), subjects), ordered = byLevel(subjects, applied);
   // with no subject chosen, wider screens open the first one; phones show the list
-  const chosen = subjects.find((s) => s.id === subjectId), open = chosen ?? subjects[0];
+  const chosen = subjects.find((s) => s.id === subjectId), open = chosen ?? ordered[0];
   return (
     <main className="mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-32 pt-[max(16px,env(safe-area-inset-top,0px))] sm:px-5 sm:pb-12 lg:pl-1.5 lg:pr-7 lg:pt-8">
       <header className={`sm:pl-5 ${chosen ? 'max-lg:hidden' : ''}`}>
@@ -121,15 +133,16 @@ export function StudyPage() {
       <div className="grid items-start gap-x-8 gap-y-6 lg:grid-cols-[300px_minmax(0,1fr)]">
         <nav aria-label="Subjects" className={chosen ? 'max-lg:hidden' : ''}>
           <ul>
-            {subjects.map((s) => (
+            {ordered.map((s) => (
               <li key={s.id} className="border-t border-line first:border-t-0">
                 <Link to={`/study/${s.id}`} data-subject={s.id} aria-current={open?.id === s.id ? 'page' : undefined}
-                  className="grid min-h-[60px] grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 rounded-md px-3 py-2 outline-offset-0 hover:bg-surface-well lg:aria-[current=page]:bg-surface-well sm:pl-5">
+                  className="grid min-h-[60px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 rounded-md px-3 py-2 outline-offset-0 hover:bg-surface-well lg:aria-[current=page]:bg-surface-well sm:pl-5">
                   <span aria-hidden="true" className="size-2.5 rounded-full" style={{ background: SUBJECT_COLOURS[s.colour].dot }} />
                   <span className="min-w-0">
                     <span className="block truncate text-[15.5px] font-semibold max-sm:text-[16px]">{s.name}</span>
                     <span className="block truncate text-[13px] text-text-muted">{summaryLine(subjectSummary(s, tasks, assessments, today), today)}</span>
                   </span>
+                  {levelRank(applied.levels[s.id]) < 2 && <span className="text-[13px] font-semibold text-text-muted"><span data-level>{applied.levels[s.id] === 'high' ? 'High' : 'Medium'}</span><span className="sr-only"> this week</span></span>}
                 </Link>
               </li>
             ))}

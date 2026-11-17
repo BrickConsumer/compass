@@ -51,6 +51,8 @@ export function VoyagePage() {
         <section aria-labelledby="boat-title" className="flex flex-col gap-5">
           <div>
             <h1 id="boat-title" className="font-display text-[32px] italic leading-[1.1] lg:text-[40px]">{boat.name}</h1>
+            {/* the long-term goal in full: "Bound for" is the voyage speaking, the goal itself is the plan */}
+            {boat.boundFor && <p data-bound className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 text-[15.5px] font-semibold leading-[1.35]"><i className="font-display text-[17.5px] font-medium text-text-muted">Bound for</i><span className="min-w-0 [overflow-wrap:anywhere]">{boat.boundFor}</span></p>}
             <p className="mt-1.5 text-[15.5px] text-text-muted">{STAGES[boat.stage].name}. {miles.toLocaleString('en-GB')} nautical miles logged, {days} days at sea.</p>
           </div>
           {fresh.stage && fresh.stage !== boat.stage && (
@@ -62,6 +64,11 @@ export function VoyagePage() {
           <label className="flex max-w-sm flex-col gap-1.5 text-[13.5px] font-medium text-text-muted">Name
             <DraftInput value={boat.name} maxLength={40} onSave={(name) => setBoat({ name })} className="h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]" />
           </label>
+          <div className="flex max-w-sm flex-col gap-1.5">
+            <label htmlFor="bound-for" className="text-[13.5px] font-medium text-text-muted">Bound for</label>
+            <DraftInput id="bound-for" value={boat.boundFor ?? ''} maxLength={60} onSave={(boundFor) => setBoat({ boundFor })} aria-describedby="bound-for-help" className="h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]" />
+            <p id="bound-for-help" className="text-[13.5px] text-text-muted">Where you are headed in the long run. It is shown under the boat's name.</p>
+          </div>
           <Swatches label="Hull" options={HULLS} value={boat.hull} onChange={(hull) => setBoat({ hull })} />
           <Swatches label="Sails" options={SAILS} value={boat.sail} onChange={(sail) => setBoat({ sail })} />
           <Swatches label="Pennant" options={PENNANTS} value={boat.pennant} onChange={(pennant) => setBoat({ pennant })} />

@@ -1,6 +1,7 @@
 import { addDaysISO, weekdayOf, weekStartOf } from './dates';
 import { isDue, tickKey } from './habits';
-import type { Assessment, Boat, Habit, ISODate, LogEntry, Page, Review, Session, Settings, Subject, Task } from './types';
+import { DEFAULT_AREAS } from './ratings';
+import type { Assessment, Boat, Habit, ISODate, Levels, LogEntry, Page, QuickLink, RatingArea, Review, Session, Settings, Subject, Task } from './types';
 
 export interface CompassData {
   subjects: Subject[];
@@ -18,6 +19,12 @@ export interface CompassData {
   reviews: Review[];
   /** The user's own pages: notes, checklists, goals, and reading and project pages. */
   pages: Page[];
+  /** Links to other sites, in the order shown. Six at most. */
+  links: QuickLink[];
+  /** The parts of a week that are rated in the review, in the order shown. Six at most, and there may be none. */
+  areas: RatingArea[];
+  /** Subject levels, week by week: see `levelsFor`. */
+  levels: Levels;
   boat: Boat;
   settings: Settings;
   /** True while the data is the generated sample. */
@@ -125,11 +132,11 @@ export function seed(today: ISODate): CompassData {
     { id: 'as-3', title: 'English oral presentation', subjectId: 'eng', date: d(12), kind: 'presentation' },
   ];
   // last week's review, already saved, so the list of earlier reviews has something in it
-  const reviews: Review[] = [{ weekStart: addDaysISO(week, -7), wentWell: 'Kept up with Biology revision most days.', gotInWay: 'Left the Economics case study too late.', change: 'Start the Economics essay on Monday.', savedAt: at(addDaysISO(week, -1), 18) }];
-  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), sessions: [], sessionsMade: [], reviews, pages: samplePages(today), boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
+  const reviews: Review[] = [{ weekStart: addDaysISO(week, -7), wentWell: 'Kept up with Biology revision most days.', gotInWay: 'Left the Economics case study too late.', change: 'Start the Economics essay on Monday.', savedAt: at(addDaysISO(week, -1), 18), ratings: { 'area-study': 7, 'area-health': 6, 'area-sleep': 5, 'area-discipline': 7 } }];
+  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), sessions: [], sessionsMade: [], reviews, pages: samplePages(today), links: [], areas: DEFAULT_AREAS, levels: {}, boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
 }
 
 /** A clean start: the same subjects, nothing else, and the first boat. */
 export function empty(): CompassData {
-  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], pages: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
+  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], pages: [], links: [], areas: DEFAULT_AREAS, levels: {}, boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
 }

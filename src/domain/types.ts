@@ -51,7 +51,20 @@ export interface Review {
   change: string;
   /** Set when the review is first saved. Present means it is listed among earlier reviews. */
   savedAt?: string;
+  /** How the week went: a whole number from 1 to 10 for each area that was rated, by the area's id. */
+  ratings?: Record<string, number>;
 }
+
+/** A part of the week that is rated in the review. Each person names their own. */
+export interface RatingArea { id: string; /** 1 to 24 characters. */ name: string }
+
+/** How much a subject matters in one week. No level at all behaves as 'normal'. */
+export type Level = 'high' | 'medium' | 'normal';
+/** Subject levels, week by week: the first day of the week they are for, then the subject's id. */
+export type Levels = Record<ISODate, Record<string, Level>>;
+
+/** A link to another site, opened in a new tab. Compass fetches nothing from it. */
+export interface QuickLink { id: string; /** 1 to 24 characters. */ name: string; /** An http or https address. */ url: string }
 
 /**
  * A study session that repeats on chosen weekdays. On each of its days it becomes an ordinary task with this name,
@@ -116,9 +129,11 @@ export interface Boat {
   stage: StageId;
   /** Fitting and stage ids already shown in the voyage view. */
   seen: string[];
+  /** The long-term goal, shown as where the boat is bound for. Up to 60 characters. */
+  boundFor?: string;
 }
 
-export interface Settings { weekStartsOn: 0 | 1; seaPaused: boolean; seaFolded: boolean }
+export interface Settings { weekStartsOn: 0 | 1; seaPaused: boolean; seaFolded: boolean; /** The person's name, for the greeting on Home. Up to 30 characters. */ name?: string }
 
 /** Dot, tint and text colours for each subject colour (art direction, section 5). */
 export const SUBJECT_COLOURS: Record<SubjectColour, { dot: string; tint: string; text: string }> = {

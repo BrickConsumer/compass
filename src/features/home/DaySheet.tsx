@@ -14,7 +14,7 @@ import { TaskRow } from './TaskRow';
  * Sort tasks, but keep a just-completed task where it is for a moment,
  * so several can be ticked in a row without the list jumping.
  */
-export function useHeldOrder(tasks: Task[], holdMs = 600): Task[] {
+export function useHeldOrder(tasks: Task[], rank?: (task: Task) => number, holdMs = 600): Task[] {
   const [held, setHeld] = useState<Set<string>>(new Set()), seen = useRef(new Map<string, boolean>());
   useEffect(() => {
     const fresh: string[] = [];
@@ -26,18 +26,18 @@ export function useHeldOrder(tasks: Task[], holdMs = 600): Task[] {
   }, [tasks, holdMs]);
   return useMemo(() => {
     const byId = new Map(tasks.map((t) => [t.id, t]));
-    return sortTasks(tasks.map((t) => (held.has(t.id) ? { ...t, completedAt: undefined } : t))).map((t) => byId.get(t.id)!);
-  }, [tasks, held]);
+    return sortTasks(tasks.map((t) => (held.has(t.id) ? { ...t, completedAt: undefined } : t)), rank).map((t) => byId.get(t.id)!);
+  }, [tasks, held, rank]);
 }
 
 /** Small counts are spelled out, as the voice asks: "All five done". */
 const NUMBER_WORDS: Record<number, string> = { 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten' };
 
-interface Props { date: ISODate; today: ISODate; tasks: Task[]; subjects: Subject[]; assessment?: Assessment; carried: Task[]; onEdit: (id: string) => void }
+interface Props { date: ISODate; today: ISODate; tasks: Task[]; subjects: Subject[]; assessment?: Assessment; carried: Task[]; onEdit: (id: string) => void; /** Orders open tasks of the same priority by their subject's level: see `taskRank`. */ rank?: (task: Task) => number }
 
 /** The one raised sheet: the selected day's tasks, its progress, and anything still open from earlier in the week. */
-export function DaySheet({ date, today, tasks, subjects, assessment, carried, onEdit }: Props) {
-  const ordered = useHeldOrder(tasks), p = progress(tasks), isToday = date === today;
+export function DaySheet({ date, today, tasks, subjects, assessment, carried, onEdit, rank }: Props) {
+  const ordered = useHeldOrder(tasks, rank), p = progress(tasks), isToday = date === today;
   const count = p.total === 0 ? 'Nothing planned' : p.done === p.total ? (p.total === 1 ? 'Done' : `All ${NUMBER_WORDS[p.total] ?? p.total} done`) : `${p.done} of ${p.total} done`;
   const moveCarried = () => {
     const before = useCompass.getState().moveToDate(carried.map((t) => t.id), today);
