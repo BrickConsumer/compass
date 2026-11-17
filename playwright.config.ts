@@ -3,6 +3,14 @@ import { defineConfig } from '@playwright/test';
 /** Set by GitHub Actions. A CI runner has no graphics card and is slower than a laptop. */
 const ci = !!process.env.CI;
 
+/**
+ * The tests have a dev server of their own, on its own port, started fresh for each run.
+ * They used to borrow the one already open on 5173. Under five browsers at once that server has been seen to crash
+ * part-way through a run, and every test after it then failed at once. A fresh server on another port cannot be the
+ * one a person has open, and is never one that has been running for hours.
+ */
+const PORT = 5174, URL = `http://localhost:${PORT}`;
+
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 30_000,
@@ -10,12 +18,12 @@ export default defineConfig({
   forbidOnly: ci,
   reporter: ci ? [['github'], ['list']] : 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: URL,
     viewport: { width: 1320, height: 900 },
     // PW_CHANNEL=chrome runs the suite in an installed Chrome, so no test browser has to be downloaded
     channel: process.env.PW_CHANNEL,
     // with no graphics card, Chrome only draws WebGL in software when told it may; without this the sea would stay a still picture
     launchOptions: ci ? { args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] } : undefined,
   },
-  webServer: { command: 'npm run dev', url: 'http://localhost:5173', reuseExistingServer: !ci, timeout: 120_000 },
+  webServer: { command: `npm run dev -- --port ${PORT}`, url: URL, reuseExistingServer: false, timeout: 120_000 },
 });

@@ -210,10 +210,13 @@ test('with no pages, the five ways to start are offered', async ({ page }) => {
   await expect(page.locator('[data-kinds] button')).toHaveCount(5);
   await expect(page.locator('[data-export]')).toHaveCount(0);
   await page.locator('[data-kinds] [data-kind="note"]').click();
+  // the editor opens a moment after the page is made: keys pressed before it has would go nowhere
+  await expect(page.getByLabel('Title', { exact: true })).toBeFocused();
   await page.keyboard.type('First note');
   await page.keyboard.press('Escape');
   await closed(page);
   await expect(listed(page)).toHaveCount(1);
+  await expect(listed(page).first()).toContainText('First note');
   await expect(listed(page).first()).toContainText('Nothing written yet');
 });
 
