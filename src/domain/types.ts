@@ -81,6 +81,34 @@ export interface Habit {
   createdOn: ISODate;
 }
 
+export type PageKind = 'note' | 'checklist' | 'goal' | 'reading' | 'project';
+
+/** One line of a page's list. It is not a task: it has no day, earns nothing and is shown nowhere else. */
+export interface PageItem { id: string; /** 1 to 140 characters. */ text: string; done: boolean }
+
+/**
+ * One of the user's own pages, for what has no date. Every page has the same parts: a title, a list, writing and an
+ * optional date. The kind decides which part comes first and what the parts are called.
+ */
+export interface Page {
+  id: string;
+  /** 1 to 80 characters. */
+  title: string;
+  kind: PageKind;
+  /** In the order shown. Ticking an item does not move it. */
+  items: PageItem[];
+  /** Plain text, up to 20,000 characters. */
+  text: string;
+  /** A date to aim for. Shown on goals and projects. Nothing happens when it passes. */
+  aimFor?: ISODate;
+  subjectId?: string;
+  /** Goals only: the day the goal was marked as reached. */
+  reachedOn?: ISODate;
+  createdAt: string;
+  /** The last change, which orders the list of pages. */
+  updatedAt: string;
+}
+
 export interface Boat {
   name: string;
   hull: string; sail: string; pennant: string;

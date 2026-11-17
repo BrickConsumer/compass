@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with section 10 added on 17 November |
-| Build | Branch `weekly-review`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, and the Weekly review in section 10 |
+| Date | 16 November 2026, with sections 10 and 11 added on 17 November |
+| Build | Branch `my-pages`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, and My pages in section 11 |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 170 unit tests pass and 56 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 201 unit tests pass and 70 browser tests pass.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -49,9 +49,9 @@ Updated screenshots are in [screenshots/home/](screenshots/home/).
 
 | Check | Tool | Result |
 |---|---|---|
-| Type-check and production build | `npm run build` | Passes. Main bundle 167 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
-| Unit tests | `npm test` (Vitest) | 170 of 170 pass |
-| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 56 of 56 pass, three runs in a row |
+| Type-check and production build | `npm run build` | Passes. Main bundle 173 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
+| Unit tests | `npm test` (Vitest) | 201 of 201 pass |
+| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 70 of 70 pass, three runs in a row |
 | Screenshots and state capture | Playwright scripts, six widths and nine states | No console errors in any capture |
 | Contrast, text size, touch targets | A script run inside the live page at 390 and 1440 | Section 4 |
 | Frame rate | The same, at phone size with the processor slowed four times | Section 5 |
@@ -345,7 +345,44 @@ Built on 17 November as a first version, to [review-spec.md](review-spec.md). No
 
 They are listed with the other way for each in [review-spec.md](review-spec.md), section 7. The one that matters most: the figures are live, so an old saved review shows that week as the records stand now, not as they stood when it was saved.
 
-## 11. Built differently from the approved spec
+## 11. My pages
+
+Built on 17 November as a first version, to [my-pages-spec.md](my-pages-spec.md). Oliver chose the approach, the layout and the tick from that document and its mock. Josh and Aditya have not reviewed it.
+
+### What was built
+
+- **The page at `/pages` and `/pages/:pageId`,** in place of the last "Not built yet" page. The pages are listed beside the open one; on phones the list comes first.
+- **One page shape, five ways to start:** note, checklist, goal, reading and project. Every page has a title, a list, writing and an optional date. The kind sets the icon, which part comes first and what the parts are called.
+- **A page's list:** items are added, ticked, changed in place, moved and deleted with Undo. A ticked item stays where it is. A checklist can be unticked in one go.
+- **Goals:** a date to aim for, a "why", and "Mark as reached", which keeps the goal below the open pages.
+- **Around it:** search finds a page by title, "Export my pages" saves one text file, and "Clear everything" removes pages with the rest.
+- **Apart from the rest, on purpose:** an item is not a task. It earns no miles, is not on Home and does not move the sea.
+
+### Two faults found in the editors, both older than this work
+
+Building the page's editor showed two faults in the frame every editor shares. Both are fixed for all of them.
+
+- **A space typed at the end of a title was lost.** The record keeps a tidied title, and the box showed the record, so the space was tidied away before the next letter arrived: "essay two words" came out as "essaytwowords". It affected the task, habit, subject, assessment and session editors, a task's notes, and the boat's name. The earlier browser tests filled each box in one go, which is why they did not see it. A text box now shows what was typed while it has focus (`src/ui/DraftField.tsx`).
+- **Focus landed on the Close button, not the title.** A dialog gives focus to the first thing in it, and the Close button comes first. The frame now gives focus to the first text box: always on wider screens, and on phones only when the box is empty, so that opening something to look at it does not raise the keyboard.
+
+A new Home browser test covers both, typing a key at a time.
+
+### Found in testing
+
+- **The sample goal was stamped later than the present moment,** so a page changed now sorted below it. The sample pages are now all last changed before today. Caught by the phone browser test, and now a unit test.
+- Two of the new browser tests failed on their first run because of their own selectors.
+
+### Checked
+
+- Browser tests, fourteen new: the list and the open page; ticking and its count, with no miles and nothing on Home; adding, changing, moving and deleting items with Undo; "Untick all"; a new page with its title ready to type; a note and its list; reaching and reopening a goal; changing kind and deleting a page with Undo; search; export; the empty state; narrowing the list by kind; the phone flow; and the Home test for the two editor faults.
+- Unit tests, thirty-one new: the kinds, the list's rules, goals, the one-line summary, the order of the list, search, export, and the store's actions.
+- No console errors or warnings in any capture.
+
+### Calls made here that the founders can overrule
+
+They are in [my-pages-spec.md](my-pages-spec.md): section 10 for the decisions built to their recommendations, and section 13 for where the build differs from the mock.
+
+## 12. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -359,11 +396,11 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 12. Known limitations
+## 13. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
 - The storm's breaking crests look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
-- Dark theme, the night scene, My pages, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
+- Dark theme, the night scene, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
 - Tested in Chrome only. Safari and Firefox have not been opened.

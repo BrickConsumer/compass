@@ -281,4 +281,107 @@ describe('store', () => {
       expect(milesLogged(s().log)).toBe(miles);
     });
   });
+
+  describe("my pages", () => {
+    const page = (id: string) => s().pages.find((p) => p.id === id)!;
+
+    it("the sample has one page of each kind, all last changed before now", () => {
+      expect(s().pages.map((p) => p.kind).sort()).toEqual(["checklist", "goal", "note", "project", "reading"]);
+      const now = new Date().toISOString();
+      expect(s().pages.every((p) => p.updatedAt < now)).toBe(true);
+    });
+
+    it("a new page is untitled, and keeps its last good title", () => {
+      const id = s().addPage("checklist");
+      expect(page(id)).toMatchObject({ title: "Untitled", kind: "checklist", items: [], text: "" });
+      s().updatePage(id, { title: "  Packing   list " });
+      expect(page(id).title).toBe("Packing list");
+      s().updatePage(id, { title: "   " });
+      expect(page(id).title).toBe("Packing list");
+    });
+
+    it("items are added, ticked, changed, moved and removed, and a removed one can be put back", () => {
+      const id = s().addPage("checklist");
+      expect(s().addPageItem(id, "  ")).toBe(false);
+      for (const text of ["Socks", "Torch", "Map"]) expect(s().addPageItem(id, text)).toBe(true);
+      const [socks, torch, map] = page(id).items.map((i) => i.id) as [string, string, string];
+      s().togglePageItem(id, torch);
+      expect(page(id).items.map((i) => i.done)).toEqual([false, true, false]);
+      s().editPageItem(id, socks, "Wool socks");
+      s().movePageItem(id, map, -1);
+      expect(page(id).items.map((i) => i.text)).toEqual(["Wool socks", "Map", "Torch"]);
+      const removed = s().deletePageItem(id, map)!;
+      expect(page(id).items.map((i) => i.text)).toEqual(["Wool socks", "Torch"]);
+      s().restorePageItem(id, removed.item, removed.index);
+      expect(page(id).items.map((i) => i.text)).toEqual(["Wool socks", "Map", "Torch"]);
+    });
+
+    it("ticking an item earns nothing and makes no task", () => {
+      const miles = milesLogged(s().log), tasks = s().tasks.length;
+      s().togglePageItem("pg-trip", "pg-trip-3");
+      expect(page("pg-trip").items[2]!.done).toBe(true);
+      expect(milesLogged(s().log)).toBe(miles);
+      expect(s().tasks).toHaveLength(tasks);
+    });
+
+    it("a list is unticked in one go, and Undo ticks the same items again", () => {
+      const ticked = s().untickPageItems("pg-trip");
+      expect(ticked).toEqual(["pg-trip-1", "pg-trip-2"]);
+      expect(page("pg-trip").items.some((i) => i.done)).toBe(false);
+      s().tickPageItems("pg-trip", ticked);
+      expect(page("pg-trip").items.filter((i) => i.done).map((i) => i.id)).toEqual(ticked);
+    });
+
+    it("a goal is reached and reopened, and reaching it earns nothing", () => {
+      const miles = milesLogged(s().log);
+      s().setReached("pg-goal", true);
+      expect(page("pg-goal").reachedOn).toBe(todayISO());
+      expect(milesLogged(s().log)).toBe(miles);
+      s().setReached("pg-goal", false);
+      expect(page("pg-goal").reachedOn).toBeUndefined();
+      s().setReached("pg-trip", true);
+      expect(page("pg-trip").reachedOn).toBeUndefined();
+    });
+
+    it("a page that stops being a goal is no longer reached", () => {
+      s().setReached("pg-goal", true);
+      s().updatePage("pg-goal", { kind: "project" });
+      expect(page("pg-goal").reachedOn).toBeUndefined();
+    });
+
+    it("a date and a subject can be set and cleared", () => {
+      s().updatePage("pg-trip", { aimFor: "2026-12-01", subjectId: "eng" });
+      expect(page("pg-trip")).toMatchObject({ aimFor: "2026-12-01", subjectId: "eng" });
+      s().updatePage("pg-trip", { aimFor: null, subjectId: null });
+      expect(page("pg-trip").aimFor).toBeUndefined();
+      expect(page("pg-trip").subjectId).toBeUndefined();
+    });
+
+    it("a change moves a page to the front of the list, and a change that changes nothing does not", () => {
+      const before = page("pg-case").updatedAt;
+      s().movePageItem("pg-case", "pg-case-1", -1);
+      expect(page("pg-case").updatedAt).toBe(before);
+      s().togglePageItem("pg-case", "pg-case-4");
+      expect(page("pg-case").updatedAt > before).toBe(true);
+    });
+
+    it("a page is deleted and restored whole", () => {
+      const gone = s().deletePage("pg-read")!;
+      expect(s().pages.some((p) => p.id === "pg-read")).toBe(false);
+      s().restorePage(gone);
+      expect(page("pg-read")).toEqual(gone);
+    });
+
+    it("deleting a subject keeps its pages without a subject, and Undo gives it back", () => {
+      const removed = s().deleteSubject("bio")!;
+      expect(page("pg-trip").subjectId).toBeUndefined();
+      s().restoreSubject(removed);
+      expect(page("pg-trip").subjectId).toBe("bio");
+    });
+
+    it("clearing everything removes the pages", () => {
+      s().clearAll();
+      expect(s().pages).toEqual([]);
+    });
+  });
 });
