@@ -6,7 +6,7 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
 
 - **Compass**: a calm student planner whose distinctive feature is a sailboat that develops as you make progress.
 - **Founders:** Josh, Oliver and Aditya. Oliver is driving these sessions.
-- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Eight branches, each cut from the one before. `main` still holds only the first commit.
+- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Nine branches, each cut from the one before. `main` still holds only the first commit.
   - `phase-1-home`: Phase 1. Pushed, with pull request 1 open to `main`.
   - `sea-performance`: the performance work. Pushed, with pull request 2 open against `phase-1-home`.
   - `reward-loop`: the reward loop. Pushed, with pull request 3 open against `sea-performance`.
@@ -14,7 +14,8 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
   - `habits`: Stage 4, Habits. Pushed (`cb0b0ab`), with pull request 5 open against `home-motion`.
   - `study`: Stage 5, Study, with recurring study sessions. Pushed (`b83d73f`), with pull request 6 open against `habits`.
   - `weekly-review`: Stage 6, the Weekly review. Pushed (`ba9a373`), with pull request 7 open against `study`. 
-  - `my-pages`: Stage 6, My pages, with two fixes to the shared editors. Local only. Check `git status` and `git log` for whether it has been committed.
+  - `my-pages`: Stage 6, My pages, with two fixes to the shared editors. Pushed (`f30ff1e`, `34e3b0b`), with pull request 8 open against `weekly-review`.
+  - `ci`: a GitHub Actions workflow that builds and tests every pull request. Local only when this was written. Check `git status` and `git log` for whether it has been committed and pushed, and GitHub for whether its first run passed.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 
@@ -29,7 +30,7 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
 | The boat's look review | Two rounds done. **Parked by Oliver** ("we will look at the boat later"). |
 | E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it yet. Findings and fixes are in `docs/testing-report.md`, section 2. |
 
-**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Both its commits are pushed: `7e72a5e` (tiers and sleeping) and `98a179d` (draw calls). The reward loop is commit `6e9730f` on `reward-loop`, pushed. The motion work is commit `e4a3846` on `home-motion`, pushed, with pull request 4 open against `reward-loop`. Stages 2 and 3 are complete. Habits is one commit on `habits`, accepted by Oliver as a first version, pushed, with pull request 5 open. Study, with recurring study sessions, is one commit on `study`, pushed, with pull request 6 open; no founder has reviewed the Study page. The Weekly review is one commit on `weekly-review`, built on 17 November, pushed, with pull request 7 open; no founder has reviewed the page. My pages is on `my-pages`, built on 17 November; it has not been pushed and has no pull request.
+**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Both its commits are pushed: `7e72a5e` (tiers and sleeping) and `98a179d` (draw calls). The reward loop is commit `6e9730f` on `reward-loop`, pushed. The motion work is commit `e4a3846` on `home-motion`, pushed, with pull request 4 open against `reward-loop`. Stages 2 and 3 are complete. Habits is one commit on `habits`, accepted by Oliver as a first version, pushed, with pull request 5 open. Study, with recurring study sessions, is one commit on `study`, pushed, with pull request 6 open; no founder has reviewed the Study page. The Weekly review is one commit on `weekly-review`, built on 17 November, pushed, with pull request 7 open; no founder has reviewed the page. My pages is two commits on `my-pages`, built on 17 November, pushed, with pull request 8 open.
 
 ## 3. Decisions
 
@@ -142,6 +143,11 @@ Type-checks and builds; passing. The main bundle is 173 kB compressed. The 3D ch
 PW_CHANNEL=chrome npm run test:e2e
 ```
 Runs 70 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
+
+**CI** is `.github/workflows/ci.yml`: two jobs on every pull request, one for the build and unit tests and one for the browser tests in Playwright's own Chromium.
+- A pull request is only checked if its branch holds the workflow file, so the pull requests below the `ci` branch in the stack get no checks until the stack is merged.
+- The six tests in `tests/e2e/sea.spec.ts` are skipped on CI. They measure frame rate and draw calls, which depend on a graphics card, and a CI runner has none. Run them on a real machine.
+- To run the suite as CI does: stop the dev server, then `CI=1 PW_CHANNEL=chrome npm run test:e2e`. It should report 64 passed and 6 skipped.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
@@ -288,9 +294,9 @@ All eleven now exist. The last three (the Phase E pass, the testing report and t
 
 The full list is in `docs/next-stages.md`.
 
-1. **Get the seven pull requests reviewed and merged, in order.** None has been reviewed, and there is no CI. The stack is already deeper than is comfortable.
+1. **Get the eight pull requests reviewed and merged, in order.** None has been reviewed. CI only checks the top of the stack. The stack is already deeper than is comfortable.
 2. **A founder opens Home on a real phone,** and in Safari.
 3. **Merge pull request 1,** then pull request 2.
-4. **Commit and push `my-pages`** when Oliver says so, and open its pull request against `weekly-review`. All five destinations now exist. The open decisions for My pages are in `docs/my-pages-spec.md`, section 10. Separately, a founder should look at the Weekly review page: it was built without a mock, and its open calls are in `docs/review-spec.md`, section 7.
+4. **Commit and push `ci`** when Oliver says so, and open its pull request against `my-pages`. Then look at its first run on GitHub: the workflow has only been checked on this machine, and the two look-review tests that need the 3D scene have never run without a graphics card. All five destinations now exist. The open decisions for My pages are in `docs/my-pages-spec.md`, section 10. Separately, a founder should look at the Weekly review page: it was built without a mock, and its open calls are in `docs/review-spec.md`, section 7.
 5. **Three rules for study sessions are still open,** each built to the recommendation in the mock at https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4 (private; share it from its Share menu): whether sessions count toward the port and the storm, when a week's tasks are made, and what changing a session does to tasks already made. The rules are in `docs/habits-spec.md`, and the mock that settled its place on Home is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b (private; share it from its Share menu). Oliver has accepted the Habits page as a first version; Josh and Aditya have not seen it.
 6. **Boat look review round three**, when Oliver is ready.

@@ -1,5 +1,11 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
+// These tests measure the sea itself: its frame rate, which tier a device settles on, and how much it draws.
+// The answers depend on the graphics card. A CI runner has none and draws in software, far slower than any real device,
+// so there the scene steps down and the numbers mean nothing. They are run on a real machine instead:
+// PW_CHANNEL=chrome npm run test:e2e
+test.skip(!!process.env.CI, 'Measures the sea on real graphics hardware, which a CI runner does not have.');
+
 /** Count the frames the sea actually draws, by watching WebGL draw calls from outside the app. */
 const countFrames = () => {
   const w = window as unknown as { __frames: number; __draws: number };
