@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | Date | 16 November 2026 |
-| Build | Branch `habits`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, the motion and editor work in section 7, and Habits in section 8 |
+| Build | Branch `study`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, and Study in section 9 |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 130 unit tests pass and 39 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 155 unit tests pass and 48 browser tests pass.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -49,9 +49,9 @@ Updated screenshots are in [screenshots/home/](screenshots/home/).
 
 | Check | Tool | Result |
 |---|---|---|
-| Type-check and production build | `npm run build` | Passes. Main bundle 159 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
-| Unit tests | `npm test` (Vitest) | 130 of 130 pass |
-| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 39 of 39 pass, three runs in a row |
+| Type-check and production build | `npm run build` | Passes. Main bundle 164 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
+| Unit tests | `npm test` (Vitest) | 155 of 155 pass |
+| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 48 of 48 pass, three runs in a row |
 | Screenshots and state capture | Playwright scripts, six widths and nine states | No console errors in any capture |
 | Contrast, text size, touch targets | A script run inside the live page at 390 and 1440 | Section 4 |
 | Frame rate | The same, at phone size with the processor slowed four times | Section 5 |
@@ -284,7 +284,39 @@ Built on 16 November. The rules are in [habits-spec.md](habits-spec.md). Where h
 - **Earlier weeks can still be ticked,** so a forgotten tick can be put right.
 - **The page shows one week at a time.** There is no view across many weeks yet.
 
-## 9. Built differently from the approved spec
+## 9. Study
+
+Built on 16 November. The rules are in [study-spec.md](study-spec.md). No founder has reviewed the page. Oliver decided that a study session becomes an ordinary task that repeats.
+
+### What was built
+
+| | Behaviour |
+|---|---|
+| **The Study page** | Subjects listed beside the one that is open on wider screens. On phones the list comes first and a subject opens on its own. |
+| **A subject's sheet** | Its assessments still ahead, every open task for it wherever it is planned, a row to add a task, and notes. |
+| **Subjects** | Add, rename, recolour, delete with Undo. Deleting one removes its assessments and keeps its tasks. |
+| **Assessments** | Add, change and delete with Undo. Until now they were fixed sample records. |
+| **Study sessions** | A session repeats on chosen weekdays and becomes an ordinary task on each of them, made when its week arrives. Tasks from a session carry a small mark. Deleting one is a day off: it is not made again. Changing or ending a session leaves the tasks already made. |
+| **One set of records** | A task added on a subject's page is the same task on Home, and an assessment added here appears under "Coming up". |
+
+### Not built
+
+- **Preparation tasks attached to one assessment.** A task belongs to a subject, not yet to a particular assessment.
+
+### Worth knowing about sessions
+
+- **They count like any task,** so a day with a session is never a day in port, and doing nothing on it brings the storm the next day. This was the recommendation in the mock, and is still open to change.
+- **Nothing is made for a day that has gone.** A week's tasks are made on the first day the app is opened that week, from that day on.
+- **The sample has no sessions,** so the sample week and every earlier screenshot are unchanged. To see one, add it on a subject's page.
+
+### Checked
+
+- Browser tests: the list and the first subject's sheet; a task added on a subject's page showing on Home with its subject, and a tick on Home counting here; an assessment added, shown on Home, changed, and deleted with Undo; a subject added, renamed, recoloured, and deleted with Undo; notes kept after a reload; the phone flow, with no sideways scroll.
+- Browser tests for sessions: one is set up and needs a day; its task for today appears on the subject's page and on Home with the mark, counts in the day, and is ticked like any other; deleting it is not undone by a reload; renaming a session leaves its task alone; ending it keeps the task and removes the mark, and Undo restores both; a task from a session says where it came from.
+- Unit tests: a subject's tasks and their order, when a task is for, assessments ahead and past, the one-line summary, a new subject's colour, which session tasks are made and when, a session's days in words, and the store's actions.
+- Two of the new browser tests failed on their first run because of their own selectors, and one led to a fix in the page: the Notes label now names its text box properly.
+
+## 10. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -298,11 +330,11 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 10. Known limitations
+## 11. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
 - The storm's breaking crests look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
-- Dark theme, the night scene, Study, Weekly review, My pages, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
+- Dark theme, the night scene, Weekly review, My pages, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
 - Tested in Chrome only. Safari and Firefox have not been opened.

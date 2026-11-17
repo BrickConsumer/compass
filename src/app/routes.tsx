@@ -3,6 +3,7 @@ import { HabitsPage } from '../features/habits/HabitsPage';
 import { HomePage } from '../features/home/HomePage';
 import { LookdevPage } from '../features/lookdev/LookdevPage';
 import { PlacePage } from '../features/places/Places';
+import { StudyPage } from '../features/study/StudyPage';
 import { SettingsPage } from '../features/places/SettingsPage';
 import { VoyagePage } from '../features/voyage/VoyagePage';
 import { AppShell } from './AppShell';
@@ -13,7 +14,8 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <HomePage /> },
       { path: '/voyage', element: <VoyagePage /> },
-      { path: '/study', element: <PlacePage place="study" /> },
+      { path: '/study', element: <StudyPage /> },
+      { path: '/study/:subjectId', element: <StudyPage /> },
       { path: '/habits', element: <HabitsPage /> },
       { path: '/review', element: <PlacePage place="review" /> },
       { path: '/pages', element: <PlacePage place="pages" /> },

@@ -1,4 +1,4 @@
-import { Check, Flag } from 'lucide-react';
+import { CalendarSync, Check, Flag } from 'lucide-react';
 import * as m from 'motion/react-m';
 import type { Ref } from 'react';
 import { ENTER, EXIT, MOVE } from '../../design/motion';
@@ -6,14 +6,20 @@ import { type Subject, SUBJECT_COLOURS, type Task } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { toast } from '../../ui/Toast';
 
-interface Props { task: Task; subject?: Subject; onEdit: (id: string) => void; number?: number; small?: boolean; ref?: Ref<HTMLLIElement> }
+interface Props {
+  task: Task; subject?: Subject; onEdit: (id: string) => void; number?: number; small?: boolean; ref?: Ref<HTMLLIElement>;
+  /** On a subject's own page the subject is known, so the row says when the task is for instead. */
+  when?: string;
+}
 
 /**
  * One task: a checkbox, the title (which opens the editor), then priority and subject.
  * It slides to its new place when the list re-sorts, and fades when it is added or removed.
  */
-export function TaskRow({ task, subject, onEdit, number, small = false, ref }: Props) {
+export function TaskRow({ task, subject, onEdit, number, small = false, ref, when }: Props) {
   const toggle = useCompass((s) => s.toggleTask), cycle = useCompass((s) => s.cyclePriority);
+  // made from a study session that still exists: an ordinary task in every way, with a mark to say it repeats
+  const repeats = useCompass((s) => !!task.sessionId && s.sessions.some((x) => x.id === task.sessionId));
   const done = !!task.completedAt, colours = subject ? SUBJECT_COLOURS[subject.colour] : undefined;
   const remove = () => {
     const gone = useCompass.getState().deleteTasks([task.id]);
@@ -45,7 +51,9 @@ export function TaskRow({ task, subject, onEdit, number, small = false, ref }: P
           <Flag size={13} strokeWidth={2.2} aria-hidden="true" />
           {task.priority === 'high' ? 'High' : task.priority === 'low' ? 'Low' : null}
         </button>
-        {subject && colours && (
+        {repeats && <span className="flex items-center pr-1.5" title="From a study session that repeats" data-repeats><CalendarSync size={15} strokeWidth={2} aria-hidden="true" /><span className="sr-only">Repeats</span></span>}
+        {when && <span className="whitespace-nowrap" data-when>{when}</span>}
+        {!when && subject && colours && (
           <span className="flex items-center gap-1.5 whitespace-nowrap">
             <span aria-hidden="true" className="size-2 rounded-full" style={{ background: colours.dot }} />
             <span className="max-sm:sr-only">{subject.name}</span>

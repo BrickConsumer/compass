@@ -1,6 +1,6 @@
 import { addDaysISO, weekdayOf, weekStartOf } from './dates';
 import { isDue, tickKey } from './habits';
-import type { Assessment, Boat, Habit, ISODate, LogEntry, Settings, Subject, Task } from './types';
+import type { Assessment, Boat, Habit, ISODate, LogEntry, Session, Settings, Subject, Task } from './types';
 
 export interface CompassData {
   subjects: Subject[];
@@ -10,6 +10,10 @@ export interface CompassData {
   habits: Habit[];
   /** One entry for each habit ticked on each day: see `tickKey`. */
   ticks: string[];
+  /** Study sessions that repeat. The sample has none, so its week is the one the brief describes. */
+  sessions: Session[];
+  /** One entry for each session task already made: see `madeKey`. */
+  sessionsMade: string[];
   boat: Boat;
   settings: Settings;
   /** True while the data is the generated sample. */
@@ -17,7 +21,7 @@ export interface CompassData {
 }
 
 export const SUBJECTS: Subject[] = [
-  { id: 'bio', name: 'Biology', colour: 'seafoam' },
+  { id: 'bio', name: 'Biology', colour: 'seafoam', notes: 'Chapters 6 and 7 are on the test. Ask about osmosis in the next lesson.' },
   { id: 'eco', name: 'Economics', colour: 'brass' },
   { id: 'eng', name: 'English', colour: 'rose' },
   { id: 'mat', name: 'Mathematics', colour: 'marine' },
@@ -94,10 +98,10 @@ export function seed(today: ISODate): CompassData {
     { id: 'as-2', title: 'Economics examination', subjectId: 'eco', date: d(9), kind: 'exam' },
     { id: 'as-3', title: 'English oral presentation', subjectId: 'eng', date: d(12), kind: 'presentation' },
   ];
-  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
+  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), sessions: [], sessionsMade: [], boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
 }
 
 /** A clean start: the same subjects, nothing else, and the first boat. */
 export function empty(): CompassData {
-  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
+  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
 }

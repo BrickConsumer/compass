@@ -1,6 +1,8 @@
 import { BookOpen, CalendarCheck, FileText, House, type LucideIcon, Repeat, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
+import { useCompass } from '../state/store';
+import { useToday } from '../state/useToday';
 import { CompassMark } from '../ui/CompassMark';
 import { ToastRegion } from '../ui/Toast';
 
@@ -92,6 +94,9 @@ function Shortcuts({ open, onClose }: { open: boolean; onClose: () => void }) {
 /** The frame around every page: a rail on wider screens, a five-item bar on phones, toasts, and the command menu. */
 export function AppShell() {
   const [menu, setMenu] = useState(false), [shortcuts, setShortcuts] = useState(false), navigate = useNavigate();
+  // study sessions become tasks when their week arrives: on opening the app, and when the day or the first day of the week changes
+  const today = useToday(), makeSessionTasks = useCompass((s) => s.makeSessionTasks), startsOn = useCompass((s) => s.settings.weekStartsOn);
+  useEffect(() => { makeSessionTasks(today); }, [today, startsOn, makeSessionTasks]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setMenu((m) => !m); return; }
