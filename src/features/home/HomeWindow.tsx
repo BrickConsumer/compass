@@ -3,9 +3,10 @@ import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { announcement, daysAtSea, earnedFittings, milesLogged, nextFitting, unseenRewards } from '../../domain/voyage';
 import { useCompass } from '../../state/store';
+import { IconSwap } from '../../ui/IconSwap';
 import { SeaWindow } from '../voyage/SeaWindow';
 
-const round = 'grid size-11 cursor-pointer place-items-center rounded-full bg-surface-sheet text-text shadow-control hover:bg-surface-sheet-hover sm:size-9';
+const round = 'press grid size-11 cursor-pointer place-items-center rounded-full bg-surface-sheet text-text shadow-control hover:bg-surface-sheet-hover sm:size-9';
 
 /** The sea window on Home: the scene for the selected day, the voyage plate, and controls to pause, fold and open it. */
 export function HomeWindow({ progress, missedYesterday }: { progress: number | null; missedYesterday: boolean }) {
@@ -39,8 +40,8 @@ export function HomeWindow({ progress, missedYesterday }: { progress: number | n
           </Link>
         )}
         <div className="absolute right-3 top-3 flex gap-2 sm:right-3.5 sm:top-3.5">
-          {!folded && <button type="button" className={round} onClick={() => set({ seaPaused: !settings.seaPaused })} aria-pressed={settings.seaPaused} aria-label={settings.seaPaused ? 'Resume the sea' : 'Pause the sea'} title={settings.seaPaused ? 'Resume the sea' : 'Pause the sea'}>{settings.seaPaused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}</button>}
-          <button type="button" className={`${round} max-sm:hidden`} onClick={() => set({ seaFolded: !folded })} aria-expanded={!folded} aria-label={folded ? 'Show the sea' : 'Hide the sea'} title={folded ? 'Show the sea' : 'Hide the sea'}>{folded ? <ChevronDown size={17} aria-hidden="true" /> : <ChevronUp size={17} aria-hidden="true" />}</button>
+          {!folded && <button type="button" className={round} onClick={() => set({ seaPaused: !settings.seaPaused })} aria-pressed={settings.seaPaused} aria-label={settings.seaPaused ? 'Resume the sea' : 'Pause the sea'} title={settings.seaPaused ? 'Resume the sea' : 'Pause the sea'}><IconSwap id={settings.seaPaused ? 'play' : 'pause'}>{settings.seaPaused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}</IconSwap></button>}
+          <button type="button" className={`${round} max-sm:hidden`} onClick={() => set({ seaFolded: !folded })} aria-expanded={!folded} aria-label={folded ? 'Show the sea' : 'Hide the sea'} title={folded ? 'Show the sea' : 'Hide the sea'}><IconSwap id={folded ? 'down' : 'up'}>{folded ? <ChevronDown size={17} aria-hidden="true" /> : <ChevronUp size={17} aria-hidden="true" />}</IconSwap></button>
           {!folded && <Link to="/voyage" className={`${round} max-sm:hidden`} aria-label="Open the voyage" title="Open the voyage (V)"><Maximize2 size={15} aria-hidden="true" /></Link>}
         </div>
       </div>

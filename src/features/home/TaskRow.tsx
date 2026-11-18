@@ -4,6 +4,7 @@ import type { Ref } from 'react';
 import { ENTER, EXIT, MOVE } from '../../design/motion';
 import { type Subject, SUBJECT_COLOURS, type Task } from '../../domain/types';
 import { useCompass } from '../../state/store';
+import { PulseRing, useConfirmPulse } from '../../ui/ConfirmPulse';
 import { toast } from '../../ui/Toast';
 
 interface Props {
@@ -21,6 +22,9 @@ export function TaskRow({ task, subject, onEdit, number, small = false, ref, whe
   // made from a study session that still exists: an ordinary task in every way, with a mark to say it repeats
   const repeats = useCompass((s) => !!task.sessionId && s.sessions.some((x) => x.id === task.sessionId));
   const done = !!task.completedAt, colours = subject ? SUBJECT_COLOURS[subject.colour] : undefined;
+  // ticking confirms with a ring; unticking, and every task already done on load, stay quiet
+  const [pulse, fire] = useConfirmPulse();
+  const tick = () => { if (!done) fire(); toggle(task.id); };
   const remove = () => {
     const gone = useCompass.getState().deleteTasks([task.id]);
     toast('Task deleted.', { label: 'Undo', run: () => useCompass.getState().restoreTasks(gone) });
@@ -29,13 +33,15 @@ export function TaskRow({ task, subject, onEdit, number, small = false, ref, whe
     <m.li ref={ref} layout="position" transition={MOVE} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: ENTER }} exit={{ opacity: 0, transition: EXIT }}
       className="group grid min-h-[46px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-1 border-t border-line first:border-t-0 data-[editing=true]:bg-surface-well max-sm:min-h-[54px]" data-task={task.id} data-done={done}>
       <label className="relative -ml-[11px] grid size-11 shrink-0 cursor-pointer place-items-center">
-        <input type="checkbox" checked={done} onChange={() => toggle(task.id)} aria-label={task.title}
+        <input type="checkbox" checked={done} onChange={tick} aria-label={task.title}
           className="peer size-[22px] cursor-pointer appearance-none rounded-[7px] shadow-[inset_0_0_0_1.5px_var(--color-control)] transition-colors duration-[140ms] ease-[var(--ease-out)] checked:bg-positive checked:shadow-none max-sm:size-[26px]" />
-        <Check size={14} strokeWidth={3.2} aria-hidden="true" className="pointer-events-none absolute text-on-positive opacity-0 transition-opacity duration-[140ms] peer-checked:opacity-100" />
+        {/* the tick is revealed left to right by a mask, and fades with the box */}
+        <Check size={14} strokeWidth={3.2} aria-hidden="true" className="pointer-events-none absolute text-on-positive opacity-0 [clip-path:inset(0_100%_0_0)] transition-[opacity,clip-path] duration-[180ms] ease-[var(--ease-out)] peer-checked:opacity-100 peer-checked:[clip-path:inset(0)]" />
+        <PulseRing n={pulse} className="size-[22px] rounded-[7px] max-sm:size-[26px]" />
       </label>
       <button type="button" onClick={() => onEdit(task.id)}
         onKeyDown={(e) => {
-          if (e.key === ' ') { e.preventDefault(); toggle(task.id); }
+          if (e.key === ' ') { e.preventDefault(); tick(); }
           else if (e.key.toLowerCase() === 'p') cycle(task.id);
           else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); remove(); }
         }}
