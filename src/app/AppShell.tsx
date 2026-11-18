@@ -123,7 +123,7 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', onKey);
   }, [navigate]);
   const link = ({ isActive }: { isActive: boolean }) =>
-    `flex h-11 items-center gap-3 rounded-md px-2.5 text-[14.5px] font-medium outline-offset-0 max-lg:justify-center ${isActive ? 'bg-surface-sheet font-semibold text-text shadow-sheet ring-1 ring-line' : 'text-text-muted hover:bg-surface-well'}`;
+    `press flex h-11 items-center gap-3 rounded-md px-2.5 text-[14.5px] font-medium outline-offset-0 max-lg:justify-center ${isActive ? 'bg-surface-sheet font-semibold text-text shadow-sheet ring-1 ring-line' : 'text-text-muted hover:bg-surface-well'}`;
 
   return (
     <div className="min-h-dvh sm:pl-[72px] lg:pl-[200px] min-[1440px]:pl-[216px]">

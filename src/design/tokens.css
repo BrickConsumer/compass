@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './fonts.css';
+@import './motion.css';
 
 /* Single source of design tokens. Mirrors docs/compass-art-direction.md, section 17. */
 @theme {

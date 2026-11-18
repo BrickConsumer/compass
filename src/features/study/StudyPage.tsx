@@ -1,6 +1,6 @@
 import { ArrowLeft, CalendarSync, Plus } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { type CSSProperties, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { dayOfMonth, relativeDay, shortDay, weekdayShort, weekStartOf } from '../../domain/dates';
 import { byLevel, levelRank, levelsFor } from '../../domain/levels';
@@ -133,8 +133,8 @@ export function StudyPage() {
       <div className="grid items-start gap-x-8 gap-y-6 lg:grid-cols-[300px_minmax(0,1fr)]">
         <nav aria-label="Subjects" className={chosen ? 'max-lg:hidden' : ''}>
           <ul>
-            {ordered.map((s) => (
-              <li key={s.id} className="border-t border-line first:border-t-0">
+            {ordered.map((s, i) => (
+              <li key={s.id} style={{ '--i': i } as CSSProperties} className="rise-in border-t border-line first:border-t-0">
                 <Link to={`/study/${s.id}`} data-subject={s.id} aria-current={open?.id === s.id ? 'page' : undefined}
                   className="grid min-h-[60px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 rounded-md px-3 py-2 outline-offset-0 hover:bg-surface-well lg:aria-[current=page]:bg-surface-well sm:pl-5">
                   <span aria-hidden="true" className="size-2.5 rounded-full" style={{ background: SUBJECT_COLOURS[s.colour].dot }} />

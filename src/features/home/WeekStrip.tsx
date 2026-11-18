@@ -1,7 +1,7 @@
-import { AnimatePresence, useIsPresent, useReducedMotion } from 'motion/react';
+import { AnimatePresence, LayoutGroup, useIsPresent, useReducedMotion } from 'motion/react';
 import * as motion from 'motion/react-m';
-import { type Ref, useRef } from 'react';
-import { EXIT, MOVE } from '../../design/motion';
+import { type Ref, useEffect, useRef } from 'react';
+import { EASE_IN_OUT, EXIT, KNOB_ARC, KNOB_STRETCH, MOVE } from '../../design/motion';
 import { addDaysISO, dayOfMonth, longDate, weekDays, weekdayShort } from '../../domain/dates';
 import type { Progress } from '../../domain/tasks';
 import type { Assessment, ISODate } from '../../domain/types';
@@ -26,6 +26,20 @@ function Marks({ done, total, inverse }: Progress & { inverse: boolean }) {
   );
 }
 
+/**
+ * The selected day's fill: one knob that slides from day to day (the same layout id, so it is moved, never redrawn).
+ * On the way it stretches 12% along its travel and lifts a few pixels, so it moves in an arc, and settles flat.
+ * `settle` is false on the first render of a week, where the knob simply arrives with the strip.
+ */
+function Knob({ settle }: { settle: boolean }) {
+  return (
+    <motion.span layoutId="day-knob" aria-hidden="true" transition={MOVE} className="absolute inset-0 -z-10 rounded-[14px] sm:rounded-lg">
+      <motion.span initial={{ scaleX: 1, y: 0 }} animate={settle ? { scaleX: [1, KNOB_STRETCH, 1], y: [0, KNOB_ARC, 0] } : { scaleX: 1, y: 0 }} transition={{ duration: MOVE.duration, ease: EASE_IN_OUT }}
+        className="block size-full rounded-[inherit] bg-surface-inverse" />
+    </motion.span>
+  );
+}
+
 /** How far the strip travels as one week gives way to the next: a nudge in the direction of travel, not a full sweep. */
 const TRAVEL = 28;
 /** A drag or flick past this changes the week. */
@@ -37,6 +51,9 @@ const SWIPE = { distance: 56, speed: 420 };
  */
 function Week({ weekStart, selected, today, marks, assessments, onSelect, direction, ref }: Props & { direction: number; ref?: Ref<HTMLDivElement> }) {
   const present = useIsPresent(), reduced = useReducedMotion(), dragged = useRef(false);
+  // the knob only travels once the week is on screen: on its first render it simply arrives with the strip
+  const settled = useRef(false);
+  useEffect(() => { settled.current = true; }, []);
   return (
     <motion.div ref={ref} custom={direction}
       variants={{
@@ -58,13 +75,16 @@ function Week({ weekStart, selected, today, marks, assessments, onSelect, direct
       // sideways belongs to the strip, up and down to the page
       style={{ touchAction: 'pan-y' }}
       className="grid grid-cols-7 gap-[3px] sm:gap-2">
+      {/* named by the week, so the knob moves between days of this week and never across weeks */}
+      <LayoutGroup id={weekStart}>
       {weekDays(weekStart).map((date, i) => {
         const on = date === selected, isToday = date === today, m = marks[i] ?? { done: 0, total: 0 }, due = assessments.find((a) => a.date === date);
         const name = [longDate(date), isToday ? 'today' : '', m.total ? `${m.done} of ${m.total} tasks done` : 'nothing planned', due ? due.title : '', on ? 'selected' : ''].filter(Boolean).join(', ');
         return (
           <button key={date} type="button" data-date={date} tabIndex={on ? 0 : -1} aria-pressed={on} aria-current={isToday ? 'date' : undefined} aria-label={name}
             onClick={() => { if (!dragged.current) onSelect(date); }} draggable={false}
-            className={`relative flex h-[68px] cursor-pointer flex-col justify-between rounded-[14px] px-0 py-2 text-left transition-colors duration-[140ms] max-sm:items-center sm:h-[86px] sm:rounded-lg sm:px-3.5 sm:py-2.5 lg:px-5 ${on ? 'bg-surface-inverse text-text-inverse outline-focus-inverse' : 'hover:bg-surface-well'}`}>
+            className={`press relative isolate flex h-[68px] cursor-pointer flex-col justify-between rounded-[14px] px-0 py-2 text-left max-sm:items-center sm:h-[86px] sm:rounded-lg sm:px-3.5 sm:py-2.5 lg:px-5 ${on ? 'text-text-inverse outline-focus-inverse' : 'hover:bg-surface-well'}`}>
+            {on && <Knob settle={settled.current} />}
             <span className={`flex w-full justify-between text-[12.5px] font-semibold max-sm:justify-center ${on ? 'text-text-inverse-muted' : isToday ? 'text-text-link' : 'text-text-muted'}`}>
               <span><span className="sm:hidden">{weekdayShort(date)[0]}</span><span className="max-sm:hidden">{weekdayShort(date)}</span></span>
               {isToday && <span className="max-lg:hidden">Today</span>}
@@ -83,6 +103,7 @@ function Week({ weekStart, selected, today, marks, assessments, onSelect, direct
           </button>
         );
       })}
+      </LayoutGroup>
     </motion.div>
   );
 }

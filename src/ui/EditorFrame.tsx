@@ -2,12 +2,12 @@ import { X } from 'lucide-react';
 import { useDragControls } from 'motion/react';
 import * as motion from 'motion/react-m';
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { EASE_IN_OUT, ENTER, EXIT, SHEET } from '../design/motion';
+import { EASE_IN_OUT, ENTER, EXIT, POPOVER_FROM, SHEET } from '../design/motion';
 import { placeBeside } from './place';
 
 /** Popover on the right, sheet below: the two ways an editor arrives and leaves. */
 const SHOWN = { wide: { opacity: 1, scale: 1, transition: ENTER }, sheet: { y: 0, opacity: 1, transition: SHEET } };
-const AWAY = { wide: { opacity: 0, scale: 0.97, transition: EXIT }, sheet: { y: '100%', opacity: 0.4, transition: { duration: 0.2, ease: EASE_IN_OUT } } };
+const AWAY = { wide: { opacity: 0, scale: POPOVER_FROM, transition: EXIT }, sheet: { y: '100%', opacity: 0.4, transition: { duration: 0.2, ease: EASE_IN_OUT } } };
 /** A sheet dragged or flicked down past this is dismissed. */
 const DISMISS = { distance: 110, speed: 520 };
 
@@ -39,6 +39,8 @@ interface Props {
 export function EditorFrame({ open, anchor, title, labelId, onClose, children }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const wide = useWide(), [closing, setClosing] = useState(false), [spot, setSpot] = useState<{ left: number; top: number } | null>(null);
+  // where on the panel the row that opened it is, so it grows from there and goes back to it
+  const [origin, setOrigin] = useState('top left');
   const grip = useDragControls();
   useLayoutEffect(() => {
     const d = ref.current;
@@ -56,7 +58,14 @@ export function EditorFrame({ open, anchor, title, labelId, onClose, children }:
   useLayoutEffect(() => {
     const d = ref.current, row = open && anchor && wide ? document.querySelector<HTMLElement>(anchor) : null;
     if (!d || !row) { setSpot(null); return; }
-    const place = () => setSpot(placeBeside(row.getBoundingClientRect(), { width: d.offsetWidth, height: d.offsetHeight }, { width: window.innerWidth, height: window.innerHeight }));
+    const place = () => {
+      const r = row.getBoundingClientRect(), size = { width: d.offsetWidth, height: d.offsetHeight };
+      const at = placeBeside(r, size, { width: window.innerWidth, height: window.innerHeight });
+      setSpot(at);
+      // the point of the panel nearest the middle of the row
+      const x = Math.min(Math.max(r.left + r.width / 2 - at.left, 0), size.width), y = Math.min(Math.max(r.top + r.height / 2 - at.top, 0), size.height);
+      setOrigin(`${Math.round(x)}px ${Math.round(y)}px`);
+    };
     place(); row.dataset.editing = 'true';
     window.addEventListener('resize', place);
     return () => { window.removeEventListener('resize', place); delete row.dataset.editing; };
@@ -80,7 +89,7 @@ export function EditorFrame({ open, anchor, title, labelId, onClose, children }:
           onAnimationComplete={() => { if (closing) onClose(); }}
           drag={wide ? false : 'y'} dragListener={false} dragControls={grip} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 1 }}
           onDragEnd={(_, info) => { if (info.offset.y > DISMISS.distance || info.velocity.y > DISMISS.speed) requestClose(); }}
-          style={{ transformOrigin: 'top left' }}
+          style={{ transformOrigin: wide ? origin : 'top left' }}
           className="max-h-[calc(100dvh-24px)] overflow-y-auto rounded-xl bg-surface-sheet shadow-float max-sm:rounded-b-none max-sm:pb-[env(safe-area-inset-bottom,0px)]">
           <div className="flex flex-col gap-4 p-5">
             {/* on phones the header is the handle: drag it down to close */}
@@ -100,4 +109,4 @@ export function EditorFrame({ open, anchor, title, labelId, onClose, children }:
 }
 
 /** A choice in an editor: a day, a priority, a subject. Smaller with a pointer than under a thumb. */
-export const chip = (on: boolean) => `min-h-11 cursor-pointer rounded-md px-3.5 text-[14.5px] font-medium sm:min-h-9 sm:px-3 sm:text-[14px] ${on ? 'bg-surface-inverse text-text-inverse' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well'}`;
+export const chip = (on: boolean) => `press min-h-11 cursor-pointer rounded-md px-3.5 text-[14.5px] font-medium sm:min-h-9 sm:px-3 sm:text-[14px] ${on ? 'bg-surface-inverse text-text-inverse' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well'}`;

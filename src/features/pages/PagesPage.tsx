@@ -1,5 +1,5 @@
 import { ArrowLeft, Plus } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { longDate, shortDay } from '../../domain/dates';
 import { aimOf, isReached, kindOf, PAGE_KINDS, PAGE_LIMITS, pageLine, pagesAsText, sortPages } from '../../domain/pages';
@@ -87,8 +87,8 @@ export function PagesPage() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast('Your pages were exported as a text file.');
   };
-  const row = (p: Page) => (
-    <li key={p.id} className="border-t border-line first:border-t-0">
+  const row = (p: Page, i: number) => (
+    <li key={p.id} style={{ '--i': i } as CSSProperties} className="rise-in border-t border-line first:border-t-0">
       <Link to={`/pages/${p.id}`} data-page={p.id} aria-current={open?.id === p.id ? 'page' : undefined}
         className="grid min-h-[60px] grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 rounded-md px-3 py-2 outline-offset-0 hover:bg-surface-well lg:aria-[current=page]:bg-surface-well sm:pl-5">
         <KindIcon kind={p.kind} />
