@@ -156,16 +156,48 @@ export interface Boat {
   boundFor?: string;
 }
 
-export interface Settings { weekStartsOn: 0 | 1; seaPaused: boolean; seaFolded: boolean; /** The person's name, for the greeting on Home. Up to 30 characters. */ name?: string }
+/** Which look the app wears. Automatic follows the device. */
+export type Theme = 'auto' | 'light' | 'dark';
 
-/** Dot, tint and text colours for each subject colour (art direction, section 5). */
-export const SUBJECT_COLOURS: Record<SubjectColour, { dot: string; tint: string; text: string }> = {
-  marine: { dot: '#4776A1', tint: '#DAECFD', text: '#234B6E' },
-  teal: { dot: '#208088', tint: '#D3F0F2', text: '#00535A' },
-  seafoam: { dot: '#398166', tint: '#D8F0E5', text: '#12543E' },
-  moss: { dot: '#637B43', tint: '#E4EED9', text: '#3C4F20' },
-  brass: { dot: '#896D32', tint: '#F3E8D3', text: '#5B440D' },
-  clay: { dot: '#996243', tint: '#FBE4D8', text: '#683B20' },
-  rose: { dot: '#9D5D58', tint: '#FDE2DF', text: '#6A3633' },
-  heather: { dot: '#8B608D', tint: '#F4E3F5', text: '#5C395E' },
+export interface Settings {
+  weekStartsOn: 0 | 1; seaPaused: boolean; seaFolded: boolean;
+  /** The person's name, for the greeting on Home. Up to 30 characters. */
+  name?: string;
+  /** Absent in a save from before themes existed, which is the same as automatic. It belongs to the device, so clearing the data leaves it. */
+  theme?: Theme;
+}
+
+type SubjectPaint = Record<SubjectColour, { dot: string; tint: string; text: string }>;
+
+/**
+ * Dot, tint and text colours for each subject colour, in each theme (art direction, section 5).
+ * The dark set keeps each hue and is lighter, so a dot reads against navy as it does against ivory.
+ * The same values are in tokens.css as `--subject-marine-dot` and so on, which a test keeps in step.
+ */
+export const SUBJECT_PAINT: { light: SubjectPaint; dark: SubjectPaint } = {
+  light: {
+    marine: { dot: '#4776A1', tint: '#DAECFD', text: '#234B6E' },
+    teal: { dot: '#208088', tint: '#D3F0F2', text: '#00535A' },
+    seafoam: { dot: '#398166', tint: '#D8F0E5', text: '#12543E' },
+    moss: { dot: '#637B43', tint: '#E4EED9', text: '#3C4F20' },
+    brass: { dot: '#896D32', tint: '#F3E8D3', text: '#5B440D' },
+    clay: { dot: '#996243', tint: '#FBE4D8', text: '#683B20' },
+    rose: { dot: '#9D5D58', tint: '#FDE2DF', text: '#6A3633' },
+    heather: { dot: '#8B608D', tint: '#F4E3F5', text: '#5C395E' },
+  },
+  dark: {
+    marine: { dot: '#7FA8CF', tint: '#2C4661', text: '#ACC6E0' },
+    teal: { dot: '#5FB3BA', tint: '#24495C', text: '#97CED2' },
+    seafoam: { dot: '#6FB597', tint: '#284953', text: '#A1CFBB' },
+    moss: { dot: '#98B274', tint: '#32484B', text: '#BCCDA5' },
+    brass: { dot: '#C2A160', tint: '#3C4446', text: '#D7C298' },
+    clay: { dot: '#D0926E', tint: '#40414A', text: '#E0B8A1' },
+    rose: { dot: '#D18E88', tint: '#404050', text: '#E1B6B2' },
+    heather: { dot: '#BD92BF', tint: '#3B415D', text: '#D4B8D5' },
+  },
 };
+
+/** What a component paints a subject with: the name of its colour in the current theme, which the page resolves. */
+export const SUBJECT_COLOURS = Object.fromEntries(
+  (Object.keys(SUBJECT_PAINT.light) as SubjectColour[]).map((c) => [c, { dot: `var(--subject-${c}-dot)`, tint: `var(--subject-${c}-tint)`, text: `var(--subject-${c}-text)` }]),
+) as SubjectPaint;

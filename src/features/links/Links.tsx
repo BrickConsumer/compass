@@ -35,7 +35,7 @@ export function HomeLinks({ className = '' }: { className?: string }) {
         {links.map((l, i) => <li key={l.id} className={`min-w-0 ${i > 1 ? 'border-t border-line' : ''}`}><Out link={l} className="flex min-h-[50px] items-center justify-between gap-2 rounded-xs text-[15px] font-semibold sm:min-h-11 sm:text-[14.5px]" /></li>)}
       </ul>
       <Link to="/settings#links" className="flex min-h-[46px] items-center gap-3.5 rounded-xs border-t border-line text-[16px] font-medium text-text-muted sm:text-[14.5px]">
-        {!full && <span aria-hidden="true" className="grid size-[22px] place-items-center rounded-[7px] shadow-[inset_0_0_0_1.5px_var(--color-paper-300)]"><Plus size={13} strokeWidth={2.4} /></span>}
+        {!full && <span aria-hidden="true" className="grid size-[22px] place-items-center rounded-[7px] shadow-[inset_0_0_0_1.5px_var(--color-faint)]"><Plus size={13} strokeWidth={2.4} /></span>}
         {full ? 'Change your links' : 'Add a link'}
       </Link>
     </section>

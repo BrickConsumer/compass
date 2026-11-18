@@ -12,6 +12,7 @@ import { canReview, isBlank, reviewAward } from '../domain/review';
 import { madeKey, sessionTasksDue } from '../domain/sessions';
 import { cleanTopic, nextColour } from '../domain/study';
 import { cleanTitle } from '../domain/tasks';
+import { storedTheme } from '../domain/theme';
 import { type Assessment, type Boat, type Feedback, type Habit, type ISODate, type Level, type Page, type PageItem, type PageKind, type Priority, type QuickLink, type RatingArea, type Review, type Session, type Settings, type Subject, SUBJECT_COLOURS, type SubjectColour, type Task } from '../domain/types';
 import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
@@ -558,12 +559,13 @@ export const useCompass = create<CompassStore>()(
         }, milesLogged(s.log), daysAtSea(s.log)),
       })),
       setSettings: (patch) => set((s) => ({
-        settings: { ...s.settings, ...patch, name: patch.name !== undefined ? patch.name.trim().slice(0, 30).trim() || undefined : s.settings.name },
+        settings: { ...s.settings, ...patch, name: patch.name !== undefined ? patch.name.trim().slice(0, 30).trim() || undefined : s.settings.name, theme: patch.theme !== undefined ? storedTheme(patch.theme) : s.settings.theme },
         // the levels are kept by the first day of their week, so they move with it when that day changes
         ...(patch.weekStartsOn !== undefined && patch.weekStartsOn !== s.settings.weekStartsOn ? { levels: rekeyed(s.levels, patch.weekStartsOn) } : {}),
       })),
-      resetSample: () => set(seed(todayISO())),
-      clearAll: () => set(empty()),
+      // the theme belongs to the device and not to the data, so starting again keeps it
+      resetSample: () => set((s) => { const next = seed(todayISO()); return { ...next, settings: { ...next.settings, theme: s.settings.theme } }; }),
+      clearAll: () => set((s) => { const next = empty(); return { ...next, settings: { ...next.settings, theme: s.settings.theme } }; }),
       setSampleVoyage: (miles, days) => set((s) => {
         const log = sampleLog(miles, days, todayISO());
         return { log, boat: clampStage(s.boat, milesLogged(log), daysAtSea(log)) };

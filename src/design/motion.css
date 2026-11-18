@@ -1,0 +1,46 @@
+/*
+ * Motion rules that live in CSS. The values mirror src/design/motion.ts; change them together.
+ * Everything here answers an action or settles a page as it arrives, and nothing runs on its own.
+ */
+
+@theme {
+  --duration-exit: 160ms;   /* an exit is 20% shorter than the 200ms entrance it undoes */
+  --stagger-step: 30ms;     /* one row to the next */
+  --scale-press: 0.97;
+}
+
+/*
+ * Press: a control sinks to 0.97 under the finger and holds there, with no tween while it is held, and eases back out on
+ * release. Added by class to small controls only: a wide row sinking three percent looks like a fault, not feedback.
+ */
+@utility press {
+  transition: scale var(--duration-press) var(--ease-out), background-color var(--duration-quick) var(--ease-out), color var(--duration-quick) var(--ease-out);
+  &:active { scale: var(--scale-press); transition-duration: 0s; }
+  @media (prefers-reduced-motion: reduce) { &:active { scale: 1; } }
+}
+
+/* Details settling: the rows of a list arrive 30ms apart, the first seven staggered and the rest together. */
+@keyframes rise-in {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@utility rise-in {
+  animation: rise-in var(--duration-base) var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 7) * var(--stagger-step));
+  @media (prefers-reduced-motion: reduce) { animation-name: fade-in; }
+}
+
+/* A pulse to confirm: a ring leaves the box that was just ticked. Rendered only for a moment, so nothing replays on load. */
+@keyframes confirm-pulse {
+  from { opacity: 0.45; scale: 1; }
+  to { opacity: 0; scale: 1.75; }
+}
+.confirm-pulse {
+  background: var(--color-positive);
+  animation: confirm-pulse 360ms var(--ease-out) forwards;
+}
+@media (prefers-reduced-motion: reduce) { .confirm-pulse { display: none; } }

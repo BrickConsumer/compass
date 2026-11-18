@@ -21,7 +21,7 @@ export function LinkField({ label, value, onCommit, className }: { label: string
         <input value={draft ?? value} onChange={(e) => { setDraft(e.target.value); setWrong(false); }} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }}
           aria-invalid={wrong} inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="example.org/page" className={`${className} placeholder:text-text-subtle`} />
       </label>
-      {wrong && <p role="alert" className="text-[14px] font-medium text-port-600">{WRONG}</p>}
+      {wrong && <p role="alert" className="text-[14px] font-medium text-attention">{WRONG}</p>}
     </div>
   );
 }

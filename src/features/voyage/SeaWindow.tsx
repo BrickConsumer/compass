@@ -1,4 +1,5 @@
 import { Component, lazy, type ReactNode, type RefObject, Suspense, useEffect, useRef, useState } from 'react';
+import { useTheme } from '../../state/useTheme';
 import type { BoatColours, StageId } from './boat/specs';
 import { BoatPoster } from './poster/BoatPoster';
 import type { Tier } from './tier';
@@ -67,6 +68,8 @@ export interface SeaWindowProps {
   still?: boolean;
   /** Force a performance tier, for the look review. */
   tier?: Tier;
+  /** Show the night's sky. Left out, the theme decides: the sea is at night in the dark theme. */
+  night?: boolean;
   className?: string;
 }
 
@@ -74,8 +77,8 @@ export interface SeaWindowProps {
  * The window onto the sea. The still image is drawn at once and reserves the space;
  * the 3D scene loads afterwards and fades in over it. Without WebGL the still image stays.
  */
-export function SeaWindow({ stage, progress, colours, fittings, boatName, missedYesterday = false, paused = false, still = false, tier, className = '' }: SeaWindowProps) {
-  const reduced = useReducedMotion();
+export function SeaWindow({ stage, progress, colours, fittings, boatName, missedYesterday = false, paused = false, still = false, tier, night, className = '' }: SeaWindowProps) {
+  const reduced = useReducedMotion(), dark = useTheme() === 'dark', atNight = night ?? dark;
   const box = useRef<HTMLDivElement>(null), inView = useInView(box);
   const [running, setRunning] = useState<Tier>();
   const [ready, setReady] = useState(false);
@@ -91,13 +94,13 @@ export function SeaWindow({ stage, progress, colours, fittings, boatName, missed
   useEffect(() => { if (!live) setReady(false); }, [live]);
 
   return (
-    <div ref={box} className={`relative isolate overflow-hidden bg-[#9CC4CC] ${className}`} data-scene={live && ready ? 'live' : 'still'} data-tier={live ? running : undefined} data-asleep={live && !inView ? '' : undefined}>
-      <BoatPoster stage={stage} progress={progress} colours={colours} fittings={fittings} boatName={boatName} missedYesterday={missedYesterday} className="absolute inset-0 size-full" />
+    <div ref={box} className={`relative isolate overflow-hidden bg-sea-loading ${className}`} data-scene={live && ready ? 'live' : 'still'} data-sky={atNight ? 'night' : 'day'} data-tier={live ? running : undefined} data-asleep={live && !inView ? '' : undefined}>
+      <BoatPoster stage={stage} progress={progress} colours={colours} fittings={fittings} boatName={boatName} missedYesterday={missedYesterday} night={atNight} className="absolute inset-0 size-full" />
       {live && (
         <div aria-hidden="true" className="absolute inset-0 transition-opacity duration-[400ms] ease-[var(--ease-out)] motion-reduce:duration-200" style={{ opacity: ready ? 1 : 0 }}>
           <KeepPoster onError={() => setFailed(true)}>
             <Suspense fallback={null}>
-              <Scene stage={stage} progress={progress} colours={colours} fittings={fittings} boatName={boatName} missedYesterday={missedYesterday} still={paused || reduced} asleep={!inView} tier={tier} onTier={setRunning} onReady={() => setReady(true)} />
+              <Scene stage={stage} progress={progress} colours={colours} fittings={fittings} boatName={boatName} missedYesterday={missedYesterday} night={atNight} still={paused || reduced} asleep={!inView} tier={tier} onTier={setRunning} onReady={() => setReady(true)} />
             </Suspense>
           </KeepPoster>
         </div>

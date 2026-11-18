@@ -13,6 +13,8 @@ export interface BoatPosterProps {
   boatName: string;
   /** The day before had tasks planned and none were done: today opens in a storm. */
   missedYesterday?: boolean;
+  /** Show the night's sky, as the dark theme does. */
+  night?: boolean;
   /** Drawing size. The image scales to its box and crops to fill it. */
   width?: number;
   height?: number;
@@ -23,9 +25,9 @@ export interface BoatPosterProps {
  * The still image of the boat on the sea. Shown at once while the 3D scene loads,
  * and kept if WebGL is unavailable. Drawn from the same measurements and light table as the 3D scene.
  */
-export function BoatPoster({ stage, progress, colours, fittings, boatName, missedYesterday = false, width = 1178, height = 276, className }: BoatPosterProps) {
+export function BoatPoster({ stage, progress, colours, fittings, boatName, missedYesterday = false, night = false, width = 1178, height = 276, className }: BoatPosterProps) {
   const id = 'p' + useId().replace(/[^a-zA-Z0-9]/g, '');
-  const state = useMemo(() => sceneState(progress, { missedYesterday }), [progress, missedYesterday]);
+  const state = useMemo(() => sceneState(progress, { missedYesterday, night }), [progress, missedYesterday, night]);
   const markup = useMemo(
     () => seaPoster({ width, height, spec: fitOut(STAGES[stage], fittings), state, colours, id }),
     // the list is compared by what is in it, not by identity

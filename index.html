@@ -4,6 +4,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#F6F0E4" />
+    <style>
+      /* the page's colour before the style sheet arrives, in either theme */
+      html { background: #F6F0E4; }
+      html[data-theme='dark'] { background: #0A1626; }
+    </style>
+    <script>
+      // The theme, set before anything is drawn, so the page never flashes the wrong one. The app keeps it in step from then on.
+      // It reads the saved setting: dark if dark was chosen, or if nothing was chosen and the device is dark.
+      try {
+        var saved = JSON.parse(localStorage.getItem('compass:v1') || '{}');
+        var theme = saved && saved.state && saved.state.settings && saved.state.settings.theme;
+        if (theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.dataset.theme = 'dark';
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0A1626');
+        }
+      } catch (e) { /* storage blocked or unreadable: the light theme, and the app decides once it loads */ }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Compass</title>
   </head>

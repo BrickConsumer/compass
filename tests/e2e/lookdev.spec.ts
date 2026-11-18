@@ -8,7 +8,8 @@ test('the look review page loads the live scene without errors', async ({ page }
   const windows = page.locator('[data-scene]');
   await expect(windows).toHaveCount(2);
   // the still image is there from the first paint, with a description for assistive technology
-  await expect(page.getByRole('img', { name: 'The Kestrel, a sloop, under sail in clear daylight.' }).first()).toBeVisible();
+  // by day in the light theme, by night in the dark one
+  await expect(page.getByRole('img', { name: /^The Kestrel, a sloop, under sail (in clear daylight|beneath the stars)\.$/ }).first()).toBeVisible();
   await expect(windows.first()).toHaveAttribute('data-scene', 'live', { timeout: 15_000 });
   expect(errors).toEqual([]);
 });
@@ -33,6 +34,8 @@ test('without WebGL the still image stays and nothing breaks', async ({ page }) 
 test('the still image follows the day, a rest day is in port, and a missed day brings a storm', async ({ page }) => {
   await page.goto('/lookdev');
   await page.getByLabel('Still image only').check();
+  // this test is about the day's sky, whatever theme the suite is run in
+  await page.getByLabel("Night (the dark theme's sea)").uncheck();
   await page.locator('#done').fill('5');
   await expect(page.getByRole('img', { name: 'The Kestrel, a sloop, under full sail at golden hour.' }).first()).toBeVisible();
   await page.locator('#done').fill('0');

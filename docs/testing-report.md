@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 13 added on 17 November and section 14 on 18 November |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November and sections 14 and 15 on 18 November |
 | Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it. Section 14, the Study detail, is on the branch `study-detail`, cut from that |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 284 unit tests pass and 147 browser tests pass. Those counts include the additions in section 13 and the Study detail in section 14; before the two it was 225 and 72, and all of those still pass unchanged.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 313 unit tests pass and 159 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14 and the Study detail in section 15; before the three it was 225 and 72, and all of those still pass unchanged.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -481,7 +481,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 16). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 17). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -500,7 +500,58 @@ None of the three is fixed here.
 
 The larger calls are in the specification, section 12.
 
-## 14. Study detail
+## 14. Night and the dark theme
+
+Built on 17 and 18 November on the branch `night-dark-theme`, to [night-and-dark-theme-spec.md](night-and-dark-theme-spec.md), on top of the Home and Weekly review additions. Committed on 18 November with Oliver's approval. He saw the pictures that day, kept the blue selection and approved the look as built. Josh and Aditya have seen nothing.
+
+![Home in the dark theme at 1440 px](screenshots/night/home-1440.png)
+
+<img src="screenshots/night/home-390.png" alt="Home in the dark theme at 390 px" width="286">
+
+Every screen is pictured in [screenshots/night/](screenshots/night/) at 1440 and 390 px, with seven pictures of the sea at night.
+
+### What was built
+
+- **A theme setting:** Automatic, Light or Dark, in Settings under Appearance and in the command menu. Automatic follows the device. The choice is kept through a reload, through "Reset the sample data" and through "Clear everything".
+- **A dark palette** for every screen: navy surfaces, ivory ink, and a lighter set of subject colours.
+- **The sea at night,** which comes with the dark theme: dusk with nothing done, stars part-way, moonrise with everything done, lit portlights, an evening in port, and a storm with no stars. The still image follows it.
+- **Colour roles.** No component names a colour step any more. This is what lets one block of values turn the whole app dark.
+
+### Checked
+
+- **Unit tests:** 285 pass. New ones cover the theme setting, the night's light, the rule that no component names a colour step, and the contrast of every pair in the dark palette.
+- **Browser tests, light theme:** all 127 pass.
+- **Browser tests, device set to dark:** all 127 pass. This is the whole suite run as a dark device sees the app (`PW_THEME=dark`).
+- **Browser tests as CI runs them:** 121 pass and 6 are skipped, the same six as before.
+- These three runs, the unit tests and the build were all run again on 18 November after the last change to the code.
+- **Twelve new browser tests** for the theme: dark before the app loads, each of the three settings, the night's four spoken descriptions, the still image's stars, the live night scene with no console errors, the contrast of each element's own colours at 1440 and 390 px, and no sideways scroll at five widths.
+- **The light theme is unchanged.** Every screen was pictured before the work and after it and compared pixel by pixel. The one change is the new Appearance section in Settings. A few hundred pixels on two screens differ by a shade from one run to the next on identical code, at the edges of rounded marks; that was confirmed by picturing the same code twice.
+- **The build** passes.
+
+### A morning of broken runs
+
+On 18 November the laptop was installing a system update, and browser runs that take under a minute took between six and twenty-eight. Tests failed by running out of time, a different few each run. They were sorted into slowness and faults by running the failed tests one at a time with a long limit: every one passed but one, and that one was a real fault (below). The runs above were made after it was fixed, with the laptop kept awake.
+
+### Found on the way
+
+- **The command menu could swallow a key.** On opening, the search box showed its last query for an instant, and a key pressed in that instant was added to it. A new test failed one run in three because of it; 9 openings of 30 showed it, and none of 30 after the fix. It is older than this work.
+- **An editor opened straight after another closed could shut at once.** The browser says a dialog has closed a moment after it closes. If an editor was opened again in that moment, for another row, the late word closed the new one. Under the CI settings on a slow machine, "a session can be changed and ended" failed 8 runs of 10 because of it, and passes 10 of 10 with the fix, which is one line in the frame every editor shares. It is older than this work, so the branches below this one still have it.
+- **The dark palette in the mock did not pass.** The mock's selection blue was 2.2 to 1 against the sheet. The built blue is `#3073AD` (3.0 against the sheet, 4.8 under its ivory text). Nothing quieter than the brightest ivory is readable on it, so the small labels on a selected day are full ivory.
+- **The browser's own tick box is neutral grey on a dark page.** The two in Settings are restyled in the dark theme only.
+
+### Calls made in the build that the founders can overrule
+
+- The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 17).
+- With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear.
+- Frame rate with the night scene.
+- A device that changes theme by itself at sunset.
+
+## 15. Study detail
 
 Built on 18 November on the branch `study-detail`, to [study-detail-spec.md](study-detail-spec.md). It is the second of five pieces of Aditya's plan. The sample gains a topic and one piece of feedback on Biology. No sample task was changed, so every count on Home, in Study and in the Weekly review is as it was.
 
@@ -560,15 +611,27 @@ It also noted two things that are older than this piece: a subject brought back 
 - **An editor opened in the moment after another closed was shut again.** The browser reports a dialog's close slightly after it happens, and the frame the editors share took the late report to be about the editor now open. An older Study test began to fail once the page's order changed, which is how it was found. It is fixed in the frame, so for every editor.
 - **A feedback entry of one short line was 41 px tall on a phone,** under the 44 px a thumb needs. The test that measures every new control found it. Fixed.
 
+### Brought up to date with `main`
+
+On 18 November, after the piece was committed, `main` was merged into the branch. By then `main` held night and the dark theme, the motion system and the new type, none of which this piece was built on.
+
+- **Seven files were changed on both sides,** five of them code. Each was settled by keeping both changes. The fix to the editors' frame had been made on both sides, in the same words but for the comment.
+- **Two of the new parts named a colour step,** for the line that says an address is refused. They now name the role, which is what lets the dark theme colour them and what `src/design/roles.test.ts` requires.
+- **Unit tests:** 313 pass. That is the 285 on `main` and the 28 of this piece.
+- **Browser tests:** all 159 pass in the light theme, and all 159 pass with the device set to dark (`PW_THEME=dark`). Run as CI runs them, 153 pass and the six sea tests are skipped. That is the 127 on `main` and the 32 of this piece.
+- **The build** passes.
+- **In the dark theme,** a subject's page was opened at 1440 and 375 px. The new parts are drawn in the dark palette and the new type, nothing is wider than the screen, and the console is clean. The text that was measured (the topic, feedback, the starters and their label, and the links' button) is 7.1 to 1 or better against what is behind it. The rest was not measured.
+- **The pictures in this section were taken before the merge.** They show the light theme and the type as it was.
+
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 16).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 17).
 
 ### Calls made in the build that the founders can overrule
 
 They are in the specification: section 13 for the calls made in the design, and section 16 for those made in the build. The largest is that a subject's links are changed in place on its page, not in a pop-up editor.
 
-## 15. Built differently from the approved spec
+## 16. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -582,11 +645,12 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 16. Known limitations
+## 17. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
 - The storm's breaking crests look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
-- Dark theme, the night scene, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
+- Drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
+- Night and the dark theme are built and approved by Oliver. Josh and Aditya have not seen them (section 14).
 - Tested in Chrome only. Safari and Firefox have not been opened.

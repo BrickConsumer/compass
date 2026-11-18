@@ -14,8 +14,8 @@ import { toast } from '../../ui/Toast';
 // shared with the feedback editor, so every editor on a subject's page looks the same
 export const label = 'flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted';
 export const field = 'h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]';
-export const done = 'ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-deep-700';
-export const del = 'flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-port-600 hover:bg-port-100';
+export const done = 'ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-surface-inverse-hover';
+export const del = 'flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-attention hover:bg-attention-tint';
 
 /** Rename a subject, say what it is on now, choose its colour, or delete it. Changes save as they are made. `focus` opens it with the cursor in the topic box. */
 export function SubjectEditor({ id, focus, onClose }: { id: string | null; focus?: 'topic'; onClose: () => void }) {
@@ -148,7 +148,7 @@ export function SessionEditor({ editing, onClose }: { editing: EditingSession | 
               <button type="button" aria-pressed={same(value.days, EVERY)} onClick={() => change({ days: EVERY })} className={chip(same(value.days, EVERY))}>Every day</button>
               <button type="button" aria-pressed={same(value.days, WEEKDAYS)} onClick={() => change({ days: WEEKDAYS })} className={chip(same(value.days, WEEKDAYS))}>Weekdays</button>
             </div>
-            {isNew && tried && value.days.length === 0 && <p role="alert" className="mt-2 text-[13.5px] font-medium text-port-700">Choose at least one day.</p>}
+            {isNew && tried && value.days.length === 0 && <p role="alert" className="mt-2 text-[13.5px] font-medium text-attention-strong">Choose at least one day.</p>}
           </fieldset>
           <p className="text-[13.5px] text-text-muted">{isNew
             ? 'Each of these days gets a task with this name when its week arrives. It is an ordinary task: tick it, move it, or delete it for a day off.'

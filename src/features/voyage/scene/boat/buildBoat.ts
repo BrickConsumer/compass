@@ -93,8 +93,9 @@ export interface BuiltBoat {
 /**
  * Build a boat from its measurements. Metres; +x bow, +y up, +z starboard, origin amidships on the waterline.
  * `mirror` builds the same boat in flat reflection paint, for the image in the water.
+ * `lit` lights her portlights, for dusk and night.
  */
-export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?: boolean; furled?: boolean; clip?: Plane } = {}): BuiltBoat {
+export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?: boolean; furled?: boolean; clip?: Plane; lit?: boolean } = {}): BuiltBoat {
   const root = new Group(), g = new Group();
   g.position.x = -spec.L / 2;
   root.add(g);
@@ -119,7 +120,8 @@ export function buildBoat(spec: BoatSpec, colours: BoatColours, opts: { mirror?:
     cabin: () => paint('cabin', () => solid(PAINT.cabin, 0.7), PAINT.cabin),
     roof: () => paint('roof', () => solid(PAINT.roof, 0.55), PAINT.roof),
     brass: () => paint('brass', () => solid(PAINT.brass, 0.35, 0.9), PAINT.brass),
-    glass: () => paint('glass', () => solid(PAINT.glass, 0.2, 0.3), PAINT.glass),
+    // at dusk and at night the lamps are lit below, so the portlights glow as the lanterns do
+    glass: () => paint('glass', () => (opts.lit ? solid(PAINT.lantern, 0.4, 0, 0.85) : solid(PAINT.glass, 0.2, 0.3)), opts.lit ? PAINT.lantern : PAINT.glass),
     rig: () => paint('rig', () => solid(PAINT.rig, 0.6), PAINT.rig),
     sail: () => paint('sail', () => sailMaterial(colours.sail), colours.sail),
     // every flag is one mesh, each strip in its own colour, so its reflection takes its colours from the same place

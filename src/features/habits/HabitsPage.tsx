@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { type CSSProperties, useState } from 'react';
 import { addDaysISO, dayOfMonth, isoWeek, longDate, weekDays, weekLabel, weekStartOf } from '../../domain/dates';
 import { daysLabel, weekCount, weekdayName, weekRow } from '../../domain/habits';
 import { weekdayOf } from '../../domain/dates';
@@ -9,7 +9,7 @@ import { SegmentedProgress } from '../../ui/SegmentedProgress';
 import { HabitEditor } from './HabitEditor';
 import { HabitTick } from './HabitTick';
 
-const square = 'grid size-11 cursor-pointer place-items-center rounded-md bg-surface-sheet shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well sm:size-9';
+const square = 'press grid size-11 cursor-pointer place-items-center rounded-md bg-surface-sheet shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well sm:size-9';
 /** One row of the week: the habit's name, its seven days, and its count. On phones the days go under the name. */
 const ROW = 'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 sm:grid-cols-[minmax(0,1fr)_308px_4.5rem]';
 
@@ -33,7 +33,7 @@ export function HabitsPage() {
           <span className="px-1 text-center sm:min-w-[9.5rem]" aria-live="polite">{weekLabel(week)}</span>
           <button type="button" className={square} onClick={() => setWeek(addDaysISO(week, 7))} aria-label="Next week"><ChevronRight size={17} aria-hidden="true" /></button>
           <button type="button" onClick={() => setWeek(thisWeek)} disabled={week === thisWeek}
-            className="h-11 cursor-pointer rounded-md bg-surface-sheet px-3.5 text-[13.5px] font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well disabled:cursor-default disabled:text-text-subtle disabled:hover:bg-surface-sheet sm:h-9">This week</button>
+            className="press h-11 cursor-pointer rounded-md bg-surface-sheet px-3.5 text-[13.5px] font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well disabled:cursor-default disabled:text-text-subtle disabled:hover:bg-surface-sheet sm:h-9">This week</button>
         </div>
       </header>
 
@@ -51,7 +51,7 @@ export function HabitsPage() {
             <span className="max-sm:hidden" />
             <div className="grid grid-cols-7 max-sm:col-span-2">
               {days.map((d) => (
-                <span key={d} className={`flex flex-col items-center text-[12.5px] font-semibold leading-[1.25] ${d === today ? 'text-marine-600' : 'text-text-muted'}`}>
+                <span key={d} className={`flex flex-col items-center text-[12.5px] font-semibold leading-[1.25] ${d === today ? 'text-text-link' : 'text-text-muted'}`}>
                   {weekdayName(weekdayOf(d))}<span className="font-display text-[17px] font-medium text-text">{dayOfMonth(d)}</span>
                 </span>
               ))}
@@ -61,10 +61,10 @@ export function HabitsPage() {
         )}
 
         <ul>
-          {list.map((h) => {
+          {list.map((h, i) => {
             const row = weekRow(h, ticks, week, today), c = weekCount(h, ticks, week, today);
             return (
-              <li key={h.id} data-habit-row={h.id} className={`${ROW} border-t border-line py-1.5 first:border-t-0 data-[editing=true]:bg-surface-well`}>
+              <li key={h.id} data-habit-row={h.id} style={{ '--i': i } as CSSProperties} className={`rise-in ${ROW} border-t border-line py-1.5 first:border-t-0 data-[editing=true]:bg-surface-well`}>
                 <button type="button" onClick={() => setEditing(h.id)} className="flex min-h-11 min-w-0 cursor-pointer flex-col justify-center rounded-[9px] text-left outline-offset-0">
                   <span className="truncate text-[15.5px] font-medium max-sm:text-[16px]">{h.name}</span>
                   <span className="text-[13px] text-text-muted">{daysLabel(h.days, startsOn)}</span>

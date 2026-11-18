@@ -84,3 +84,72 @@ describe('scene state', () => {
     expect(describeScene('The Kestrel', 'Sloop', sceneState(0, { missedYesterday: true }))).toBe('The Kestrel, a sloop, riding out a storm.');
   });
 });
+
+describe('the night, which comes with the dark theme', () => {
+  const day = (p: number) => lightFor(p, 0), night = (p: number) => lightFor(p, 0, 1);
+
+  it('by day nothing changes: no stars, no lamps, the boat fully lit', () => {
+    for (const p of [0, 0.25, 0.5, 0.75, 1]) {
+      expect(day(p)).toEqual(lightAt(p));
+      expect(lightFor(p, 0, 0)).toEqual(lightAt(p));
+      expect(day(p)).toMatchObject({ stars: 0, lamps: 0, lit: 1 });
+    }
+  });
+
+  it('opens on dusk, with the sun just down and the lamps lit', () => {
+    expect(night(0)).toMatchObject({ skyTop: '#34406e', skyHorizon: '#f0a271', sun: '#ffb27a', stars: 0, lamps: 1 });
+    expect(night(0).lit).toBeGreaterThan(0.6);
+    expect(night(0).lit).toBeLessThan(1);
+  });
+
+  it('half way the sky has cleared to stars, with no moon yet', () => {
+    expect(night(0.5)).toMatchObject({ skyTop: '#081428', waterDeep: '#061226', stars: 1, sunAmount: 0, lamps: 1 });
+  });
+
+  it('with everything done the moon rises and lays a path on the water, as the sun does at golden hour', () => {
+    expect(night(1)).toMatchObject({ skyTop: '#0c1a36', sun: '#f1f4ff', sunAmount: 1, glitter: 1 });
+    expect(night(1).glitter).toBe(day(1).glitter);
+    expect(night(1).stars).toBeGreaterThan(0.5);
+  });
+
+  it('the boat is never a silhouette: she keeps at least a quarter of her light', () => {
+    for (const p of [0, 0.3, 0.5, 0.8, 1]) for (const storm of [0, 0.5, 1]) expect(lightFor(p, storm, 1).lit).toBeGreaterThanOrEqual(0.25);
+  });
+
+  it('changing theme eases from one sky to the other', () => {
+    expect(lightFor(0.5, 0, 0.5).skyTop).toBe(mixHex(day(0.5).skyTop, night(0.5).skyTop, 0.5));
+    expect(lightFor(0.5, 0, 0.5).stars).toBeCloseTo(0.5);
+    expect(lightFor(0.5, 0, 7)).toEqual(night(0.5));
+    expect(lightFor(0.5, 0, NaN)).toEqual(day(0.5));
+  });
+
+  it('a storm at night has no stars, and clears toward the night and not the day', () => {
+    expect(lightFor(0, 1, 1).stars).toBe(0);
+    expect(lightFor(0, 1, 1).skyTop).not.toBe(lightFor(0, 1, 0).skyTop);
+    expect(lightFor(1, 0, 1)).toEqual(night(1));
+    for (const v of Object.values(lightFor(0.4, 0.6, 1))) { if (typeof v === 'string') expect(v).toMatch(HEX); else expect(Number.isFinite(v)).toBe(true); }
+  });
+
+  it('the scene knows it is night, and a day in port is an evening with the lamps lit', () => {
+    expect(sceneState(0.6).night).toBe(false);
+    expect(sceneState(0.6, { night: true }).night).toBe(true);
+    expect(sceneState(0.6, { night: true }).light).toEqual(night(0.6));
+    const port = sceneState(null, { night: true });
+    expect(port.inPort).toBe(true);
+    expect(port.light.lamps).toBe(1);
+    expect(port.light).toEqual(night(0.45));
+    // everything but the sky is as by day
+    const { light: a, night: n1, ...restNight } = sceneState(0.6, { night: true }), { light: b, night: n2, ...restDay } = sceneState(0.6);
+    expect(restNight).toEqual(restDay);
+    expect([a === b, n1, n2]).toEqual([false, true, false]);
+  });
+
+  it('is described for someone who cannot see it', () => {
+    const say = (progress: number | null, day = {}) => describeScene('The Kestrel', 'Sloop', sceneState(progress, { night: true, ...day }));
+    expect(say(0)).toBe('The Kestrel, a sloop, on still water at dusk.');
+    expect(say(0.6)).toBe('The Kestrel, a sloop, under sail beneath the stars.');
+    expect(say(1)).toBe('The Kestrel, a sloop, under full sail by moonlight.');
+    expect(say(null)).toBe('The Kestrel, a sloop, moored in port for the evening.');
+    expect(say(0, { missedYesterday: true })).toBe('The Kestrel, a sloop, riding out a storm.');
+  });
+});

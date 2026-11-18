@@ -1,5 +1,5 @@
 import { type BoatColours, type BoatSpec, DEFAULT_COLOURS, tallOf } from '../boat/specs';
-import { mixHex, type SceneState } from '../light';
+import { type Light, mixHex, type SceneState } from '../light';
 import { drawBoat, type PosterLook } from './drawBoat';
 
 const f1 = (n: number) => Math.round(n * 10) / 10;
@@ -12,16 +12,24 @@ function seeded(seed: number): () => number {
   return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
 }
 
-/** Paint for the boat under a given light, from the user's chosen colours. */
-export function posterLook(colours: BoatColours, progress: number, plan = false): PosterLook {
+/** Moonlight on sailcloth and paint: a cool blue-grey that the boat's colours sink toward as the light goes. */
+const MOONLIT = '#31445f';
+
+/**
+ * Paint for the boat under a given light, from the user's chosen colours.
+ * Given the light itself, the sails and paint dim with it, and the portlights are lit once the lamps are.
+ */
+export function posterLook(colours: BoatColours, progress: number, plan = false, light?: Light): PosterLook {
   const hull = safe(colours.hull, DEFAULT_COLOURS.hull), sail = safe(colours.sail, DEFAULT_COLOURS.sail), pennant = safe(colours.pennant, DEFAULT_COLOURS.pennant);
   const p = progress;
-  const sailLit = mixHex(mixHex(sail, '#f1f4f2', (1 - p) * 0.5), '#ffe8b8', p * 0.5);
-  const sailShade = mixHex(mixHex(mixHex(sail, '#0e243a', 0.1), '#d5dbdb', (1 - p) * 0.4), '#e3b982', p * 0.42);
+  // by day `dim` is 0 and every colour is exactly as it was; by night the boat keeps her shape and loses her brightness
+  const dim = light ? (1 - light.lit) * 0.72 : 0, lamps = (light?.lamps ?? 0) > 0.5, by = (c: string) => (dim ? mixHex(c, MOONLIT, dim) : c);
+  const sailLit = by(mixHex(mixHex(sail, '#f1f4f2', (1 - p) * 0.5), '#ffe8b8', p * 0.5));
+  const sailShade = by(mixHex(mixHex(mixHex(sail, '#0e243a', 0.1), '#d5dbdb', (1 - p) * 0.4), '#e3b982', p * 0.42));
   return {
-    hull: [mixHex(hull, '#ffffff', 0.16), hull], sail: [sailShade, sailLit],
-    boot: '#F6F0E4', cove: '#D8B768', rail: '#A8733D', cabin: '#EFE6D3', roof: '#8B5E36', glass: '#16344F', brass: '#C9A552',
-    spar: '#B88A55', sailEdge: 'rgba(14,36,58,.2)', sailShade: mixHex(sail, '#0e243a', 0.12), seam: 'rgba(14,36,58,.12)', batten: 'rgba(14,36,58,.24)',
+    hull: [by(mixHex(hull, '#ffffff', 0.16)), by(hull)], sail: [sailShade, sailLit],
+    boot: by('#F6F0E4'), cove: '#D8B768', rail: by('#A8733D'), cabin: by('#EFE6D3'), roof: by('#8B5E36'), glass: lamps ? '#F2D488' : '#16344F', brass: '#C9A552',
+    spar: by('#B88A55'), sailEdge: 'rgba(14,36,58,.2)', sailShade: mixHex(sail, '#0e243a', 0.12), seam: 'rgba(14,36,58,.12)', batten: 'rgba(14,36,58,.24)',
     rig: 'rgba(14,36,58,.5)', pennant, ensign: '#1A619B', lantern: '#EBCB7C',
     under: plan ? 'rgba(140,45,43,.38)' : undefined,
   };
@@ -65,6 +73,16 @@ export function seaPoster(o: SeaPosterOptions): string {
   D.push(`<filter id="${id}c" x="-20%" y="-300%" width="140%" height="700%"><feGaussianBlur stdDeviation="${f1(W * 0.007)} ${f1(H * 0.006)}"/></filter>`);
 
   G.push(`<rect width="${W}" height="${hz + 1}" fill="url(#${id}a)"/>`);
+  if (Lt.stars > 0.01) {
+    // stars, fixed in their places by a generator of their own, so the day's picture is not changed by them
+    const S = seeded(23);
+    let stars = '';
+    for (let i = 0; i < 90; i++) {
+      const x = f1(S() * W), y = f1(S() * hz * 0.86), r = f1((0.45 + S() * 0.75) * Math.max(0.6, H / 276)), a = (0.35 + 0.65 * S()) * Lt.stars * (1 - 0.8 * Lt.hazeAmount * (y / hz));
+      stars += `<circle cx="${x}" cy="${y}" r="${r}" fill="#dfe7fa" opacity="${a.toFixed(2)}"/>`;
+    }
+    G.push(stars);
+  }
   if (Lt.sunAmount > 0.02) {
     G.push(`<circle cx="${sunX}" cy="${sunY}" r="${f1(H * 0.52)}" fill="url(#${id}s)" opacity="${Lt.sunAmount.toFixed(2)}"/>`);
     G.push(`<circle cx="${sunX}" cy="${sunY}" r="${f1(H * (p < 0.5 ? 0.05 : 0.036))}" fill="${Lt.sun}" opacity="${Lt.sunAmount.toFixed(2)}"/>`);
@@ -72,7 +90,7 @@ export function seaPoster(o: SeaPosterOptions): string {
   let clouds = '';
   for (let i = 0; i < 6; i++) {
     const cx = W * R(), cy = hz - H * (0.05 + 0.34 * R()), rx = W * (0.07 + 0.13 * R()), ry = H * (0.007 + 0.013 * R());
-    clouds += `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${mixHex(Lt.skyHorizon, '#ffffff', 0.45)}" opacity="${(0.34 + 0.3 * R()).toFixed(2)}"/>`;
+    clouds += `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${mixHex(Lt.skyHorizon, '#ffffff', 0.45 * Lt.lit)}" opacity="${(0.34 + 0.3 * R()).toFixed(2)}"/>`;
   }
   G.push(`<g filter="url(#${id}c)">${clouds}</g>`);
   G.push(`<path d="${ridge(W * 0.56, W * 1.04, hz, H * 0.075, R)}" fill="${mixHex(Lt.land, Lt.skyHorizon, 0.5)}"/>`);
@@ -103,7 +121,7 @@ export function seaPoster(o: SeaPosterOptions): string {
     for (let x = px0 + 6 * k; x < px1; x += 2.2 * s) G.push(`<rect x="${f1(x)}" y="${f1(py)}" width="${f1(0.22 * s)}" height="${f1(oy - py + 0.4 * s)}" fill="#6b4a2f"/>`);
     G.push(`<rect x="${f1(px0)}" y="${f1(py - 0.16 * s)}" width="${f1(px1 - px0)}" height="${f1(0.2 * s)}" rx="${f1(0.05 * s)}" fill="#a8733d"/>`);
   }
-  const boat = drawBoat(spec, { s, ox, oy, look: posterLook(o.colours, p), fill: state.sailFill, furled: state.inPort, id: `${id}b` });
+  const boat = drawBoat(spec, { s, ox, oy, look: posterLook(o.colours, p, false, Lt), fill: state.sailFill, furled: state.inPort, id: `${id}b` });
   D.push(boat.defs);
   const cx = f1(ox + (spec.L / 2) * s);
   D.push(`<filter id="${id}f" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.006 ${(0.08 + 0.1 * p).toFixed(3)}" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="${f1((6 + 16 * p) * k)}" xChannelSelector="R" yChannelSelector="B"/></filter>`);

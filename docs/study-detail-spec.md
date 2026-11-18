@@ -251,7 +251,7 @@ The same parts in one column. Preparation tasks are not indented. A page's count
 
 ## 16. As built
 
-Built on 18 November 2026. Every line of section 11 is met, each by a test. The pictures of the built pages are the numbered files in `screenshots/study-detail/`, beside the mocks. What was tested is in [testing-report.md](testing-report.md), section 14.
+Built on 18 November 2026. Every line of section 11 is met, each by a test. The pictures of the built pages are the numbered files in `screenshots/study-detail/`, beside the mocks. What was tested is in [testing-report.md](testing-report.md), section 15.
 
 ![A subject's page as built, at 1440 px](screenshots/study-detail/1-subject-1440.png)
 
@@ -285,4 +285,4 @@ The frame every editor shares closed an editor that was opened in the moment aft
 
 ### The review of the whole change
 
-A fresh reviewer read the whole change against this document before it was committed. What it found, what was fixed and what was left is in the testing report, section 14.
+A fresh reviewer read the whole change against this document before it was committed. What it found, what was fixed and what was left is in the testing report, section 15.

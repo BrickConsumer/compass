@@ -19,7 +19,7 @@ function Rating({ name, rating, onRate }: { name: string; rating: number | null;
         // each segment can be pressed across the full height of the row; the negative margin keeps the focus ring close to the bars
         <span key={n} data-segment aria-hidden="true" onClick={() => onRate(n === rating ? null : n)} className="-my-[18.5px] flex cursor-pointer items-center py-[18.5px] pr-[3px] last:pr-0 max-sm:-my-[21.5px] max-sm:py-[21.5px]">
           {/* deep navy, not seafoam: seafoam means done, and a rating is not progress */}
-          <span className={`h-[7px] w-5 rounded-full transition-colors duration-[140ms] ease-[var(--ease-out)] motion-reduce:transition-none max-sm:w-[13px] ${rating !== null && n <= rating ? 'bg-deep-700' : 'bg-track'}`} />
+          <span className={`h-[7px] w-5 rounded-full transition-colors duration-[140ms] ease-[var(--ease-out)] motion-reduce:transition-none max-sm:w-[13px] ${rating !== null && n <= rating ? 'bg-rating' : 'bg-track'}`} />
         </span>
       ))}
     </span>

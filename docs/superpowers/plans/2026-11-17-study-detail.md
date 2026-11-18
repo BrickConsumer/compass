@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 19.3, TypeScript 7.0, React Router 8.5, Zustand 5.1, date-fns 4.4, Lucide React 1.73, Tailwind CSS 4.3, Motion 14.14, Vitest 5.1, Playwright 1.65.
 
-**As executed, on 18 November:** every step below was done. Four things were done differently, each for a reason given in the spec's section 16 and the testing report's section 14: the new tests are in files of their own, so the older test files were not edited; a subject's links are changed in place on the page, not in the pop-up frame; a page's row leaves its count out of its line when the count is shown beside it; and the review of the whole change led to seven fixes.
+**As executed, on 18 November:** every step below was done. Four things were done differently, each for a reason given in the spec's section 16 and the testing report's section 15: the new tests are in files of their own, so the older test files were not edited; a subject's links are changed in place on the page, not in the pop-up frame; a page's row leaves its count out of its line when the count is shown beside it; and the review of the whole change led to seven fixes.
 
 **Spec:** [docs/study-detail-spec.md](../../study-detail-spec.md). Read it first. Section numbers below refer to it. Its pictures are in `docs/screenshots/study-detail/`. House rules are in [docs/HANDOFF.md](../../HANDOFF.md), section 5.
 

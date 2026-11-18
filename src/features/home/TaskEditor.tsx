@@ -100,9 +100,9 @@ export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
                 <button type="button" onClick={() => store.nudge(existing.id, 1)} className={`${chip(false)} flex items-center gap-1.5`}><ArrowDown size={15} aria-hidden="true" />Move down</button>
               </>
             )}
-            {existing && <button type="button" onClick={remove} className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-port-600 hover:bg-port-100"><Trash2 size={15} aria-hidden="true" />Delete</button>}
+            {existing && <button type="button" onClick={remove} className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-attention hover:bg-attention-tint"><Trash2 size={15} aria-hidden="true" />Delete</button>}
             {/* on wider screens changes save as they are made, so there is nothing to confirm; it stays in the form so Enter still closes */}
-            <button type="submit" className={`ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-deep-700 ${isNew ? '' : 'sm:hidden'}`}>{isNew ? 'Add task' : 'Done'}</button>
+            <button type="submit" className={`ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-surface-inverse-hover ${isNew ? '' : 'sm:hidden'}`}>{isNew ? 'Add task' : 'Done'}</button>
           </div>
         </form>
       )}

@@ -34,7 +34,7 @@ export function VoyagePage() {
   // a boat that has just been earned is the first thing shown
   const [viewing, setViewing] = useState<StageId>(fresh.stage ?? boat.stage), isEarned = STAGE_ORDER.indexOf(viewing) <= STAGE_ORDER.indexOf(earned);
   const fittings = useMemo(() => earnedFittings(miles).map((f) => f.id), [miles]);
-  const newTag = <span className="ml-2 rounded-xs bg-brass-100 px-1.5 py-0.5 text-[12.5px] font-semibold text-brass-800">New</span>;
+  const newTag = <span className="ml-2 rounded-xs bg-note px-1.5 py-0.5 text-[12.5px] font-semibold text-on-note">New</span>;
   // everything earned so far has now been seen
   useEffect(() => { setBoat({ seen: earnedIds(miles, days) }); }, [miles, days, setBoat]);
   useEffect(() => { const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('dialog[open]')) navigate('/'); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [navigate]);
@@ -43,8 +43,8 @@ export function VoyagePage() {
     <main className="mx-auto flex max-w-[1560px] flex-col gap-6 px-4 pb-32 pt-3 sm:px-5 sm:pb-10 lg:pl-1.5 lg:pr-7 lg:pt-4">
       <div className="relative">
         <SeaWindow stage={viewing} progress={0.6} colours={{ hull: boat.hull, sail: boat.sail, pennant: boat.pennant }} fittings={fittings} boatName={boat.name} paused={paused} className="h-[42vh] min-h-[240px] rounded-[24px] sm:rounded-2xl" />
-        <Link to="/" className="absolute left-3 top-3 flex min-h-11 items-center gap-2 rounded-full bg-surface-sheet pl-3 pr-4 text-[14.5px] font-semibold shadow-[0_1px_2px_rgb(14_36_58/0.18)]"><ArrowLeft size={17} aria-hidden="true" />Home</Link>
-        {!isEarned && <p className="absolute bottom-3 left-3 rounded-full bg-brass-100 px-3.5 py-1.5 text-[13.5px] font-semibold text-brass-800">Preview. Not earned yet.</p>}
+        <Link to="/" className="absolute left-3 top-3 flex min-h-11 items-center gap-2 rounded-full bg-surface-sheet pl-3 pr-4 text-[14.5px] font-semibold shadow-control"><ArrowLeft size={17} aria-hidden="true" />Home</Link>
+        {!isEarned && <p className="absolute bottom-3 left-3 rounded-full bg-note px-3.5 py-1.5 text-[13.5px] font-semibold text-on-note">Preview. Not earned yet.</p>}
       </div>
 
       <div className="grid gap-x-10 gap-y-9 lg:grid-cols-[1.1fr_1fr]">
@@ -56,7 +56,7 @@ export function VoyagePage() {
             <p className="mt-1.5 text-[15.5px] text-text-muted">{STAGES[boat.stage].name}. {miles.toLocaleString('en-GB')} nautical miles logged, {days} days at sea.</p>
           </div>
           {fresh.stage && fresh.stage !== boat.stage && (
-            <p className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-md bg-brass-100 px-3.5 py-2.5 text-[14.5px] text-brass-800" data-ready>
+            <p className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-md bg-note px-3.5 py-2.5 text-[14.5px] text-on-note" data-ready>
               <span><i className="font-display text-[17px]">The {STAGES[fresh.stage].name.toLowerCase()}</i> is ready. You are still sailing the {STAGES[boat.stage].name.toLowerCase()}.</span>
               <button type="button" onClick={() => { setBoat({ stage: fresh.stage }); setViewing(fresh.stage!); }} className="min-h-11 cursor-pointer rounded-md bg-surface-inverse px-4 font-semibold text-text-inverse">Sail the {STAGES[fresh.stage].name.toLowerCase()}</button>
             </p>
@@ -101,9 +101,9 @@ export function VoyagePage() {
               const got = miles >= f.miles;
               return (
                 <li key={f.id} className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 border-t border-line py-2.5 text-[15px] first:border-t-0">
-                  <span aria-hidden="true" className={`grid size-[22px] place-items-center rounded-full ${got ? 'bg-positive text-paper-0' : 'shadow-[inset_0_0_0_1.5px_var(--color-control)]'}`}>{got && <Check size={13} strokeWidth={3.2} />}</span>
+                  <span aria-hidden="true" className={`grid size-[22px] place-items-center rounded-full ${got ? 'bg-positive text-on-positive' : 'shadow-[inset_0_0_0_1.5px_var(--color-control)]'}`}>{got && <Check size={13} strokeWidth={3.2} />}</span>
                   <span className={got ? 'font-medium' : 'text-text-muted'}>{f.name}<span className="sr-only">{got ? ', earned' : ', not earned yet'}</span>{fresh.fittings.some((x) => x.id === f.id) && newTag}{got && f.id === 'dress-flags' ? <span className="text-[13px] font-normal text-text-muted" data-in-port> (flown in port, on a day with nothing planned)</span> : null}{got && !carries(STAGES[viewing], f.id) ? <span className="text-[13px] font-normal text-text-muted" data-not-carried> (the {STAGES[viewing].name.toLowerCase()} has no place for it)</span> : null}</span>
-                  <span className="text-[13.5px] font-semibold text-brass-700">{f.miles.toLocaleString('en-GB')}</span>
+                  <span className="text-[13.5px] font-semibold text-highlight-text">{f.miles.toLocaleString('en-GB')}</span>
                 </li>
               );
             })}
