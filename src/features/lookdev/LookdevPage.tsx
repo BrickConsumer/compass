@@ -1,3 +1,4 @@
+import { useTheme } from '../../state/useTheme';
 import { useState } from 'react';
 import { type BoatColours, DEFAULT_COLOURS, DRAWN_FITTINGS, STAGES, STAGE_ORDER, type StageId } from '../voyage/boat/specs';
 import { SeaWindow } from '../voyage/SeaWindow';
@@ -36,12 +37,14 @@ export function LookdevPage() {
   const [planned, setPlanned] = useState(true);
   const [paused, setPaused] = useState(false);
   const [missed, setMissed] = useState(false);
+  // the sea is at night in the dark theme, so this starts where the theme is; it can be turned either way to compare
+  const [night, setNight] = useState(useTheme() === 'dark');
   const [use3d, setUse3d] = useState(true);
   const [tier, setTier] = useState<Tier>();
   const [worn, setWorn] = useState<readonly string[]>(DRAWN_FITTINGS);
   const [colours, setColours] = useState<BoatColours>(DEFAULT_COLOURS);
   const progress = planned ? done / 5 : null;
-  const windowProps = { stage, progress, colours, paused, boatName: 'The Kestrel', still: !use3d, missedYesterday: missed, tier, fittings: worn };
+  const windowProps = { stage, progress, colours, paused, boatName: 'The Kestrel', still: !use3d, missedYesterday: missed, night, tier, fittings: worn };
 
   return (
     <main className="mx-auto flex max-w-[1240px] flex-col gap-8 px-4 py-8 sm:px-7">
@@ -81,12 +84,15 @@ export function LookdevPage() {
               Tasks done today: {planned ? `${done} of 5` : 'nothing planned'}
             </label>
             <input id="done" type="range" min={0} max={5} step={1} value={done} disabled={!planned}
-              onChange={(e) => setDone(Number(e.target.value))} className="accent-[var(--color-deep-900)]" />
+              onChange={(e) => setDone(Number(e.target.value))} className="accent-[var(--color-text)]" />
             <label className="flex items-center gap-2 text-[14.5px]">
               <input type="checkbox" checked={!planned} onChange={(e) => setPlanned(!e.target.checked)} /> Nothing planned (in port)
             </label>
             <label className="flex items-center gap-2 text-[14.5px]">
               <input type="checkbox" checked={missed} onChange={(e) => setMissed(e.target.checked)} /> Yesterday was missed (storm)
+            </label>
+            <label className="flex items-center gap-2 text-[14.5px]">
+              <input type="checkbox" checked={night} onChange={(e) => setNight(e.target.checked)} /> Night (the dark theme's sea)
             </label>
           </div>
 

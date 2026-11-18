@@ -7,7 +7,7 @@ import { toast } from '../../ui/Toast';
 import { addButton, field, ListControls, note } from './ListControls';
 
 const WRONG = 'That does not look like a web address.';
-const wrongLine = 'basis-full text-[14px] font-medium text-port-600';
+const wrongLine = 'basis-full text-[14px] font-medium text-attention';
 // an address is not prose: no capitals, no spelling, and the keyboard for addresses on a phone
 const addressProps = { inputMode: 'url', autoCapitalize: 'none', autoCorrect: 'off', spellCheck: false } as const;
 

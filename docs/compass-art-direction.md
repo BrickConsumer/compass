@@ -551,6 +551,8 @@ At a steady pace: the sloop in about two and a half weeks, the cutter in about a
 
 Environments and seasonal decoration are designed after Phase 1. The intent is that new waters are earned by distance and seasonal items appear with the calendar, and both are kept once seen.
 
+**Decided for Stage 7, by Oliver on 17 November.** New waters are earned along the way, from about 800 miles, and not only after the last fitting as the table above has it; an earned water can be chosen, as an earned boat can. Each season leaves one keepsake. Night comes with a dark theme, which runs from dusk through stars to moonrise by the same share of the day done. The eleven decisions are listed in [next-stages.md](next-stages.md), Stage 7, and none is built yet. Josh and Aditya have not weighed in.
+
 ## 14. Motion
 
 1. **Motion answers an action or shows a change.** Nothing in the planner moves on its own.

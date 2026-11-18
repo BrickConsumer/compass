@@ -517,3 +517,35 @@ describe('additions: links', () => {
     expect(s().links).toHaveLength(6); s().clearAll(); expect(s().links).toEqual([]);
   });
 });
+
+describe("the theme", () => {
+  beforeEach(() => { s().setSettings({ theme: "auto" }); s().resetSample(); });
+
+  it("is automatic until one is chosen, and anything that is not a theme is automatic", () => {
+    expect(s().settings.theme ?? "auto").toBe("auto");
+    s().setSettings({ theme: "dark" });
+    expect(s().settings.theme).toBe("dark");
+    s().setSettings({ theme: "night" as never });
+    expect(s().settings.theme).toBe("auto");
+  });
+
+  it("is left alone by other settings", () => {
+    s().setSettings({ theme: "dark" });
+    s().setSettings({ seaPaused: true });
+    expect(s().settings.theme).toBe("dark");
+    s().setSettings({ theme: "auto" });
+  });
+
+  it("belongs to the device, so resetting the sample or clearing everything keeps it", () => {
+    s().setSettings({ theme: "dark", seaPaused: true });
+    s().resetSample();
+    expect(s().settings).toMatchObject({ theme: "dark", seaPaused: false });
+    s().clearAll();
+    expect(s().settings.theme).toBe("dark");
+    expect(s().tasks).toEqual([]);
+    s().setSettings({ theme: "light" });
+    s().resetSample();
+    expect(s().settings.theme).toBe("light");
+    s().setSettings({ theme: "auto" });
+  });
+});

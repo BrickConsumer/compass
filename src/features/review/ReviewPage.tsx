@@ -76,7 +76,7 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
             const p = sum.days[i] ?? { done: 0, total: 0 }, ahead = d > today;
             return (
               <li key={d} className="flex flex-col items-center gap-0.5">
-                <span aria-hidden="true" className={`text-[12.5px] font-semibold ${d === today ? 'text-marine-600' : 'text-text-muted'}`}>{weekdayShort(d)}</span>
+                <span aria-hidden="true" className={`text-[12.5px] font-semibold ${d === today ? 'text-text-link' : 'text-text-muted'}`}>{weekdayShort(d)}</span>
                 <span aria-hidden="true" className="font-display text-[17px] font-medium leading-[1.2]">{dayOfMonth(d)}</span>
                 {p.total
                   ? <span aria-hidden="true" className={`text-[13.5px] font-semibold ${ahead ? 'text-text-muted' : p.done === p.total ? 'text-positive' : ''}`}>{p.done}/{p.total}</span>
@@ -144,7 +144,7 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
           ? <p className="text-[14.5px] text-text-muted" data-saved>This review is saved. It can still be changed.</p>
           : (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <button type="submit" disabled={blank} className="min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-deep-700 disabled:cursor-default disabled:bg-surface-well disabled:text-text-muted">Save review</button>
+              <button type="submit" disabled={blank} className="min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-surface-inverse-hover disabled:cursor-default disabled:bg-surface-well disabled:text-text-muted">Save review</button>
               <p className="text-[14px] text-text-muted">{blank ? 'Write in any of the three, or rate the week, to save it.' : earns ? `Saving logs ${MILES.review} nautical miles.` : 'This week is too far back to log miles.'}</p>
             </div>
           )}

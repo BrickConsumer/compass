@@ -45,8 +45,8 @@ export function HabitEditor({ id, onClose }: { id: string | null; onClose: () =>
           </fieldset>
           <p className="text-[13.5px] text-text-muted">Changing the days keeps the ticks you have already made.</p>
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-            <button type="button" onClick={remove} className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-port-600 hover:bg-port-100"><Trash2 size={15} aria-hidden="true" />Delete</button>
-            <button type="submit" className="ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-deep-700 sm:hidden">Done</button>
+            <button type="button" onClick={remove} className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-attention hover:bg-attention-tint"><Trash2 size={15} aria-hidden="true" />Delete</button>
+            <button type="submit" className="ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-surface-inverse-hover sm:hidden">Done</button>
           </div>
         </form>
       )}

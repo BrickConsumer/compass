@@ -67,11 +67,14 @@ export function EditorFrame({ open, anchor, title, labelId, onClose, children }:
   useEffect(() => { if (!closing) return; const timer = window.setTimeout(onClose, 320); return () => window.clearTimeout(timer); }, [closing, onClose]);
 
   return (
-    <dialog ref={ref} onClose={onClose} onCancel={(e) => { e.preventDefault(); requestClose(); }} onClick={(e) => { if (e.target === ref.current) requestClose(); }} aria-labelledby={labelId}
+    <dialog ref={ref}
+      // The browser says a dialog has closed a moment after it closes. If the editor has been opened again in that moment,
+      // for another row, the late word is about the last time and must not close this one.
+      onClose={() => { if (!ref.current?.open) onClose(); }} onCancel={(e) => { e.preventDefault(); requestClose(); }} onClick={(e) => { if (e.target === ref.current) requestClose(); }} aria-labelledby={labelId}
       data-closing={closing} data-placed={spot ? 'beside' : undefined}
       style={spot ? { left: spot.left, top: spot.top, right: 'auto', bottom: 'auto', margin: 0 } : undefined}
       // the dialog is only a frame: the panel inside is the surface, so it can slide and fade without the frame moving
-      className="m-auto w-[min(94vw,420px)] overflow-visible bg-transparent p-0 text-text backdrop:bg-transparent backdrop:transition-colors backdrop:duration-200 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:backdrop:bg-deep-900/40 max-sm:data-[closing=true]:backdrop:bg-transparent">
+      className="m-auto w-[min(94vw,420px)] overflow-visible bg-transparent p-0 text-text backdrop:bg-transparent backdrop:transition-colors backdrop:duration-200 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:backdrop:bg-backdrop max-sm:data-[closing=true]:backdrop:bg-transparent">
       {open && (
         <motion.div initial={wide ? AWAY.wide : AWAY.sheet} animate={closing ? (wide ? AWAY.wide : AWAY.sheet) : wide ? SHOWN.wide : SHOWN.sheet}
           onAnimationComplete={() => { if (closing) onClose(); }}
@@ -82,7 +85,7 @@ export function EditorFrame({ open, anchor, title, labelId, onClose, children }:
           <div className="flex flex-col gap-4 p-5">
             {/* on phones the header is the handle: drag it down to close */}
             <div onPointerDown={(e) => { if (!wide) grip.start(e); }} style={{ touchAction: wide ? undefined : 'none' }} className="-mx-5 -mt-5 px-5 pt-2.5 max-sm:cursor-grab max-sm:select-none sm:pt-5" data-grip>
-              <span aria-hidden="true" className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-paper-300 sm:hidden" />
+              <span aria-hidden="true" className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-faint sm:hidden" />
               <div className="flex items-center justify-between gap-3">
                 <h2 id={labelId} className="text-[20px]">{title}</h2>
                 <button type="button" onClick={requestClose} aria-label="Close" className="grid size-11 cursor-pointer place-items-center rounded-full hover:bg-surface-well"><X size={18} aria-hidden="true" /></button>

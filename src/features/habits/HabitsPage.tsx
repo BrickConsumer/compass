@@ -51,7 +51,7 @@ export function HabitsPage() {
             <span className="max-sm:hidden" />
             <div className="grid grid-cols-7 max-sm:col-span-2">
               {days.map((d) => (
-                <span key={d} className={`flex flex-col items-center text-[12.5px] font-semibold leading-[1.25] ${d === today ? 'text-marine-600' : 'text-text-muted'}`}>
+                <span key={d} className={`flex flex-col items-center text-[12.5px] font-semibold leading-[1.25] ${d === today ? 'text-text-link' : 'text-text-muted'}`}>
                   {weekdayName(weekdayOf(d))}<span className="font-display text-[17px] font-medium text-text">{dayOfMonth(d)}</span>
                 </span>
               ))}
