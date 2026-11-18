@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDaysISO, todayISO, weekStartOf } from '../domain/dates';
 import { habitProgress } from '../domain/habits';
+import { levelsFor } from '../domain/levels';
+import { DEFAULT_AREAS, shownRatings } from '../domain/ratings';
+import { isBlank } from '../domain/review';
 import { daysAtSea, milesLogged } from '../domain/voyage';
 import { useCompass } from './store';
 
@@ -383,5 +386,134 @@ describe('store', () => {
       s().clearAll();
       expect(s().pages).toEqual([]);
     });
+  });
+});
+
+describe('additions: records and the saved data', () => {
+  beforeEach(() => { s().resetSample(); });
+
+  it('starts with nothing set and the four starting areas', () => {
+    expect(s().settings.name).toBeUndefined(); expect(s().boat.boundFor).toBeUndefined();
+    expect(s().links).toEqual([]); expect(s().levels).toEqual({});
+    expect(s().areas.map((a) => a.name)).toEqual(['Study', 'Health', 'Sleep', 'Discipline']);
+    expect(s().reviews[0]!.ratings).toEqual({ 'area-study': 7, 'area-health': 6, 'area-sleep': 5, 'area-discipline': 7 });
+  });
+
+  it('tidies a name and a goal, and clears them when emptied', () => {
+    s().setSettings({ name: `  ${'A'.repeat(200)}  ` }); expect(s().settings.name).toHaveLength(30);
+    s().setSettings({ name: '   ' }); expect(s().settings.name).toBeUndefined();
+    s().setBoat({ boundFor: '  97+   ATAR ' }); expect(s().boat.boundFor).toBe('97+ ATAR');
+    s().setBoat({ boundFor: 'x'.repeat(200) }); expect(s().boat.boundFor).toHaveLength(60);
+    s().setBoat({ boundFor: '' }); expect(s().boat.boundFor).toBeUndefined();
+    expect(s().boat.name).toBe('The Kestrel');
+  });
+
+  it('opens a save from before this piece with nothing lost', () => {
+    const old = JSON.parse(JSON.stringify({ ...s(), sample: false }));
+    for (const key of ['links', 'areas', 'levels']) delete old[key];
+    const merged = useCompass.persist.getOptions().merge!(old, s()) as ReturnType<typeof s>;
+    expect(merged.tasks).toHaveLength(s().tasks.length);
+    expect(merged.links).toEqual([]); expect(merged.levels).toEqual({}); expect(merged.areas).toEqual(DEFAULT_AREAS);
+  });
+
+  it('falls back when the new lists are unreadable', () => {
+    const bad = { ...JSON.parse(JSON.stringify(s())), links: 'x', areas: null, levels: [] };
+    const merged = useCompass.persist.getOptions().merge!(bad, s()) as ReturnType<typeof s>;
+    expect(merged.links).toEqual([]); expect(merged.areas).toEqual(DEFAULT_AREAS); expect(merged.levels).toEqual({});
+  });
+
+  it('keeps only stored links and areas that Compass could have saved', () => {
+    const fine = (i: number) => ({ id: `v${i}`, name: `Site ${i}`, url: `https://site${i}.org/` });
+    const bad = {
+      ...JSON.parse(JSON.stringify(s())),
+      links: [null, 'text', { id: 'a' }, { id: 'j', name: 'Bad', url: 'javascript:alert(1)' }, { id: 'd', name: 'Data', url: 'data:text/html,hi' }, { id: 'f', name: 'File', url: 'file:///etc/hosts' }, { id: 'ok', name: '', url: 'investopedia.com' }, { id: 'ok', name: 'Twice', url: 'https://twice.org/' }, ...[0, 1, 2, 3, 4, 5, 6].map(fine)],
+      areas: [null, 'text', { id: 'x' }, { id: 'area-study', name: '  Study  ' }, { id: 'area-study', name: 'Twice' }, { id: 'long', name: 'n'.repeat(60) }],
+    };
+    const merged = useCompass.persist.getOptions().merge!(bad, s()) as ReturnType<typeof s>;
+    // nothing but web addresses, each once, six at most, tidied as if they had been typed
+    expect(merged.links).toEqual([{ id: 'ok', name: 'investopedia.com', url: 'https://investopedia.com/' }, ...[0, 1, 2, 3, 4].map(fine)]);
+    expect(merged.areas).toEqual([{ id: 'area-study', name: 'Study' }, { id: 'long', name: 'n'.repeat(24) }]);
+    // an empty list of areas is a choice, and is kept
+    expect((useCompass.persist.getOptions().merge!({ ...bad, areas: [] }, s()) as ReturnType<typeof s>).areas).toEqual([]);
+  });
+
+  it('moves the levels with the week when its first day changes', () => {
+    // 16 November 2026 is a Monday, 2 November the Monday two weeks before
+    s().setLevel('2026-11-02', 'chi', 'high'); s().setLevel('2026-11-16', 'chi', null); s().setLevel('2026-11-16', 'eng', 'high');
+    s().setSettings({ weekStartsOn: 0 });
+    expect(s().levels).toEqual({ '2026-11-01': { chi: 'high' }, '2026-11-15': { eng: 'high' } });
+    expect(levelsFor(s().levels, '2026-11-15', s().subjects)).toEqual({ levels: { eng: 'high' }, from: '2026-11-15', carried: false });
+    s().setSettings({ weekStartsOn: 0 }); s().setSettings({ seaPaused: true });
+    expect(Object.keys(s().levels)).toEqual(['2026-11-01', '2026-11-15']);
+    s().setSettings({ weekStartsOn: 1 });
+    expect(s().levels).toEqual({ '2026-11-02': { chi: 'high' }, '2026-11-16': { eng: 'high' } });
+  });
+
+  it('clears the name and the goal with everything else', () => {
+    s().setSettings({ name: 'Aditya' }); s().setBoat({ boundFor: 'Law' }); s().clearAll();
+    expect(s().settings.name).toBeUndefined(); expect(s().boat.boundFor).toBeUndefined(); expect(s().areas).toEqual(DEFAULT_AREAS);
+  });
+});
+
+describe('additions: subject levels', () => {
+  beforeEach(() => { s().resetSample(); });
+
+  it('keeps levels week by week, and brings them back with a deleted subject', () => {
+    const week = weekStartOf(todayISO(), 1), next = addDaysISO(week, 7);
+    s().setLevel(week, 'eng', 'high'); s().setLevel(next, 'bio', 'medium');
+    expect(s().levels[week]).toEqual({ eng: 'high' }); expect(s().levels[next]).toEqual({ eng: 'high', bio: 'medium' });
+    const removed = s().deleteSubject('eng')!;
+    expect(levelsFor(s().levels, week, s().subjects).levels).toEqual({});
+    s().restoreSubject(removed);
+    expect(levelsFor(s().levels, week, s().subjects).levels).toEqual({ eng: 'high' });
+    s().setLevel(week, 'eng', null); expect(s().levels[week]).toEqual({});
+    s().clearAll(); expect(s().levels).toEqual({});
+  });
+});
+
+describe('additions: ratings', () => {
+  beforeEach(() => { s().resetSample(); });
+
+  it('rates a week, saves it on ratings alone, and logs its miles once', () => {
+    const week = weekStartOf(todayISO(), 1), miles = milesLogged(s().log);
+    s().rateReview(addDaysISO(week, 7), 'area-study', 8); expect(s().reviews.some((r) => r.weekStart === addDaysISO(week, 7))).toBe(false);
+    s().rateReview(week, 'nowhere', 8); s().rateReview(week, 'area-study', 8.4); s().rateReview(week, 'area-sleep', 3); s().rateReview(week, 'area-sleep', null);
+    expect(s().reviews.find((r) => r.weekStart === week)!.ratings).toEqual({ 'area-study': 8 });
+    expect(s().saveReview(week)).toBe(true); expect(s().saveReview(week)).toBe(true); expect(milesLogged(s().log)).toBe(miles + 10);
+  });
+
+  it('changes the areas, up to six, and brings a removed one back with its ratings', () => {
+    expect(s().addArea('   ')).toBeNull();
+    const id = s().addArea(`  ${'Investing'.repeat(5)} `)!; expect(s().areas.at(-1)!.name).toHaveLength(24);
+    s().renameArea(id, 'Investing'); s().renameArea(id, '  '); expect(s().areas.at(-1)!.name).toBe('Investing');
+    s().addArea('Friends'); expect(s().addArea('One too many')).toBeNull(); expect(s().areas).toHaveLength(6);
+    s().moveArea(id, -1); expect(s().areas[3]!.id).toBe(id);
+    const last = s().reviews[0]!, removed = s().deleteArea('area-study')!;
+    expect(removed.index).toBe(0); expect(shownRatings(last, s().areas).some((r) => r.area.id === 'area-study')).toBe(false);
+    s().restoreArea(removed.area, removed.index);
+    expect(s().areas[0]!.id).toBe('area-study'); expect(shownRatings(s().reviews[0], s().areas)[0]!.rating).toBe(7);
+  });
+
+  it('does not list a review whose only ratings are for removed areas', () => {
+    const week = weekStartOf(todayISO(), 1);
+    s().rateReview(week, 'area-sleep', 4); s().saveReview(week); s().deleteArea('area-sleep');
+    expect(isBlank(s().reviews.find((r) => r.weekStart === week)!, s().areas)).toBe(true);
+  });
+});
+
+describe('additions: links', () => {
+  beforeEach(() => { s().resetSample(); });
+
+  it('adds, changes, moves and removes links, six at most', () => {
+    expect(s().addLink({ name: 'Bad', url: 'javascript:alert(1)' })).toBeNull();
+    const a = s().addLink({ name: '', url: 'investopedia.com' })!, b = s().addLink({ name: 'Gizmo', url: 'https://gizmo.ai' })!;
+    expect(s().links.map((l) => l.name)).toEqual(['investopedia.com', 'Gizmo']);
+    expect(s().updateLink(b, { url: 'nope' })).toBe(false); expect(s().links[1]!.url).toBe('https://gizmo.ai/');
+    expect(s().updateLink(b, { name: '  Flashcards ' })).toBe(true); expect(s().links[1]!.name).toBe('Flashcards');
+    s().moveLink(b, -1); expect(s().links[0]!.id).toBe(b);
+    const removed = s().deleteLink(b)!; expect(s().links.map((l) => l.id)).toEqual([a]);
+    s().restoreLink(removed.link, removed.index); expect(s().links[0]!.id).toBe(b);
+    for (let i = 0; i < 6; i++) s().addLink({ name: `n${i}`, url: `site${i}.org` });
+    expect(s().links).toHaveLength(6); s().clearAll(); expect(s().links).toEqual([]);
   });
 });

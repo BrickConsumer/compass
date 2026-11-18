@@ -85,6 +85,33 @@ All five destinations in the brief now exist. What is left in this stage is for 
 - New waters earned by distance, and seasonal items that arrive with the calendar.
 - Dusk, night and the dark theme, designed together.
 
+## Stage 8. Aditya's plan
+
+Aditya wrote a plan for a complete personal planner. The plan itself is kept by the founders and is not in this repository, because the repository is public and the plan is personal. On 17 November Oliver decided how it comes into Compass: Compass keeps its main idea (the boat, the navy and ivory look, a planner any student could use), and Aditya's extras come in around it. Josh and Aditya have not weighed in. The review page is https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot (private; share it from its Share menu).
+
+It is five pieces, each designed and reviewed on its own before it is built:
+
+| Piece | What it holds | State |
+|---|---|---|
+| 1. Home and the Weekly review | A greeting, a long-term goal and links on Home; ratings and subject levels in the review, which then decide what Home puts first | **Built on 17 November** on `home-review-additions`, to [home-and-review-additions-spec.md](home-and-review-additions-spec.md). Committed, with a pull request against `boat-fittings`. Josh and Aditya have not reviewed it. |
+| 2. Study detail | Current topic, teacher feedback, a revision checklist, past papers, links on tasks and assessments, preparation tasks | Not designed |
+| 3. Fitness | The training week, a workout log and measurements, in a place that is switched on | Not designed |
+| 4. Interests | Investing and Law Journey as folders in My pages with ready-made forms, and saved headlines on Home | Not designed |
+| 5. Search and backup | Search across everything, and a full export and import | Not designed |
+
+**Decided by Oliver on 17 November:**
+
+- Fitness is a place of its own, off until it is switched on. Investing and Law Journey are interests in My pages, not places.
+- The green and cream palette and the emoji icons do not come in.
+- In piece 1: the goal sits on the boat's plate as "Bound for"; a greeting shows once a name is set; links sit in the rail on wide screens and at the foot of Home on narrow ones; a High subject is named on Home and comes first in each list and in Study; each person names their own rating areas; and the review keeps its three questions.
+
+**Still open:**
+
+- The nine smaller calls in the specification's section 12. The largest: the sample shows nothing new on Home, Study can change this week's level, and levels are kept week by week.
+- Headlines that refresh by themselves. That would be the first time Compass talks to an outside service, so it gets its own decision, with piece 4 or after it.
+
+The mock shows where training (piece 3) and headlines (piece 4) will sit on Home, so Home's layout does not have to be reopened for them.
+
 ## Later, and deliberately not now
 
 Accounts and sync, notifications, school licensing and any payment. The brief rules these out of the prototype, and each one changes the privacy promise, so each deserves its own decision.

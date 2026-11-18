@@ -1,15 +1,20 @@
 import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router';
 import type { ShellContext } from '../../app/AppShell';
 import { addDaysISO, isISODate, isoWeek, longDate, shortDate, weekLabel, weekStartOf } from '../../domain/dates';
+import { greeting } from '../../domain/greeting';
+import { taskRank } from '../../domain/levels';
 import { allTasksInWeek, carryOver, dayMarks, missedDay, nextWeekPriorities, progress, share, tasksForDay, tasksForWeek, upcomingAssessments } from '../../domain/tasks';
 import type { ISODate } from '../../domain/types';
 import { useCompass } from '../../state/store';
+import { useHour } from '../../state/useHour';
 import { useToday } from '../../state/useToday';
 import { SegmentedProgress } from '../../ui/SegmentedProgress';
 import { HabitsToday } from '../habits/HabitsToday';
+import { HomeLinks } from '../links/Links';
 import { DaySheet } from './DaySheet';
+import { Focus } from './Focus';
 import { HomeWindow } from './HomeWindow';
 import { ComingUp, NextWeek, WeekList } from './SideLists';
 import { type Editing, TaskEditor } from './TaskEditor';
@@ -39,7 +44,10 @@ export function HomePage() {
   }, [select, today]);
 
   const week = weekStartOf(selected, startsOn), thisWeek = weekStartOf(today, startsOn);
-  const dayTasks = tasksForDay(tasks, selected), weekProgress = progress(allTasksInWeek(tasks, week));
+  // within a priority, a High subject's tasks come first: the numbered lists are left in the order they were given
+  const levels = useCompass((s) => s.levels), rank = useMemo(() => taskRank(levels, subjects, startsOn), [levels, subjects, startsOn]);
+  const hello = greeting(useHour(), useCompass((s) => s.settings.name));
+  const dayTasks = tasksForDay(tasks, selected, rank), weekProgress = progress(allTasksInWeek(tasks, week));
   // the storm follows a missed day, but only once that day is over
   const yesterday = addDaysISO(selected, -1), stormy = yesterday < today && missedDay(tasks, yesterday);
   const closeEditor = useCallback(() => setEditing(null), []);
@@ -51,6 +59,8 @@ export function HomePage() {
       {/* on phones the header dissolves, so the date sits above the sea and the week controls sit on the strip they move */}
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1 max-sm:contents sm:order-2 sm:pl-3.5 sm:pt-5 lg:pl-5">
         <div className="min-w-0 max-sm:order-1 max-sm:pb-3 max-sm:pl-1">
+          {/* shown whichever day is selected, so the page does not jump as days are chosen */}
+          {hello && <p data-greeting className="text-[15px] font-medium leading-[1.3] text-text-muted [overflow-wrap:anywhere] sm:mb-[3px]">{hello}</p>}
           <div className="flex items-center justify-between gap-3">
             <h1 className="whitespace-nowrap text-[25px] leading-[1.2] tracking-[-0.012em] sm:text-[32px] sm:leading-[1.15] lg:text-[40px] lg:leading-[1.1]"><span className="sm:hidden">{shortDate(selected)}</span><span className="max-sm:hidden">{longDate(selected)}</span></h1>
             <span className="flex gap-2 sm:hidden">
@@ -61,6 +71,7 @@ export function HomePage() {
           <p className="mt-0.5 flex min-h-9 flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] font-medium text-text-muted max-sm:hidden">
             <span>Week {isoWeek(week)}</span><SegmentedProgress done={weekProgress.done} total={weekProgress.total} />
             <span>{weekProgress.total ? `${weekProgress.done} of ${weekProgress.total} done` : 'Nothing planned this week'}</span>
+            <Focus week={week} rule />
           </p>
         </div>
         <div className="flex items-center gap-2 text-[14.5px] font-medium max-sm:order-3 max-sm:justify-between max-sm:pt-3">
@@ -78,6 +89,7 @@ export function HomePage() {
           <span>Week {isoWeek(week)}{weekProgress.total ? `, ${weekProgress.done} of ${weekProgress.total} done` : ', nothing planned'}</span>
           <SegmentedProgress done={weekProgress.done} total={weekProgress.total} className="[&>span]:w-2" />
         </p>
+        <Focus week={week} className="px-2 pt-2 text-[13px] font-medium text-text-muted sm:hidden" />
       </div>
 
       {/* where there is room for it, the day's habits take a line of their own; narrower screens show them at the foot of the day's sheet */}
@@ -85,15 +97,18 @@ export function HomePage() {
 
       <div className="order-5 grid items-start gap-x-8 gap-y-9 pt-3 lg:flex-1 lg:grid-cols-[1.25fr_1fr] xl:grid-cols-[1.32fr_1fr_0.86fr]">
         <DaySheet date={selected} today={today} tasks={dayTasks} subjects={subjects} assessment={assessments.find((a) => a.date === selected)}
-          carried={carryOver(tasks, today, startsOn)} onEdit={(id) => setEditing({ id })} />
+          carried={carryOver(tasks, today, startsOn)} onEdit={(id) => setEditing({ id })} rank={rank} />
         <div className="grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-1 lg:pt-[18px] xl:contents">
-          <div className="xl:pt-[18px]"><WeekList weekStart={week} current={week === thisWeek} tasks={tasksForWeek(tasks, week)} subjects={subjects} onEdit={(id) => setEditing({ id })} /></div>
+          <div className="xl:pt-[18px]"><WeekList weekStart={week} current={week === thisWeek} tasks={tasksForWeek(tasks, week, rank)} subjects={subjects} onEdit={(id) => setEditing({ id })} rank={rank} /></div>
           <div className="flex flex-col gap-9 xl:pt-[18px]">
             <ComingUp assessments={upcomingAssessments(assessments, today)} subjects={subjects} today={today} onSelect={select} />
             <NextWeek tasks={nextWeekPriorities(tasks, today, startsOn)} subjects={subjects} today={today} weekStartsOn={startsOn} onEdit={(id) => setEditing({ id })} />
           </div>
         </div>
       </div>
+
+      {/* below the width where the rail has words, the links come last on Home */}
+      <HomeLinks className="order-6 pt-9 lg:hidden" />
 
       <button type="button" onClick={() => setEditing({ draft: { date: selected, scope: 'day' } })} aria-label="Add a task"
         className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] right-[18px] z-20 grid size-14 cursor-pointer place-items-center rounded-full bg-surface-inverse text-text-inverse shadow-float sm:hidden">

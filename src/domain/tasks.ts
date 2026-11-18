@@ -3,17 +3,20 @@ import type { Assessment, ISODate, Task } from './types';
 
 const RANK = { high: 0, normal: 1, low: 2 } as const;
 
-/** Open tasks first (high, normal, low, then by order); completed tasks after, most recent first. */
-export function sortTasks(tasks: Task[]): Task[] {
+/**
+ * Open tasks first (high, normal, low, then by order); completed tasks after, most recent first.
+ * Given a rank, open tasks of the same priority are ordered by it before their own order: see `taskRank`.
+ */
+export function sortTasks(tasks: Task[], rank?: (task: Task) => number): Task[] {
   return tasks.slice().sort((a, b) => {
     if (!!a.completedAt !== !!b.completedAt) return a.completedAt ? 1 : -1;
     if (a.completedAt && b.completedAt) return b.completedAt.localeCompare(a.completedAt);
-    return RANK[a.priority] - RANK[b.priority] || a.order - b.order;
+    return RANK[a.priority] - RANK[b.priority] || (rank ? rank(a) - rank(b) : 0) || a.order - b.order;
   });
 }
 
-export const tasksForDay = (tasks: Task[], date: ISODate): Task[] => sortTasks(tasks.filter((t) => t.scope === 'day' && t.date === date));
-export const tasksForWeek = (tasks: Task[], weekStart: ISODate): Task[] => sortTasks(tasks.filter((t) => t.scope === 'week' && t.date === weekStart));
+export const tasksForDay = (tasks: Task[], date: ISODate, rank?: (task: Task) => number): Task[] => sortTasks(tasks.filter((t) => t.scope === 'day' && t.date === date), rank);
+export const tasksForWeek = (tasks: Task[], weekStart: ISODate, rank?: (task: Task) => number): Task[] => sortTasks(tasks.filter((t) => t.scope === 'week' && t.date === weekStart), rank);
 
 /** Every task that belongs to a week: its seven days and its any-time tasks. */
 export function allTasksInWeek(tasks: Task[], weekStart: ISODate): Task[] {

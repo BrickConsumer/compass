@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { tickKey } from './habits';
+import { DEFAULT_AREAS } from './ratings';
 import { canReview, isBlank, reviewAward, reviewExcerpt, weekSummary } from './review';
 import type { Assessment, Habit, LogEntry, Review, Task } from './types';
 import { MILES } from './voyage';
@@ -79,5 +80,12 @@ describe('a reflection', () => {
     expect(reviewExcerpt(review({ change: 'Start earlier.' }))).toBe('Start earlier.');
     expect(reviewExcerpt(review({ wentWell: 'x'.repeat(200) })).length).toBeLessThanOrEqual(90);
     expect(reviewExcerpt(review())).toBe('');
+  });
+
+  it('is not blank once a listed area is rated', () => {
+    const rated = review({ ratings: { 'area-study': 7 } });
+    expect(isBlank(rated, DEFAULT_AREAS)).toBe(false); expect(isBlank(rated, [])).toBe(true); expect(isBlank(rated)).toBe(true);
+    expect(reviewExcerpt(rated)).toBe('Rated, nothing written.');
+    expect(reviewExcerpt(review({ ratings: { 'area-study': 7 }, change: 'Start earlier.' }))).toBe('Start earlier.');
   });
 });

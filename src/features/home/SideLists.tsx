@@ -15,8 +15,8 @@ const Heading = ({ id, title, aside }: { id: string; title: string; aside?: stri
 );
 
 /** Tasks for any time in the selected week. */
-export function WeekList({ weekStart, tasks, subjects, onEdit, current }: { weekStart: ISODate; tasks: Task[]; subjects: Subject[]; onEdit: (id: string) => void; current: boolean }) {
-  const ordered = useHeldOrder(tasks), p = progress(tasks);
+export function WeekList({ weekStart, tasks, subjects, onEdit, current, rank }: { weekStart: ISODate; tasks: Task[]; subjects: Subject[]; onEdit: (id: string) => void; current: boolean; rank?: (task: Task) => number }) {
+  const ordered = useHeldOrder(tasks, rank), p = progress(tasks);
   return (
     <section aria-labelledby="week-title" className="min-w-0">
       <Heading id="week-title" title={current ? 'Any time this week' : `Any time in week ${isoWeek(weekStart)}`} aside={p.total ? `${p.done} of ${p.total}` : undefined} />

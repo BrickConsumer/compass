@@ -14,6 +14,8 @@ import { toast } from '../../ui/Toast';
 import { TaskComposer } from '../home/TaskComposer';
 import { type Editing, TaskEditor } from '../home/TaskEditor';
 import { TaskRow } from '../home/TaskRow';
+import { Ratings } from './Ratings';
+import { SubjectLevels } from './SubjectLevels';
 
 const square = 'grid size-11 cursor-pointer place-items-center rounded-md bg-surface-sheet shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well disabled:cursor-default disabled:text-text-subtle disabled:hover:bg-surface-sheet sm:size-9';
 const heading = 'text-[20px] leading-[1.3]', aside = 'text-[13.5px] font-semibold text-text-muted';
@@ -44,7 +46,8 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
   const review = useCompass((s) => s.reviews.find((r) => r.weekStart === week)), write = useCompass((s) => s.writeReview), save = useCompass((s) => s.saveReview), startsOn = useCompass((s) => s.settings.weekStartsOn);
   const [editing, setEditing] = useState<Editing | null>(null);
   const sum = weekSummary({ tasks, habits, ticks, log, assessments }, week, today), days = weekDays(week), after = addDaysISO(week, 7), priorities = tasksForWeek(tasks, after);
-  const blank = !review || isBlank(review), saved = !blank && !!review.savedAt, earns = !review?.savedAt && !!reviewAward(week, log, today, startsOn);
+  const areas = useCompass((s) => s.areas);
+  const blank = !review || isBlank(review, areas), saved = !blank && !!review.savedAt, earns = !review?.savedAt && !!reviewAward(week, log, today, startsOn);
   const title = week === thisWeek ? 'This week' : week === addDaysISO(thisWeek, -7) ? 'Last week' : `Week ${isoWeek(week)}`;
 
   return (
@@ -123,6 +126,8 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
         </div>
       )}
 
+      <Ratings week={week} />
+
       <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); if (save(week)) toast(earns ? `Review saved. ${MILES.review} nautical miles logged.` : 'Review saved.'); }}>
         <div>
           <h3 className={heading}>Reflection</h3>
@@ -140,7 +145,7 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
           : (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <button type="submit" disabled={blank} className="min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-deep-700 disabled:cursor-default disabled:bg-surface-well disabled:text-text-muted">Save review</button>
-              <p className="text-[14px] text-text-muted">{blank ? 'Write in any of the three to save it.' : earns ? `Saving logs ${MILES.review} nautical miles.` : 'This week is too far back to log miles.'}</p>
+              <p className="text-[14px] text-text-muted">{blank ? 'Write in any of the three, or rate the week, to save it.' : earns ? `Saving logs ${MILES.review} nautical miles.` : 'This week is too far back to log miles.'}</p>
             </div>
           )}
       </form>
@@ -159,6 +164,8 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
           <div className={priorities.length ? '' : '[&>form]:border-t-0'}><TaskComposer date={after} scope="week" label="Add a priority" /></div>
         </div>
       )}
+      {/* the same week's subject levels, shown by the same rule: a plan for a week that is not over */}
+      {after >= thisWeek && <SubjectLevels week={after} title={after === thisWeek ? 'Subjects this week' : 'Subjects next week'} />}
       <TaskEditor editing={editing} today={today} viewWeek={after} onClose={() => setEditing(null)} />
     </section>
   );
@@ -167,8 +174,8 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
 /** Weekly review: look back on a week, write a few lines, and set what matters next. Saved reviews are listed beside it. */
 export function ReviewPage() {
   const today = useToday(), startsOn = useCompass((s) => s.settings.weekStartsOn), reviews = useCompass((s) => s.reviews);
-  const thisWeek = weekStartOf(today, startsOn), [week, setWeek] = useState(thisWeek);
-  const kept = reviews.filter((r) => r.savedAt && !isBlank(r)).sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+  const thisWeek = weekStartOf(today, startsOn), [week, setWeek] = useState(thisWeek), areas = useCompass((s) => s.areas);
+  const kept = reviews.filter((r) => r.savedAt && !isBlank(r, areas)).sort((a, b) => b.weekStart.localeCompare(a.weekStart));
   return (
     <main className="mx-auto flex max-w-[1100px] flex-col gap-5 px-4 pb-32 pt-[max(16px,env(safe-area-inset-top,0px))] sm:px-5 sm:pb-12 lg:pl-1.5 lg:pr-7 lg:pt-8">
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 sm:pl-5">

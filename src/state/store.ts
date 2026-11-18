@@ -4,11 +4,14 @@ import { todayISO, weekStartOf } from '../domain/dates';
 import { type CompassData, empty, sampleLog, seed } from '../domain/seed';
 import { cleanDays, isDue, tickKey } from '../domain/habits';
 import { addItem, cleanPageTitle, editItem, insertItem, moveItem, newPage, PAGE_LIMITS, removeItem, toggleItem, untickAll } from '../domain/pages';
+import { rekeyed, withLevel } from '../domain/levels';
+import { cleanUrl, LINK_LIMITS, linkName, storedLinks } from '../domain/links';
+import { AREA_LIMITS, cleanRating, storedAreas } from '../domain/ratings';
 import { canReview, isBlank, reviewAward } from '../domain/review';
 import { madeKey, sessionTasksDue } from '../domain/sessions';
 import { nextColour } from '../domain/study';
 import { cleanTitle } from '../domain/tasks';
-import type { Assessment, Boat, Habit, ISODate, Page, PageItem, PageKind, Priority, Review, Session, Settings, Subject, SubjectColour, Task } from '../domain/types';
+import type { Assessment, Boat, Habit, ISODate, Level, Page, PageItem, PageKind, Priority, QuickLink, RatingArea, Review, Session, Settings, Subject, SubjectColour, Task } from '../domain/types';
 import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
 
@@ -53,8 +56,26 @@ export interface CompassStore extends CompassData {
   makeSessionTasks: (today?: ISODate) => void;
   /** Write part of a week's reflection. It is kept as it is typed. A week still to come cannot be written. */
   writeReview: (weekStart: ISODate, patch: Partial<Pick<Review, 'wentWell' | 'gotInWay' | 'change'>>) => void;
-  /** Save a week's review, which lists it among earlier reviews and logs its miles once. Returns false when there is nothing written. */
+  /** Save a week's review, which lists it among earlier reviews and logs its miles once. Returns false when nothing is written and no listed area is rated. */
   saveReview: (weekStart: ISODate) => boolean;
+  /** Rate one area of a week from 1 to 10, or clear it with `null`. It is kept with that week's review, and starts one if there is none. A week still to come cannot be rated. */
+  rateReview: (weekStart: ISODate, areaId: string, rating: number | null) => void;
+  /** Add an area to rate. Returns its id, or null when the name is empty or there are six already. */
+  addArea: (name: string) => string | null;
+  /** Rename an area. An empty name keeps the last good one. */
+  renameArea: (id: string, name: string) => void;
+  /** Remove an area, and return it with its place so the caller can offer Undo. Ratings given for it are kept, unseen. */
+  deleteArea: (id: string) => { area: RatingArea; index: number } | null;
+  restoreArea: (area: RatingArea, index: number) => void;
+  moveArea: (id: string, direction: -1 | 1) => void;
+  /** Add a link. Returns its id, or null when the address is not a web address or there are six already. With no name it takes its site's. */
+  addLink: (input: { name: string; url: string }) => string | null;
+  /** Change a link. Returns false, with nothing changed, when the new address is not a web address. */
+  updateLink: (id: string, patch: { name?: string; url?: string }) => boolean;
+  /** Remove a link, and return it with its place so the caller can offer Undo. */
+  deleteLink: (id: string) => { link: QuickLink; index: number } | null;
+  restoreLink: (link: QuickLink, index: number) => void;
+  moveLink: (id: string, direction: -1 | 1) => void;
   /** Start a page of this kind, named "Untitled". Returns its id. */
   addPage: (kind: PageKind) => string;
   /** Change a page. `null` clears its date or its subject. An empty title keeps the last good one. */
@@ -83,6 +104,8 @@ export interface CompassStore extends CompassData {
   restoreHabit: (removed: { habit: Habit; ticks: string[] }) => void;
   /** Tick or untick a habit for a day. The first tick logs a mile; unticking removes nothing. A day still to come cannot be ticked. */
   toggleHabit: (id: string, date: ISODate) => void;
+  /** Set a subject's level for a week, or clear it with `null`. A week with no levels of its own starts from the ones it was carrying. */
+  setLevel: (weekStart: ISODate, subjectId: string, level: Level | null) => void;
   setBoat: (patch: Partial<Boat>) => void;
   setSettings: (patch: Partial<Settings>) => void;
   resetSample: () => void;
@@ -98,6 +121,17 @@ const siblings = (tasks: Task[], t: Pick<Task, 'scope' | 'date'>) => tasks.filte
 
 /** Change one page, and note when: the list of pages is ordered by the last change. A change that changes nothing is not one. */
 const changePage = (pages: Page[], id: string, change: (p: Page) => Page): Page[] => pages.map((p) => { if (p.id !== id) return p; const next = change(p); return next === p ? p : { ...next, updatedAt: new Date().toISOString() }; });
+
+/** A list with one of its items swapped with its neighbour. Nothing changes at either end. */
+function moved<T extends { id: string }>(list: T[], id: string, direction: -1 | 1): T[] {
+  const i = list.findIndex((x) => x.id === id), j = i + direction;
+  if (i < 0 || j < 0 || j >= list.length) return list;
+  const next = list.slice();
+  [next[i], next[j]] = [next[j]!, next[i]!];
+  return next;
+}
+/** A list with a removed item back at the place it had. */
+const putBack = <T extends { id: string }>(list: T[], item: T, index: number): T[] => { const rest = list.filter((x) => x.id !== item.id); return [...rest.slice(0, index), item, ...rest.slice(index)]; };
 
 /** Keep the boat being sailed within what has been earned. */
 function clampStage(boat: Boat, miles: number, days: number): Boat {
@@ -256,9 +290,55 @@ export const useCompass = create<CompassStore>()(
         const existing = s.reviews.find((r) => r.weekStart === weekStart);
         return { reviews: existing ? s.reviews.map((r) => (r === existing ? { ...r, ...clean } : r)) : [...s.reviews, { weekStart, wentWell: '', gotInWay: '', change: '', ...clean }] };
       }),
+      rateReview: (weekStart, areaId, rating) => set((s) => {
+        if (!canReview(weekStart, todayISO(), s.settings.weekStartsOn) || !s.areas.some((a) => a.id === areaId)) return s;
+        const clean = rating === null ? null : cleanRating(rating), existing = s.reviews.find((r) => r.weekStart === weekStart);
+        // clearing a rating on a week that has no review is nothing to keep
+        if (!existing && clean === null) return s;
+        const ratings = { ...existing?.ratings };
+        if (clean === null) delete ratings[areaId]; else ratings[areaId] = clean;
+        return { reviews: existing ? s.reviews.map((r) => (r === existing ? { ...r, ratings } : r)) : [...s.reviews, { weekStart, wentWell: '', gotInWay: '', change: '', ratings }] };
+      }),
+      addArea: (name) => {
+        const clean = cleanTitle(name).slice(0, AREA_LIMITS.name).trim();
+        if (!clean || get().areas.length >= AREA_LIMITS.max) return null;
+        const id = newId().replace('t-', 'area-');
+        set((s) => ({ areas: [...s.areas, { id, name: clean }] }));
+        return id;
+      },
+      renameArea: (id, name) => set((s) => ({ areas: s.areas.map((a) => (a.id === id ? { ...a, name: cleanTitle(name).slice(0, AREA_LIMITS.name).trim() || a.name } : a)) })),
+      deleteArea: (id) => {
+        const index = get().areas.findIndex((a) => a.id === id), area = get().areas[index];
+        if (!area) return null;
+        set((s) => ({ areas: s.areas.filter((a) => a.id !== id) }));
+        return { area, index };
+      },
+      restoreArea: (area, index) => set((s) => ({ areas: putBack(s.areas, area, index) })),
+      moveArea: (id, direction) => set((s) => ({ areas: moved(s.areas, id, direction) })),
+      addLink: (input) => {
+        const url = cleanUrl(input.url);
+        if (!url || get().links.length >= LINK_LIMITS.max) return null;
+        const id = newId().replace('t-', 'l-');
+        set((s) => ({ links: [...s.links, { id, name: linkName(input.name, url), url }] }));
+        return id;
+      },
+      updateLink: (id, patch) => {
+        const link = get().links.find((l) => l.id === id), url = link && patch.url !== undefined ? cleanUrl(patch.url) : link?.url;
+        if (!link || !url) return false;
+        set((s) => ({ links: s.links.map((l) => (l.id === id ? { ...l, url, name: patch.name !== undefined ? linkName(patch.name, url) : l.name } : l)) }));
+        return true;
+      },
+      deleteLink: (id) => {
+        const index = get().links.findIndex((l) => l.id === id), link = get().links[index];
+        if (!link) return null;
+        set((s) => ({ links: s.links.filter((l) => l.id !== id) }));
+        return { link, index };
+      },
+      restoreLink: (link, index) => set((s) => ({ links: putBack(s.links, link, index) })),
+      moveLink: (id, direction) => set((s) => ({ links: moved(s.links, id, direction) })),
       saveReview: (weekStart) => {
         const review = get().reviews.find((r) => r.weekStart === weekStart);
-        if (!review || isBlank(review)) return false;
+        if (!review || isBlank(review, get().areas)) return false;
         set((s) => {
           // a review already saved has had its miles, whatever the log holds (the sample's has no entry of its own)
           const award = review.savedAt ? null : reviewAward(weekStart, s.log, todayISO(), s.settings.weekStartsOn);
@@ -344,8 +424,20 @@ export const useCompass = create<CompassStore>()(
         const award = habitAward(id, date, s.log, today);
         return { ticks: [...s.ticks, key], log: award ? [...s.log, award] : s.log };
       }),
-      setBoat: (patch) => set((s) => ({ boat: clampStage({ ...s.boat, ...patch, name: patch.name !== undefined ? patch.name.trim().slice(0, 40) || s.boat.name : s.boat.name }, milesLogged(s.log), daysAtSea(s.log)) })),
-      setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
+      setLevel: (weekStart, subjectId, level) => set((s) => ({ levels: withLevel(s.levels, weekStart, subjectId, level) })),
+      // the boat keeps its last good name; the goal can be cleared, so an empty one is no goal
+      setBoat: (patch) => set((s) => ({
+        boat: clampStage({
+          ...s.boat, ...patch,
+          name: patch.name !== undefined ? patch.name.trim().slice(0, 40) || s.boat.name : s.boat.name,
+          boundFor: patch.boundFor !== undefined ? cleanTitle(patch.boundFor).slice(0, 60).trim() || undefined : s.boat.boundFor,
+        }, milesLogged(s.log), daysAtSea(s.log)),
+      })),
+      setSettings: (patch) => set((s) => ({
+        settings: { ...s.settings, ...patch, name: patch.name !== undefined ? patch.name.trim().slice(0, 30).trim() || undefined : s.settings.name },
+        // the levels are kept by the first day of their week, so they move with it when that day changes
+        ...(patch.weekStartsOn !== undefined && patch.weekStartsOn !== s.settings.weekStartsOn ? { levels: rekeyed(s.levels, patch.weekStartsOn) } : {}),
+      })),
       resetSample: () => set(seed(todayISO())),
       clearAll: () => set(empty()),
       setSampleVoyage: (miles, days) => set((s) => {
@@ -357,14 +449,18 @@ export const useCompass = create<CompassStore>()(
       name: 'compass:v1',
       version: 1,
       storage: createJSONStorage(safeStorage),
-      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, boat, settings, sample }),
+      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, boat, settings, sample }),
       // anything unreadable falls back to the sample, so a bad save can never stop the app opening
       merge: (saved, current) => {
         const s = saved as Partial<CompassData> | undefined;
         if (!s || !Array.isArray(s.tasks) || !Array.isArray(s.log) || !s.boat || !s.settings) return current;
         // a save from before habits existed gets the sample habits if it is still the sample, and none if it is the user's own
         const fresh = s.sample !== false, habits = Array.isArray(s.habits) ? s.habits : fresh ? current.habits : [], ticks = Array.isArray(s.ticks) ? s.ticks : fresh ? current.ticks : [];
-        return { ...current, ...s, habits, ticks, sessions: Array.isArray(s.sessions) ? s.sessions : [], sessionsMade: Array.isArray(s.sessionsMade) ? s.sessionsMade : [], reviews: Array.isArray(s.reviews) ? s.reviews : fresh ? current.reviews : [], pages: Array.isArray(s.pages) ? s.pages : fresh ? current.pages : [], subjects: Array.isArray(s.subjects) && s.subjects.length ? s.subjects : current.subjects, assessments: Array.isArray(s.assessments) ? s.assessments : current.assessments };
+        return { ...current, ...s, habits, ticks, sessions: Array.isArray(s.sessions) ? s.sessions : [], sessionsMade: Array.isArray(s.sessionsMade) ? s.sessionsMade : [], reviews: Array.isArray(s.reviews) ? s.reviews : fresh ? current.reviews : [], pages: Array.isArray(s.pages) ? s.pages : fresh ? current.pages : [],
+          // a save from before links, areas and levels existed starts with none set, and the four starting areas
+          // and nothing in those lists is taken on trust: a save can be edited by hand, and a link is only a link if it is a web address
+          links: storedLinks(s.links), areas: storedAreas(s.areas), levels: s.levels && typeof s.levels === 'object' && !Array.isArray(s.levels) ? s.levels : {},
+          subjects: Array.isArray(s.subjects) && s.subjects.length ? s.subjects : current.subjects, assessments: Array.isArray(s.assessments) ? s.assessments : current.assessments };
       },
     },
   ),

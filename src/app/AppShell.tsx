@@ -1,7 +1,9 @@
 import { BookOpen, CalendarCheck, FileText, House, type LucideIcon, Repeat, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
+import { searchLinks } from '../domain/links';
 import { kindOf, searchPages } from '../domain/pages';
+import { RailLinks } from '../features/links/Links';
 import { useCompass } from '../state/store';
 import { useToday } from '../state/useToday';
 import { CompassMark } from '../ui/CompassMark';
@@ -19,7 +21,7 @@ const typing = (e: KeyboardEvent) => { const t = e.target as HTMLElement | null;
 
 /** Jump to a place or run a command. Opens with Cmd or Ctrl and K. */
 function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: () => void; onShortcuts: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState(''), pages = useCompass((s) => s.pages);
+  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState(''), pages = useCompass((s) => s.pages), links = useCompass((s) => s.links);
   useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) { setQuery(''); d.showModal(); } else if (!open && d.open) d.close(); }, [open]);
   type Command = { label: string; hint?: string; note?: string; run: () => void };
   const commands: Command[] = [
@@ -28,11 +30,14 @@ function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: (
     { label: 'Add a task', hint: 'N', run: () => { navigate('/'); window.setTimeout(() => document.getElementById('composer-day')?.focus(), 60); } },
     { label: 'Open the voyage', hint: 'V', run: () => navigate('/voyage') },
     { label: 'Go to Settings', run: () => navigate('/settings') },
+    { label: 'Add a link', run: () => navigate('/settings#links') },
     { label: 'Keyboard shortcuts', hint: '?', run: onShortcuts },
   ];
   // once something is typed, the user's own pages are found by title as well
   const found: Command[] = searchPages(pages, query).map((p) => ({ label: p.title, note: kindOf(p.kind).label, run: () => { navigate(`/pages/${p.id}`); } }));
-  const shown = [...commands.filter((c) => c.label.toLowerCase().includes(query.trim().toLowerCase())), ...found];
+  // and their links by name: one opens in a new tab that cannot reach back into Compass
+  const foundLinks: Command[] = searchLinks(links, query).map((l) => ({ label: l.name, note: 'Link', run: () => { window.open(l.url, '_blank', 'noopener,noreferrer'); } }));
+  const shown = [...commands.filter((c) => c.label.toLowerCase().includes(query.trim().toLowerCase())), ...found, ...foundLinks];
   const choose = (c: Command) => { onClose(); c.run(); };
   return (
     <dialog ref={ref} onClose={onClose} onClick={(e) => { if (e.target === ref.current) onClose(); }} aria-label="Search and commands"
@@ -122,12 +127,16 @@ export function AppShell() {
         <NavLink to="/" className="flex items-center gap-2.5 rounded-md px-2 font-display text-[22px] font-medium max-lg:justify-center" aria-label="Compass, home">
           <CompassMark size={30} /><span className="max-lg:hidden">Compass</span>
         </NavLink>
-        <ul className="flex flex-col gap-1">
-          {PLACES.map((p) => (
-            <li key={p.to}><NavLink to={p.to} end={p.to === '/'} className={link} title={p.label}><p.icon size={18} strokeWidth={1.75} aria-hidden="true" /><span className="max-lg:sr-only">{p.label}</span></NavLink></li>
-          ))}
-        </ul>
-        <div className="flex-1" />
+        {/* the places and the links scroll between the name and the foot of the rail when the window is too short for them,
+            so Search and Settings stay in sight. The small margins leave room for the rings and outlines of what is inside. */}
+        <div className="-mx-1.5 -my-1 flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto px-1.5 py-1">
+          <ul className="flex flex-col gap-1">
+            {PLACES.map((p) => (
+              <li key={p.to}><NavLink to={p.to} end={p.to === '/'} className={link} title={p.label}><p.icon size={18} strokeWidth={1.75} aria-hidden="true" /><span className="max-lg:sr-only">{p.label}</span></NavLink></li>
+            ))}
+          </ul>
+          <RailLinks />
+        </div>
         <div className="flex flex-col gap-1">
           <button type="button" onClick={() => setMenu(true)} title="Search (Cmd or Ctrl and K)"
             className="flex h-11 cursor-pointer items-center gap-2.5 rounded-md bg-surface-well px-2.5 text-[13.5px] text-text-muted max-lg:justify-center">

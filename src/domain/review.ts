@@ -1,7 +1,8 @@
 import { addDaysISO, weekStartOf } from './dates';
 import { weekCount } from './habits';
+import { hasRatings, shownRatings } from './ratings';
 import { allTasksInWeek, dayMarks, type Progress, progress } from './tasks';
-import type { Assessment, Habit, ISODate, LogEntry, Review, Task } from './types';
+import type { Assessment, Habit, ISODate, LogEntry, RatingArea, Review, Task } from './types';
 import { MILES } from './voyage';
 
 export interface WeekSummary {
@@ -48,10 +49,12 @@ export function reviewAward(weekStart: ISODate, log: LogEntry[], today: ISODate,
 }
 
 const parts = (r: Review) => [r.wentWell, r.gotInWay, r.change];
-export const isBlank = (r: Review): boolean => parts(r).every((p) => !p.trim());
+/** A review with nothing written and nothing rated. Only ratings for the areas given count, so one whose areas are all gone is blank. */
+export const isBlank = (r: Review, areas: RatingArea[] = []): boolean => parts(r).every((p) => !p.trim()) && shownRatings(r, areas).every((x) => x.rating === null);
 
-/** The first words of a reflection, for a list of earlier reviews. */
+/** The first words of a reflection, for a list of earlier reviews. A review that was only rated says so. */
 export function reviewExcerpt(r: Review): string {
   const first = parts(r).map((p) => p.trim().replace(/\s+/g, ' ')).find(Boolean) ?? '';
+  if (!first) return hasRatings(r) ? 'Rated, nothing written.' : '';
   return first.length > 90 ? `${first.slice(0, 87).trimEnd()}...` : first;
 }
