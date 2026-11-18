@@ -77,8 +77,8 @@
   --color-sea-loading: #9CC4CC;
 
   /* type */
-  --font-display: 'Brygada 1918 Variable', 'Iowan Old Style', Palatino, Georgia, serif;
-  --font-sans: 'Hanken Grotesk Variable', system-ui, -apple-system, 'Segoe UI', Roboto,
+  --font-display: 'Libre Caslon Text', 'Iowan Old Style', Palatino, Georgia, serif;
+  --font-sans: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', Roboto,
     'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
 
   /* shape */
@@ -98,7 +98,8 @@
   html { background: var(--color-surface-deck); color: var(--color-text); font-family: var(--font-sans);
     font-size: 16px; line-height: 1.45; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   body { margin: 0; min-height: 100dvh; font-variant-numeric: tabular-nums; }
-  h1, h2, h3 { font-family: var(--font-display); font-weight: 500; text-wrap: balance; }
+  /* Libre Caslon Text has a regular and a bold, so headings are regular: a 500 would only fall back to it */
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; }
   :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
   /* key hints use the interface face: the system has two families and no monospace */
   kbd { font-family: var(--font-sans); }

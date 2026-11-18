@@ -1,5 +1,8 @@
-/* Self-hosted variable fonts (SIL OFL 1.1). No request leaves for a font service. */
-@import '@fontsource-variable/brygada-1918/wght.css';
-@import '@fontsource-variable/brygada-1918/wght-italic.css';
-@import '@fontsource-variable/hanken-grotesk/wght.css';
-@import '@fontsource-variable/hanken-grotesk/wght-italic.css';
+/* Self-hosted fonts (SIL OFL 1.1). No request leaves for a font service. */
+/* Display and voyage: Libre Caslon Text, static 400 and 700 with the 400 italic. */
+@import '@fontsource/libre-caslon-text/400.css';
+@import '@fontsource/libre-caslon-text/400-italic.css';
+@import '@fontsource/libre-caslon-text/700.css';
+/* Interface: Source Sans 3, variable 200 to 900, roman and italic. */
+@import '@fontsource-variable/source-sans-3/wght.css';
+@import '@fontsource-variable/source-sans-3/wght-italic.css';

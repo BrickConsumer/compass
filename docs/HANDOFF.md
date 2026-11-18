@@ -89,7 +89,7 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
 - `docs/compass-master-brief.md`: the brief.
 - `docs/compass-art-direction.md`: the approved identity. It covers:
   - colour tokens with measured contrast;
-  - type (Brygada 1918 for display, Hanken Grotesk for the interface);
+  - type (Libre Caslon Text for display, Source Sans 3 for the interface; changed from Brygada 1918 and Hanken Grotesk on 18 November);
   - components, the boat, light, progression and motion;
   - references, and the token source in section 17.
 - `docs/home-screen-spec.md`: layout at every width, the data model, calendar, task, progress and window behaviour, accessibility, states.
@@ -131,7 +131,7 @@ These versions are installed.
 | Zustand | 5.1.0 |
 | date-fns | 4.4.0 |
 | lucide-react | 1.73.0 |
-| Fontsource variable fonts (Brygada 1918, Hanken Grotesk) | 5.3.0 |
+| Fontsource fonts (Libre Caslon Text 5.3.0, Source Sans 3 5.3.1) | see package.json |
 | TypeScript | 7.0.2 |
 | Vite | 8.3.8 |
 | Tailwind CSS | 4.3.5 |
