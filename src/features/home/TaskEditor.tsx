@@ -78,6 +78,7 @@ export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
               ))}
             </div>
           </fieldset>
+          {existing?.sessionId && store.sessions.some((x) => x.id === existing.sessionId) && <p className="text-[13.5px] text-text-muted">This task comes from a study session. Changes here are for this day only.</p>}
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
             {existing && existing.scope === 'week' && (
               <>

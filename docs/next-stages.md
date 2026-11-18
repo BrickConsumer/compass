@@ -63,9 +63,11 @@ Not built: reordering habits, pausing one without deleting it, and a view of con
 
 ## Stage 5. Study
 
-- Subject pages that can be created and edited. Subjects and assessments are fixed sample records today.
-- Assessments that can be added, edited and removed, with preparation tasks attached.
-- Recurring study sessions. This needs recurring tasks, which is new work in the data model.
+**Built on 16 November.** The rules are in [study-spec.md](study-spec.md).
+
+- ~~Subject pages that can be created and edited.~~ Built, with notes.
+- ~~Assessments that can be added, edited and removed.~~ Built. Preparation tasks attached to one assessment are not: a task belongs to a subject, not yet to an assessment.
+- ~~Recurring study sessions.~~ **Built.** Oliver decided from the [mock](https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4) that a session becomes an ordinary task that repeats. Three smaller rules were built to the mock's recommendations and are still open: sessions count toward the port and the storm like any task, a week's tasks are made when the week arrives, and changing a session leaves tasks already made.
 
 ## Stage 6. Weekly review, then My pages
 

@@ -11,7 +11,8 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
   - `sea-performance`: the performance work. Pushed, with pull request 2 open against `phase-1-home`.
   - `reward-loop`: the reward loop. Pushed, with pull request 3 open against `sea-performance`.
   - `home-motion`: motion, the popover editor and the shortcut list. Pushed, with pull request 4 open against `reward-loop`.
-  - `habits`: Stage 4, Habits. Local only.
+  - `habits`: Stage 4, Habits. Local only, one commit (`cb0b0ab`).
+  - `study`: Stage 5, Study, with recurring study sessions. Local only.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 
@@ -26,7 +27,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 | The boat's look review | Two rounds done. **Parked by Oliver** ("we will look at the boat later"). |
 | E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it yet. Findings and fixes are in `docs/testing-report.md`, section 2. |
 
-**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Both its commits are pushed: `7e72a5e` (tiers and sleeping) and `98a179d` (draw calls). The reward loop is commit `6e9730f` on `reward-loop`, pushed. The motion work is commit `e4a3846` on `home-motion`, pushed, with pull request 4 open against `reward-loop`. Stages 2 and 3 are complete. Habits is one commit on `habits`, accepted by Oliver as a first version. **It has not been pushed and has no pull request.**
+**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Both its commits are pushed: `7e72a5e` (tiers and sleeping) and `98a179d` (draw calls). The reward loop is commit `6e9730f` on `reward-loop`, pushed. The motion work is commit `e4a3846` on `home-motion`, pushed, with pull request 4 open against `reward-loop`. Stages 2 and 3 are complete. Habits is one commit on `habits`, accepted by Oliver as a first version; it has not been pushed and has no pull request. Study, with recurring study sessions, is one commit on `study`; it has not been pushed, has no pull request, and no founder has reviewed the Study page.
 
 ## 3. Decisions
 
@@ -36,6 +37,9 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 - **Window above the planner**, not beside it.
 - **Boat family:** dinghy, sloop, cutter, schooner, with a navy hull, ivory sails and brass trim by default.
 - **Each day's light:** dawn when nothing is done, clear day as tasks are done, golden hour when everything is done.
+
+### Decided by Oliver on 16 November, for Stage 5
+- **A study session becomes an ordinary task that repeats,** not a kind of its own and not a reminder. It counts in progress, earns miles and moves the day's light like any task.
 
 ### Decided by Oliver on 16 November, for Stage 4
 - **Today's habits on Home** sit on a line of their own between the week and the lists from 1280 px wide, and at the foot of the day's sheet below that. Habits have round ticks; tasks keep square boxes.
@@ -79,6 +83,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
   - components, the boat, light, progression and motion;
   - references, and the token source in section 17.
 - `docs/home-screen-spec.md`: layout at every width, the data model, calendar, task, progress and window behaviour, accessibility, states.
+- `docs/study-spec.md`: the Study page, subjects and assessments, and what is not built.
 - `docs/habits-spec.md`: what a habit is, what habits never do, miles, where they sit on Home, and the Habits page.
 - `docs/testing-report.md`: the functional testing report against the brief's section 11, the Phase E findings, measured contrast and targets, and where the build differs from the spec.
 - `docs/next-stages.md`: recommended next stages, and the decisions the founders owe.
@@ -87,6 +92,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 - `docs/art-direction/*.png`: images of the original review boards.
 - `docs/screenshots/lookdev/`: the second boat review, covering sailing, golden hour, port, storm and the four boats.
 - `docs/screenshots/home/`: Home at 375, 390, 768, 1024 and 1440, the new-task sheet, the task editor, and the voyage view. Retaken after Phase E.
+- **Recurring study sessions mock:** https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4. Private. Oliver chose option A on 16 November; three smaller decisions open.
 - **Habits on Home mock:** https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b. Private. Placement decided by Oliver on 16 November; three smaller decisions open.
 - **Review boards page:** https://claude.ai/artifact/9hqgFfz74FdZkBYdgJCCXm. It is private, so Josh and Aditya need it shared from its Share menu. It still shows the older side-on boat.
 
@@ -122,7 +128,7 @@ Opens on http://localhost:5173. It is also set up in `.claude/launch.json` as "c
 ```bash
 npm test
 ```
-Runs 130 unit tests, all passing.
+Runs 138 unit tests, all passing.
 ```bash
 npm run build
 ```
@@ -130,13 +136,14 @@ Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D ch
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 39 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
+Runs 45 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
 - `/voyage`: the boat at full size, name, colours, fittings and boats. Earned boats can be sailed; unearned ones are previews.
 - `/habits`: the week as a grid of ticks, a count for each habit, earlier weeks as the record, and adding, editing and deleting habits.
-- `/study`, `/review`, `/pages`: honest "Not built yet" pages that say what will live there.
+- `/study` and `/study/:subjectId`: the subjects, and one subject's assessments, tasks and notes.
+- `/review`, `/pages`: honest "Not built yet" pages that say what will live there.
 - `/settings`:
   - week start, pause and fold the sea;
   - reset the sample data, or clear everything (with an in-page confirm);
@@ -159,6 +166,8 @@ Runs 39 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
   - `carryOver`, `missedDay`, `upcomingAssessments`, `nextWeekPriorities`, `cleanTitle`.
 - `voyage.ts`: the miles rules, `STAGE_GATES`, `FITTINGS`, `awardsFor`, `earnedStage`, `nextFitting`, `nextStage`.
   - `earnedIds`, `unseenRewards` and `announcement` drive the reward loop: what has been earned since the voyage was last opened, and the one line that says so.
+- `sessions.ts`: which session tasks are due to be made (`sessionTasksDue`) and a session's days in words. A session becomes ordinary tasks; the store's `makeSessionTasks` makes them, and `AppShell` calls it when the day changes.
+- `study.ts`: a subject's tasks and assessments, the one-line summary, when a task is for, and a new subject's colour.
 - `habits.ts`: which habits fall on a day, a habit's week, counts, and choosing days. A tick is one habit on one day, kept as a key in a flat list.
 - `seed.ts`: sample data from the brief, placed around today, including the brief's four habits with three weeks of ticks. It starts the boat at 412 miles, 23 days at sea, sailing a sloop.
 
@@ -195,6 +204,9 @@ Runs 39 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
   - `batch.ts`: bakes parts that never move into one mesh for each material, which keeps a frame to 17 to 32 draw calls. Anything new that does not move should be built as ordinary meshes in plain paint (`solid()`), and the bake picks it up. Anything that moves must be added to the `moving` set.
 - `SeaWindow.tsx`: shows the still image first, then lazy-loads and fades in the 3D scene. It puts the scene to sleep when the window is off screen or the tab is hidden, and exposes `data-tier` and `data-asleep` for tests.
 - `VoyagePage.tsx`: the voyage view.
+
+**`features/study/`**
+- `StudyPage` (the list and the open subject's sheet) and `Editors` (the subject, assessment and session editors, in the shared frame).
 
 **`features/habits/`**
 - `HabitsPage`, `HabitEditor`, `HabitTick` (the round tick), and `HabitsToday`, which Home shows as a line from 1280 px and at the foot of the day's sheet below that.
@@ -240,9 +252,8 @@ Runs 39 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 
 ### Not built, by plan
 - Dark theme and night scene.
-- Study, Weekly review, My pages.
+- Weekly review, My pages.
 - Drag to reorder.
-- Editing assessments.
 - Recurring tasks.
 - Accounts and sync.
 
@@ -265,5 +276,6 @@ The full list is in `docs/next-stages.md`.
 1. **Get the four pull requests reviewed and merged, in order.** None has been reviewed. Do not stack a fifth on top.
 2. **A founder opens Home on a real phone,** and in Safari.
 3. **Merge pull request 1,** then pull request 2.
-4. **Push `habits`** when Oliver says so, and open its pull request against `home-motion`. The rules are in `docs/habits-spec.md`, and the mock that settled its place on Home is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b (private; share it from its Share menu). Oliver has accepted the Habits page as a first version; Josh and Aditya have not seen it.
-5. **Boat look review round three**, when Oliver is ready.
+4. **Push `habits`** when Oliver says so, and open its pull request against `home-motion`. Then push `study` and open its pull request against `habits`.
+5. **Three rules for study sessions are still open,** each built to the recommendation in the mock at https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4 (private; share it from its Share menu): whether sessions count toward the port and the storm, when a week's tasks are made, and what changing a session does to tasks already made. The rules are in `docs/habits-spec.md`, and the mock that settled its place on Home is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b (private; share it from its Share menu). Oliver has accepted the Habits page as a first version; Josh and Aditya have not seen it.
+6. **Boat look review round three**, when Oliver is ready.

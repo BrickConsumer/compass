@@ -125,4 +125,112 @@ describe('store', () => {
     expect(s().habits).toHaveLength(4);
     expect(s().ticks).toHaveLength(ticks);
   });
+
+  it('adds a subject in a colour not yet used, and refuses an empty name', () => {
+    expect(s().addSubject('  ')).toBeNull();
+    const id = s().addSubject('  Physical   education ')!, made = () => s().subjects.find((x) => x.id === id)!;
+    expect(made().name).toBe('Physical education');
+    expect(s().subjects.filter((x) => x.colour === made().colour)).toHaveLength(1);
+    s().updateSubject(id, { name: ' ', colour: 'clay', notes: 'Bring kit on Thursdays.' });
+    expect(made()).toMatchObject({ name: 'Physical education', colour: 'clay', notes: 'Bring kit on Thursdays.' });
+  });
+
+  it('deleting a subject removes its assessments and leaves its tasks without a subject; Undo puts it all back', () => {
+    const tasks = s().tasks.filter((t) => t.subjectId === 'bio').length, tests = s().assessments.length;
+    expect(tasks).toBeGreaterThan(0);
+    const removed = s().deleteSubject('bio')!;
+    expect(s().subjects.some((x) => x.id === 'bio')).toBe(false);
+    expect(s().assessments).toHaveLength(tests - 1);
+    expect(s().tasks.filter((t) => t.subjectId === 'bio')).toHaveLength(0);
+    expect(s().tasks).toHaveLength(20);
+    s().restoreSubject(removed);
+    expect(s().subjects.some((x) => x.id === 'bio')).toBe(true);
+    expect(s().assessments).toHaveLength(tests);
+    expect(s().tasks.filter((t) => t.subjectId === 'bio')).toHaveLength(tasks);
+  });
+
+  it('adds, changes and deletes an assessment, with Undo', () => {
+    expect(s().addAssessment({ title: '  ', subjectId: 'bio', date: todayISO(), kind: 'test' })).toBeNull();
+    expect(s().addAssessment({ title: 'Quiz', subjectId: 'nobody', date: todayISO(), kind: 'test' })).toBeNull();
+    const id = s().addAssessment({ title: ' Chinese  dictation ', subjectId: 'chi', date: addDaysISO(todayISO(), 2), kind: 'test' })!, made = () => s().assessments.find((a) => a.id === id);
+    expect(made()).toMatchObject({ title: 'Chinese dictation', subjectId: 'chi', kind: 'test' });
+    s().updateAssessment(id, { title: '', kind: 'exam', date: addDaysISO(todayISO(), 5) });
+    expect(made()).toMatchObject({ title: 'Chinese dictation', kind: 'exam', date: addDaysISO(todayISO(), 5) });
+    const gone = s().deleteAssessment(id)!;
+    expect(made()).toBeUndefined();
+    s().restoreAssessment(gone);
+    expect(made()).toBeDefined();
+  });
+
+  describe("study sessions", () => {
+    const today = todayISO(), weekday = new Date().getDay();
+    const from = (id: string) => s().tasks.filter((t) => t.sessionId === id);
+
+    it("a new session makes an ordinary task for today, which earns miles like any other", () => {
+      const before = s().tasks.length, id = s().addSession({ subjectId: "bio", name: "  Biology   revision ", days: [weekday] })!;
+      expect(from(id)).toHaveLength(1);
+      expect(from(id)[0]).toMatchObject({ title: "Biology revision", subjectId: "bio", scope: "day", date: today, priority: "normal" });
+      expect(s().tasks).toHaveLength(before + 1);
+      const miles = milesLogged(s().log);
+      s().toggleTask(from(id)[0]!.id);
+      expect(milesLogged(s().log)).toBe(miles + 2);
+    });
+
+    it("refuses a session with no name, no day or no subject", () => {
+      expect(s().addSession({ subjectId: "bio", name: "  ", days: [weekday] })).toBeNull();
+      expect(s().addSession({ subjectId: "bio", name: "Revision", days: [] })).toBeNull();
+      expect(s().addSession({ subjectId: "nobody", name: "Revision", days: [weekday] })).toBeNull();
+      expect(s().sessions).toHaveLength(0);
+    });
+
+    it("never makes a task twice, so one deleted for a day off stays deleted", () => {
+      const id = s().addSession({ subjectId: "bio", name: "Biology revision", days: [weekday] })!;
+      s().deleteTasks(from(id).map((t) => t.id));
+      s().makeSessionTasks();
+      s().updateSession(id, { name: "Biology past papers" });
+      expect(from(id)).toHaveLength(0);
+    });
+
+    it("changing a session leaves the tasks already made as they are", () => {
+      const id = s().addSession({ subjectId: "bio", name: "Biology revision", days: [weekday] })!;
+      s().updateSession(id, { name: "Biology past papers", days: [(weekday + 3) % 7] });
+      expect(s().sessions[0]).toMatchObject({ name: "Biology past papers", days: [(weekday + 3) % 7] });
+      expect(from(id).filter((t) => t.date === today)).toHaveLength(1);
+      expect(from(id).find((t) => t.date === today)!.title).toBe("Biology revision");
+      // an empty name or no days is not saved
+      s().updateSession(id, { name: " ", days: [] });
+      expect(s().sessions[0]).toMatchObject({ name: "Biology past papers", days: [(weekday + 3) % 7] });
+    });
+
+    it("when the next week arrives, its tasks are made", () => {
+      const id = s().addSession({ subjectId: "bio", name: "Biology revision", days: [weekday] })!;
+      s().makeSessionTasks(addDaysISO(today, 7));
+      s().makeSessionTasks(addDaysISO(today, 7));
+      expect(from(id).map((t) => t.date).sort()).toEqual([today, addDaysISO(today, 7)]);
+    });
+
+    it("ending a session keeps its tasks, and Undo brings the session back", () => {
+      const id = s().addSession({ subjectId: "bio", name: "Biology revision", days: [weekday] })!, gone = s().deleteSession(id)!;
+      expect(s().sessions).toHaveLength(0);
+      expect(from(id)).toHaveLength(1);
+      s().restoreSession(gone);
+      expect(s().sessions.map((x) => x.id)).toEqual([id]);
+    });
+
+    it("deleting a subject ends its sessions, and Undo restores them", () => {
+      const id = s().addSession({ subjectId: "bio", name: "Biology revision", days: [weekday] })!, removed = s().deleteSubject("bio")!;
+      expect(s().sessions).toHaveLength(0);
+      // nothing more is made for a session that has gone
+      s().makeSessionTasks(addDaysISO(today, 7));
+      expect(from(id)).toHaveLength(1);
+      s().restoreSubject(removed);
+      expect(s().sessions.map((x) => x.id)).toEqual([id]);
+    });
+
+    it("the sample has no sessions, so its week is unchanged", () => {
+      s().makeSessionTasks();
+      expect(s().sessions).toEqual([]);
+      expect(s().tasks).toHaveLength(20);
+    });
+  });
 });

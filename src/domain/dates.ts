@@ -28,6 +28,8 @@ export function weekLabel(weekStart: ISODate): string {
 export const longDate = (iso: ISODate): string => f(d(iso), 'EEEE d MMMM');
 /** For the phone headline, where the full weekday would wrap beside the two icon buttons. */
 export const shortDate = (iso: ISODate): string => f(d(iso), 'EEE d MMMM');
+/** A day in a list, where the year is understood: "Thu 19 Nov". */
+export const shortDay = (iso: ISODate): string => f(d(iso), 'EEE d MMM');
 /** 0 for Sunday to 6 for Saturday. */
 export const weekdayOf = (iso: ISODate): number => d(iso).getDay();
 export const weekdayShort = (iso: ISODate): string => f(d(iso), 'EEE');
