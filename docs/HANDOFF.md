@@ -6,7 +6,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 
 - **Compass**: a calm student planner whose distinctive feature is a sailboat that develops as you make progress.
 - **Founders:** Josh, Oliver and Aditya. Oliver is driving these sessions.
-- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Work is on branch `phase-1-home`, which is pushed. `main` still holds only the first commit.
+- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Phase 1 is on branch `phase-1-home`, pushed, with pull request 1 open to `main`. The performance work is on branch `sea-performance`, cut from it. `main` still holds only the first commit.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 
@@ -21,7 +21,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 | The boat's look review | Two rounds done. **Parked by Oliver** ("we will look at the boat later"). |
 | E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it yet. Findings and fixes are in `docs/testing-report.md`, section 2. |
 
-**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is the commit after it on the same branch: the fixes in `src/`, two changes to the browser tests, new screenshots, and the two new documents. **The Phase E commit has not been pushed.**
+**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Its first commit (`7e72a5e`, tiers and sleeping) is pushed. The draw-call work is the commit after it, approved by Oliver. **That second commit has not been pushed.**
 
 ## 3. Decisions
 
@@ -109,7 +109,7 @@ Opens on http://localhost:5173. It is also set up in `.claude/launch.json` as "c
 ```bash
 npm test
 ```
-Runs 59 unit tests, all passing.
+Runs 88 unit tests, all passing.
 ```bash
 npm run build
 ```
@@ -117,7 +117,7 @@ Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D ch
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 15 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
+Runs 21 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
@@ -127,7 +127,7 @@ Runs 15 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
   - week start, pause and fold the sea;
   - reset the sample data, or clear everything (with an in-page confirm);
   - a labelled prototype tool to set miles and days at sea.
-- `/lookdev`: the boat and sea on their own, with controls for stage, tasks done, in port, missed yesterday, pause, still-only, and colours.
+- `/lookdev`: the boat and sea on their own, with controls for stage, tasks done, in port, missed yesterday, pause, still-only, performance tier, and colours.
 
 ### Layout of `src/`
 
@@ -166,11 +166,15 @@ Runs 15 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 **`features/voyage/`**
 - `boat/specs.ts`: the measurements of all four boats, shared by the 2D and 3D boats.
 - `light.ts`: the light table, storm light, and `sceneState(progress, { missedYesterday })`, which returns light, wind, sail fill, waves, speed, storm and in-port.
+- `tier.ts`: the two performance tiers, the rule for stepping down, and the frame-time watch. Pure and unit-tested.
+  - Phones start on the low tier (no shadow map, fewer pixels, 30 frames a second).
+  - Any device steps down when frames stay slow, and stays down for the visit.
 - `poster/`: the SVG still image, used while the 3D scene loads and if WebGL is unavailable.
 - `scene/`:
   - `Scene.tsx`: sky, sea, rain and wake shaders, islands, gulls, lights and framing;
-  - `boat/` (hull loft, materials, `buildBoat`), `scenery.ts` (port, people, gulls, silhouettes), `waves.ts`.
-- `SeaWindow.tsx`: shows the still image first, then lazy-loads and fades in the 3D scene.
+  - `boat/` (hull loft, materials, `buildBoat`), `scenery.ts` (port, people, gulls, silhouettes), `waves.ts`;
+  - `batch.ts`: bakes parts that never move into one mesh for each material, which keeps a frame to 17 to 32 draw calls. Anything new that does not move should be built as ordinary meshes in plain paint (`solid()`), and the bake picks it up. Anything that moves must be added to the `moving` set.
+- `SeaWindow.tsx`: shows the still image first, then lazy-loads and fades in the 3D scene. It puts the scene to sleep when the window is off screen or the tab is hidden, and exposes `data-tier` and `data-asleep` for tests.
 - `VoyagePage.tsx`: the voyage view.
 
 **Other `features/`**
@@ -200,8 +204,7 @@ Runs 15 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 ## 7. Not verified, not built, known issues
 
 ### Not run or measured
-- **Performance on a real phone** has not been measured. A laptop figure exists (60 frames a second at phone size with the processor slowed four times) and is only indicative.
-- **The low performance tier in the spec is mostly not built.** Touch devices get a lower pixel density and nothing else, and the scene keeps drawing when scrolled out of view.
+- **Performance on a real phone** has not been measured. Laptop figures exist and are only indicative.
 - **No manual screen-reader pass.** Contrast, text size and touch targets were measured by script in the running app and pass.
 - **Only Chrome has been tested.**
 - The full list of places where the build differs from the spec is in `docs/testing-report.md`, section 6.
@@ -236,8 +239,8 @@ All eleven now exist. The last three (the Phase E pass, the testing report and t
 
 The full list is in `docs/next-stages.md`.
 
-1. **Push the Phase E commit** when Oliver says so, then open a pull request from `phase-1-home` to `main`.
+1. **Push the draw-call commit** on `sea-performance` when Oliver says so. Pull request 2 picks it up.
 2. **A founder opens Home on a real phone,** and in Safari.
-3. **Build the low performance tier** and stop the scene drawing when it is out of view.
+3. **Merge pull request 1,** then pull request 2.
 4. **Finish the reward loop:** the plate announcing what was earned, and the motion in the spec.
 5. **Boat look review round three**, when Oliver is ready.

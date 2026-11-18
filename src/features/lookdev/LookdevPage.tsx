@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { type BoatColours, DEFAULT_COLOURS, STAGES, STAGE_ORDER, type StageId } from '../voyage/boat/specs';
 import { SeaWindow } from '../voyage/SeaWindow';
+import type { Tier } from '../voyage/tier';
 
 const HULLS: [string, string][] = [['Deep navy', '#0E243A'], ['Marine', '#1A619B'], ['Teal', '#256F75'], ['Ivory', '#F6F0E4'], ['Bottle green', '#1C6048'], ['Oxblood', '#8C2D2B']];
 const SAILS: [string, string][] = [['Ivory', '#FCF8EE'], ['Flax', '#EFE0B8'], ['Tanbark', '#9A5A3C'], ['Slate', '#7E91A6'], ['Seafoam', '#BEE8D5'], ['Rose', '#F6CFC9']];
@@ -36,9 +37,10 @@ export function LookdevPage() {
   const [paused, setPaused] = useState(false);
   const [missed, setMissed] = useState(false);
   const [use3d, setUse3d] = useState(true);
+  const [tier, setTier] = useState<Tier>();
   const [colours, setColours] = useState<BoatColours>(DEFAULT_COLOURS);
   const progress = planned ? done / 5 : null;
-  const windowProps = { stage, progress, colours, paused, boatName: 'The Kestrel', still: !use3d, missedYesterday: missed };
+  const windowProps = { stage, progress, colours, paused, boatName: 'The Kestrel', still: !use3d, missedYesterday: missed, tier };
 
   return (
     <main className="mx-auto flex max-w-[1240px] flex-col gap-8 px-4 py-8 sm:px-7">
@@ -91,6 +93,19 @@ export function LookdevPage() {
             <label className="flex items-center gap-2"><input type="checkbox" checked={paused} onChange={(e) => setPaused(e.target.checked)} /> Pause the sea</label>
             <label className="flex items-center gap-2"><input type="checkbox" checked={!use3d} onChange={(e) => setUse3d(!e.target.checked)} /> Still image only</label>
           </div>
+
+          <fieldset>
+            <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Performance</legend>
+            <div className="flex flex-wrap gap-2">
+              {([['Automatic', undefined], ['High', 'high'], ['Low', 'low']] as const).map(([name, value]) => (
+                <button key={name} type="button" aria-pressed={tier === value} onClick={() => setTier(value)}
+                  className="h-10 cursor-pointer rounded-md px-4 text-[14.5px] font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] aria-pressed:bg-surface-inverse aria-pressed:text-text-inverse aria-pressed:shadow-none">
+                  {name}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 max-w-[52ch] text-[13.5px] text-text-muted">Low is what phones get: no shadow map, fewer pixels, 30 frames a second. Automatic starts from the device and drops if frames run slow.</p>
+          </fieldset>
 
           <div className="flex flex-wrap gap-x-8 gap-y-5">
             <Swatches label="Hull" options={HULLS} value={colours.hull} onChange={(hull) => setColours({ ...colours, hull })} />

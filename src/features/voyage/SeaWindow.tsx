@@ -1,6 +1,7 @@
-import { Component, lazy, type ReactNode, Suspense, useEffect, useState } from 'react';
+import { Component, lazy, type ReactNode, type RefObject, Suspense, useEffect, useRef, useState } from 'react';
 import type { BoatColours, StageId } from './boat/specs';
 import { BoatPoster } from './poster/BoatPoster';
+import type { Tier } from './tier';
 
 const Scene = lazy(() => import('./scene/Scene'));
 
@@ -23,6 +24,25 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
+/** True while the element is on screen in a visible tab. The sea draws nothing when nobody can see it. */
+function useInView(ref: RefObject<HTMLElement | null>): boolean {
+  const [onScreen, setOnScreen] = useState(true);
+  const [tabShown, setTabShown] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver !== 'function') return;
+    const io = new IntersectionObserver((entries) => setOnScreen(entries[entries.length - 1]?.isIntersecting ?? true));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref]);
+  useEffect(() => {
+    const on = () => setTabShown(document.visibilityState !== 'hidden');
+    document.addEventListener('visibilitychange', on);
+    return () => document.removeEventListener('visibilitychange', on);
+  }, []);
+  return onScreen && tabShown;
+}
+
 /** If the 3D scene fails to load or loses its context, keep the still image and say nothing. */
 class KeepPoster extends Component<{ children: ReactNode; onError: () => void }, { failed: boolean }> {
   state = { failed: false };
@@ -43,6 +63,8 @@ export interface SeaWindowProps {
   paused?: boolean;
   /** Show only the still image and never load the 3D scene. */
   still?: boolean;
+  /** Force a performance tier, for the look review. */
+  tier?: Tier;
   className?: string;
 }
 
@@ -50,8 +72,10 @@ export interface SeaWindowProps {
  * The window onto the sea. The still image is drawn at once and reserves the space;
  * the 3D scene loads afterwards and fades in over it. Without WebGL the still image stays.
  */
-export function SeaWindow({ stage, progress, colours, boatName, missedYesterday = false, paused = false, still = false, className = '' }: SeaWindowProps) {
+export function SeaWindow({ stage, progress, colours, boatName, missedYesterday = false, paused = false, still = false, tier, className = '' }: SeaWindowProps) {
   const reduced = useReducedMotion();
+  const box = useRef<HTMLDivElement>(null), inView = useInView(box);
+  const [running, setRunning] = useState<Tier>();
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -65,13 +89,13 @@ export function SeaWindow({ stage, progress, colours, boatName, missedYesterday 
   useEffect(() => { if (!live) setReady(false); }, [live]);
 
   return (
-    <div className={`relative isolate overflow-hidden bg-[#9CC4CC] ${className}`} data-scene={live && ready ? 'live' : 'still'}>
+    <div ref={box} className={`relative isolate overflow-hidden bg-[#9CC4CC] ${className}`} data-scene={live && ready ? 'live' : 'still'} data-tier={live ? running : undefined} data-asleep={live && !inView ? '' : undefined}>
       <BoatPoster stage={stage} progress={progress} colours={colours} boatName={boatName} missedYesterday={missedYesterday} className="absolute inset-0 size-full" />
       {live && (
         <div aria-hidden="true" className="absolute inset-0 transition-opacity duration-[400ms] ease-[var(--ease-out)] motion-reduce:duration-200" style={{ opacity: ready ? 1 : 0 }}>
           <KeepPoster onError={() => setFailed(true)}>
             <Suspense fallback={null}>
-              <Scene stage={stage} progress={progress} colours={colours} missedYesterday={missedYesterday} still={paused || reduced} onReady={() => setReady(true)} />
+              <Scene stage={stage} progress={progress} colours={colours} missedYesterday={missedYesterday} still={paused || reduced} asleep={!inView} tier={tier} onTier={setRunning} onReady={() => setReady(true)} />
             </Suspense>
           </KeepPoster>
         </div>

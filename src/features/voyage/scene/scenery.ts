@@ -1,7 +1,9 @@
 import {
-  BoxGeometry, BufferAttribute, BufferGeometry, CapsuleGeometry, ConeGeometry, CylinderGeometry, DoubleSide, Group, type Material, Mesh, MeshBasicMaterial,
-  MeshStandardMaterial, Shape, ShapeGeometry, SphereGeometry, Vector3,
+  BoxGeometry, BufferAttribute, BufferGeometry, CapsuleGeometry, ConeGeometry, CylinderGeometry, DoubleSide, Group, type Material, Matrix4, Mesh, MeshBasicMaterial,
+  Object3D, Shape, ShapeGeometry, SphereGeometry, Vector3,
 } from 'three';
+import { bakeStatic, Batch, type Range } from './batch';
+import { paintMaterial, solid } from './boat/materials';
 
 /** A small seeded generator so scenery is the same on every visit. */
 export function seeded(seed: number): () => number {
@@ -66,63 +68,97 @@ export const flat = (color = '#888888') => new MeshBasicMaterial({ color, side: 
 
 /* ---------- gulls ---------- */
 
-export interface Gull { group: Group; update: (time: number) => void; phase: number; speed: number; base: Vector3; span: number }
+export interface Gull { phase: number; speed: number; base: Vector3; span: number }
 
-/** A gull: two wings that beat, gliding on a slow looping path. */
-export function buildGull(material: Material, seed: number): Gull {
-  const R = seeded(seed), group = new Group(), wings: Mesh[] = [];
-  for (const side of [-1, 1]) {
-    const g = new BufferGeometry();
-    g.setAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0, 0.12, 0, side * 0.5, -0.22, 0, side * 0.48, 0.02, 0, side * 1.0, -0.2, 0, side * 0.95, 0.12, 0, side * 0.5]), 3));
-    g.setIndex([0, 1, 2, 1, 3, 4, 1, 4, 2]);
-    const m = new Mesh(g, material); wings.push(m); group.add(m);
-  }
-  const phase = R() * 6.28, speed = 0.8 + R() * 0.6;
-  const gull: Gull = {
-    group, phase, speed, base: new Vector3(), span: 1,
-    update: (time) => {
+export interface Flock {
+  mesh: Mesh;
+  gulls: Gull[];
+  /** Put gull `i` somewhere, banked and turned, with its wings where they are at this time. A hidden gull is folded to nothing. */
+  place: (i: number, position: Vector3, yaw: number, roll: number, scale: number, visible: boolean, time: number) => void;
+}
+
+/** One wing: a bent blade from the body out to the tip. Six points, three triangles. */
+const WING = [[0, 0], [0.12, 0.5], [-0.22, 0.48], [0.02, 1.0], [-0.2, 0.95], [0.12, 0.5]] as const, WING_TRIS = [0, 1, 2, 1, 3, 4, 1, 4, 2];
+
+/**
+ * Gulls: each two wings that beat, gliding on a slow looping path. The whole flock is one mesh whose
+ * points are moved each frame, so seven birds cost one draw call instead of fourteen.
+ */
+export function buildFlock(material: Material, seeds: number[]): Flock {
+  const perGull = WING.length * 2, geo = new BufferGeometry(), idx: number[] = [];
+  const pos = new BufferAttribute(new Float32Array(seeds.length * perGull * 3), 3);
+  seeds.forEach((_, i) => { for (const w of [0, 1]) for (const t of WING_TRIS) idx.push(i * perGull + w * WING.length + t); });
+  geo.setAttribute('position', pos); geo.setIndex(idx);
+  const mesh = new Mesh(geo, material);
+  // the birds range over the whole view, so there is nothing to gain from testing the flock against it
+  mesh.frustumCulled = false;
+  const gulls = seeds.map((seed) => { const R = seeded(seed); return { phase: R() * 6.28, speed: 0.8 + R() * 0.6, base: new Vector3(), span: 1 }; });
+  const body = new Object3D(), v = new Vector3();
+  return {
+    mesh, gulls,
+    place: (i, position, yaw, roll, scale, visible, time) => {
+      const g = gulls[i]!, o = i * perGull;
       // a few beats, then a glide
-      const cycle = (time * speed + phase) % 6.5, beat = cycle < 3 ? Math.sin(cycle * 7.5) * 0.55 : 0.12 * Math.sin(cycle * 1.3);
-      wings[0]!.rotation.x = -beat; wings[1]!.rotation.x = beat;
+      const cycle = (time * g.speed + g.phase) % 6.5, beat = cycle < 3 ? Math.sin(cycle * 7.5) * 0.55 : 0.12 * Math.sin(cycle * 1.3);
+      body.position.copy(position); body.rotation.set(0, yaw, roll); body.scale.setScalar(visible ? scale : 0); body.updateMatrix();
+      [-1, 1].forEach((side, w) => {
+        // each wing turns about the line of the body: one up, one down
+        const a = side * beat, cos = Math.cos(a), sin = Math.sin(a);
+        WING.forEach(([x, out], k) => { const z = side * out; v.set(x, -z * sin, z * cos).applyMatrix4(body.matrix); pos.setXYZ(o + w * WING.length + k, v.x, v.y, v.z); });
+      });
+      pos.needsUpdate = true;
     },
   };
-  return gull;
 }
 
 /* ---------- the port ---------- */
 
-const std = (color: string, roughness = 0.8) => new MeshStandardMaterial({ color, roughness });
+const std = (color: string, roughness = 0.8) => solid(color, roughness);
 
 export interface Person { group: Group; update: (time: number) => void }
 
 /** A small figure, 1.7 m tall, carrying a crate or a sack. No face: a calm, simple model. */
-export function buildPerson(shirt: string, skin: string, trousers: string, load: 'crate' | 'sack' | 'barrel' | null): Person {
-  const group = new Group(), shadows = (m: Mesh) => { m.castShadow = true; m.receiveShadow = true; return m; };
-  const legs: Mesh[] = [];
-  for (const side of [-1, 1]) {
-    const leg = shadows(new Mesh(new CapsuleGeometry(0.075, 0.6, 3, 8), std(trousers)));
-    leg.geometry.translate(0, -0.37, 0); leg.position.set(0, 0.82, side * 0.1); legs.push(leg); group.add(leg);
-  }
-  const torso = shadows(new Mesh(new CapsuleGeometry(0.17, 0.36, 4, 10), std(shirt))); torso.position.y = 1.14; group.add(torso);
-  const head = shadows(new Mesh(new SphereGeometry(0.125, 14, 12), std(skin, 0.7))); head.position.y = 1.57; group.add(head);
-  const arms: Mesh[] = [];
-  for (const side of [-1, 1]) {
-    const arm = shadows(new Mesh(new CapsuleGeometry(0.055, 0.42, 3, 8), std(shirt)));
-    arm.geometry.translate(0, -0.25, 0); arm.position.set(0.02, 1.36, side * 0.22); arm.rotation.z = load ? 1.15 : 0.08; arms.push(arm); group.add(arm);
-  }
+export function buildPerson(material: Material, shirt: string, skin: string, trousers: string, load: 'crate' | 'sack' | 'barrel' | null): Person {
+  // the whole figure is one mesh; legs and arms are swung by turning their points about the hip or shoulder
+  const batch = new Batch(), at = (x: number, y: number, z: number) => new Matrix4().makeTranslation(x, y, z);
+  const limb = (geo: BufferGeometry, color: string, x: number, y: number, z: number) => ({ range: batch.add(geo, at(x, y, z), { color, rough: 0.8 }), x, y });
+  const legs = [-1, 1].map((side) => limb(new CapsuleGeometry(0.075, 0.6, 3, 8).translate(0, -0.37, 0), trousers, 0, 0.82, side * 0.1));
+  const torso = batch.add(new CapsuleGeometry(0.17, 0.36, 4, 10), at(0, 1.14, 0), { color: shirt, rough: 0.8 });
+  batch.add(new SphereGeometry(0.125, 14, 12), at(0, 1.57, 0), { color: skin, rough: 0.7 });
+  const arms = [-1, 1].map((side) => limb(new CapsuleGeometry(0.055, 0.42, 3, 8).translate(0, -0.25, 0), shirt, 0.02, 1.36, side * 0.22));
   if (load) {
     const geo = load === 'crate' ? new BoxGeometry(0.42, 0.32, 0.42) : load === 'barrel' ? new CylinderGeometry(0.2, 0.2, 0.42, 12) : new SphereGeometry(0.24, 10, 8);
-    const cargo = shadows(new Mesh(geo, std(load === 'sack' ? '#D9C7A0' : load === 'barrel' ? '#8B5E36' : '#B88A55')));
-    if (load === 'sack') cargo.scale.set(1, 0.75, 1.2);
-    cargo.position.set(0.36, 1.18, 0); group.add(cargo);
+    const place = at(0.36, 1.18, 0);
+    if (load === 'sack') place.scale(new Vector3(1, 0.75, 1.2));
+    batch.add(geo, place, { color: load === 'sack' ? '#D9C7A0' : load === 'barrel' ? '#8B5E36' : '#B88A55', rough: 0.8 });
   }
+  const geo = batch.geometry(), pos = geo.getAttribute('position') as BufferAttribute, nor = geo.getAttribute('normal') as BufferAttribute;
+  const rest = { pos: Float32Array.from(pos.array), nor: Float32Array.from(nor.array) };
+  /** Turn a limb about its joint, as a mesh's `rotation.z` would. */
+  const swingLimb = ({ range, x, y }: { range: Range; x: number; y: number }, angle: number) => {
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    for (let i = range.start; i < range.start + range.count; i++) {
+      const dx = rest.pos[i * 3]! - x, dy = rest.pos[i * 3 + 1]! - y, nx = rest.nor[i * 3]!, ny = rest.nor[i * 3 + 1]!;
+      pos.setXY(i, x + dx * cos - dy * sin, y + dx * sin + dy * cos);
+      nor.setXY(i, nx * cos - ny * sin, nx * sin + ny * cos);
+    }
+  };
+  const pose = (leg: number, arm0: number, arm1: number, bob: number) => {
+    swingLimb(legs[0]!, leg); swingLimb(legs[1]!, -leg); swingLimb(arms[0]!, arm0); swingLimb(arms[1]!, arm1);
+    for (let i = torso.start; i < torso.start + torso.count; i++) pos.setY(i, rest.pos[i * 3 + 1]! + bob);
+    pos.needsUpdate = true; nor.needsUpdate = true;
+  };
+  // arms hold the load out in front, or hang a little off the body
+  const held = load ? 1.15 : 0.08;
+  pose(0, held, held, 0);
+  const mesh = new Mesh(geo, material), group = new Group();
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  group.add(mesh);
   return {
     group,
     update: (time) => {
       const swing = Math.sin(time * 6) * 0.42;
-      legs[0]!.rotation.z = swing; legs[1]!.rotation.z = -swing;
-      if (!load) { arms[0]!.rotation.z = -swing * 0.7; arms[1]!.rotation.z = swing * 0.7; }
-      torso.position.y = 1.14 + Math.abs(Math.sin(time * 6)) * 0.018;
+      pose(swing, load ? held : -swing * 0.7, load ? held : swing * 0.7, Math.abs(Math.sin(time * 6)) * 0.018);
     },
   };
 }
@@ -166,7 +202,7 @@ export function buildPort(L: number, B: number, deckHeight: number): Port {
   for (const [dx, dz] of [[2.92, -0.24], [3.06, -0.14], [3.0, -0.3]] as const) { const loaf = mesh(new SphereGeometry(0.1, 8, 6), std('#C98A4B')); loaf.scale.set(1.4, 0.7, 0.8); loaf.position.set(stack + dx, top + 0.26, pz + dz); }
   // a lamp post at the head of the pier
   mesh(new CylinderGeometry(0.04, 0.05, 2.2, 8), pile).position.set(x1 - 0.5, top + 1.1, pz - width / 2 + 0.25);
-  const lamp = new Mesh(new SphereGeometry(0.13, 10, 8), new MeshStandardMaterial({ color: '#F2D488', emissive: '#F2D488', emissiveIntensity: 0.8 })); lamp.position.set(x1 - 0.5, top + 2.25, pz - width / 2 + 0.25); group.add(lamp);
+  const lamp = new Mesh(new SphereGeometry(0.13, 10, 8), solid('#F2D488', 1, 0, 0.8)); lamp.position.set(x1 - 0.5, top + 2.25, pz - width / 2 + 0.25); group.add(lamp);
 
   // the shore behind: a beach, green ground, a few palms, a boathouse
   const sand = std('#E8D3A0', 0.95), grass = std('#7E9A62', 0.95), shoreZ = pz - 9;
@@ -191,13 +227,17 @@ export function buildPort(L: number, B: number, deckHeight: number): Port {
   mesh(new CylinderGeometry(0.8, 1.3, th, 20), std('#FBF7EE', 0.8), light).position.y = 1.5 + th / 2;
   mesh(new CylinderGeometry(1.02, 1.12, th * 0.18, 20), std('#AB3935', 0.8), light).position.y = 1.5 + th * 0.45;
   mesh(new CylinderGeometry(1.15, 1.15, 0.2, 20), std('#3A4A5C', 0.7), light).position.y = 1.5 + th + 0.1;
-  const beacon = new Mesh(new CylinderGeometry(0.6, 0.6, 1.1, 14), new MeshStandardMaterial({ color: '#F6E3A6', emissive: '#F2D488', emissiveIntensity: 0.9 })); beacon.position.y = 1.5 + th + 0.85; light.add(beacon);
+  const beacon = new Mesh(new CylinderGeometry(0.6, 0.6, 1.1, 14), solid('#F6E3A6', 1, 0, 0.9)); beacon.position.y = 1.5 + th + 0.85; light.add(beacon);
   mesh(new ConeGeometry(0.95, 1.0, 16), std('#AB3935', 0.8), light).position.y = 1.5 + th + 1.9;
 
   // people: two carry supplies along the pier and aboard, one stows them on deck, one keeps the tally
+  // nothing built so far moves, so the pier, the supplies and the shore become two meshes: one that casts shadows and one that does not
+  const paint = paintMaterial(); mats.push(paint);
+  for (const baked of bakeStatic(group, new Set(), { paint: () => paint })) geos.push(baked.geometry);
+
   const palette: [string, string, string][] = [['#1A619B', '#C89B7B', '#3A4A5C'], ['#AB3935', '#8D5B3F', '#405973'], ['#256F75', '#E3BFA0', '#5C4215'], ['#BF9A48', '#A8774F', '#2A4663']];
-  const walkers = [buildPerson(...palette[0]!, 'crate'), buildPerson(...palette[1]!, 'sack')];
-  const onDeck = buildPerson(...palette[2]!, 'barrel'), tally = buildPerson(...palette[3]!, null);
+  const walkers = [buildPerson(paint, ...palette[0]!, 'crate'), buildPerson(paint, ...palette[1]!, 'sack')];
+  const onDeck = buildPerson(paint, ...palette[2]!, 'barrel'), tally = buildPerson(paint, ...palette[3]!, null);
   for (const p of [...walkers, onDeck, tally]) group.add(p.group);
   onDeck.group.position.set(-L * 0.22, deckHeight + 0.12, 0.05); onDeck.group.rotation.y = 0.4;
   tally.group.position.set(stack - 2.6, top, pz + 0.55); tally.group.rotation.y = -Math.PI / 2 + 0.3;
@@ -213,7 +253,6 @@ export function buildPort(L: number, B: number, deckHeight: number): Port {
       w.update(still ? 0.4 + i : time * (0.9 + i * 0.12));
     });
     onDeck.update(still ? 0 : time * 0.35);
-    lamp.scale.setScalar(1);
   };
   update(0, true);
   return { group, update, dispose: () => { for (const g of geos) g.dispose(); for (const m of mats) m.dispose(); } };

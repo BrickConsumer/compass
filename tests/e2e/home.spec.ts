@@ -92,8 +92,8 @@ test('an assessment takes the calendar to its date, and the boat opens and close
   await page.keyboard.press('v');
   await expect(page).toHaveURL(/\/voyage$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('The Kestrel');
-  await page.keyboard.press('Escape');
-  await expect(page).toHaveURL(/\/$/);
+  // as on Home, the page is drawn a moment before its shortcuts are listening
+  await expect(async () => { await page.keyboard.press('Escape'); await expect(page).toHaveURL(/\/$/, { timeout: 500 }); }).toPass();
 });
 
 for (const width of [375, 390, 768, 1024, 1440]) {
