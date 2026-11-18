@@ -1,21 +1,41 @@
 import { ArrowDown, ArrowUp, Trash2, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useDragControls } from 'motion/react';
+import * as motion from 'motion/react-m';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { EASE_IN_OUT, ENTER, EXIT, SHEET } from '../../design/motion';
 import { addDaysISO, weekDays, weekdayShort, weekStartOf, dayOfMonth } from '../../domain/dates';
 import type { ISODate, Priority } from '../../domain/types';
 import { SUBJECT_COLOURS } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { toast } from '../../ui/Toast';
+import { placeBeside } from './place';
 
 /** What the editor is showing: an existing task, or a new one with these defaults. */
 export type Editing = { id: string } | { draft: { date: ISODate; scope: 'day' | 'week' } };
 
 interface Props { editing: Editing | null; today: ISODate; viewWeek: ISODate; onClose: () => void }
 
-const chip = (on: boolean) => `min-h-11 cursor-pointer rounded-md px-3.5 text-[14.5px] font-medium ${on ? 'bg-surface-inverse text-text-inverse' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well'}`;
+const chip = (on: boolean) => `min-h-11 cursor-pointer rounded-md px-3.5 text-[14.5px] font-medium sm:min-h-9 sm:px-3 sm:text-[14px] ${on ? 'bg-surface-inverse text-text-inverse' : 'shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-surface-well'}`;
+
+/** Popover on the right, sheet below: the two ways the editor arrives and leaves. */
+const SHOWN = { wide: { opacity: 1, scale: 1, transition: ENTER }, sheet: { y: 0, opacity: 1, transition: SHEET } };
+const AWAY = { wide: { opacity: 0, scale: 0.97, transition: EXIT }, sheet: { y: '100%', opacity: 0.4, transition: { duration: 0.2, ease: EASE_IN_OUT } } };
+/** True from 640 px wide. Read as the editor renders, so the panel knows which way to arrive before its first frame. */
+const WIDE = '(min-width: 640px)';
+const useWide = () => useSyncExternalStore(
+  (changed) => { const q = matchMedia(WIDE); q.addEventListener('change', changed); return () => q.removeEventListener('change', changed); },
+  () => matchMedia(WIDE).matches,
+  () => true,
+);
+
+/** A sheet dragged or flicked down past this is dismissed. */
+const DISMISS = { distance: 110, speed: 520 };
 
 /**
- * Edit a task, or write a new one. A panel on wider screens and a bottom sheet on phones.
- * Changes to an existing task save as they are made; Escape or a click outside closes it.
+ * Edit a task, or write a new one.
+ * On wider screens it is a popover beside the task's row, with no Save button: changes save as they are made.
+ * On phones it is a bottom sheet that follows the finger and can be dragged down by its header to close.
+ * Escape or a click outside closes it, and focus returns to the row.
  */
 export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -26,7 +46,28 @@ export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
   useEffect(() => {
     if (editing && 'draft' in editing) setDraft({ title: '', notes: '', subjectId: undefined, priority: 'normal', scope: editing.draft.scope, date: editing.draft.date });
   }, [editing]);
-  useEffect(() => { const d = ref.current; if (!d) return; if (editing && !d.open) d.showModal(); else if (!editing && d.open) d.close(); }, [editing]);
+  // a popover from 640 px, a sheet below
+  const wide = useWide(), [closing, setClosing] = useState(false), [spot, setSpot] = useState<{ left: number; top: number } | null>(null);
+  const grip = useDragControls(), anchorId = editing && 'id' in editing ? editing.id : null;
+  useLayoutEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (editing && !d.open) { setClosing(false); d.showModal(); }
+    else if (!editing && d.open) d.close();
+  }, [editing]);
+  // the popover sits beside its row, which is marked while it is being edited
+  useLayoutEffect(() => {
+    const d = ref.current, row = anchorId && wide ? document.querySelector<HTMLElement>(`li[data-task="${CSS.escape(anchorId)}"]`) : null;
+    if (!d || !row) { setSpot(null); return; }
+    const place = () => setSpot(placeBeside(row.getBoundingClientRect(), { width: d.offsetWidth, height: d.offsetHeight }, { width: window.innerWidth, height: window.innerHeight }));
+    place(); row.dataset.editing = 'true';
+    window.addEventListener('resize', place);
+    return () => { window.removeEventListener('resize', place); delete row.dataset.editing; };
+  }, [anchorId, wide]);
+  // leaving is animated: ask to close, and close for real when the panel has gone
+  const requestClose = useCallback(() => setClosing(true), []);
+  // if the animation cannot finish (a hidden tab), close anyway
+  useEffect(() => { if (!closing) return; const timer = window.setTimeout(onClose, 320); return () => window.clearTimeout(timer); }, [closing, onClose]);
   // the task was deleted elsewhere: nothing left to edit
   useEffect(() => { if (editing && 'id' in editing && !existing) onClose(); }, [editing, existing, onClose]);
 
@@ -38,7 +79,7 @@ export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
     ...weekDays(viewWeek).filter((d) => d !== today && d !== addDaysISO(today, 1)).map((d) => ({ label: `${weekdayShort(d)} ${dayOfMonth(d)}`, scope: 'day' as const, date: d })),
     { label: 'Any time this week', scope: 'week', date: thisWeek }, { label: 'Next week', scope: 'week', date: nextWeek },
   ];
-  const save = () => { if (store.addTask(draft)) onClose(); };
+  const save = () => { if (store.addTask(draft)) requestClose(); };
   const remove = () => {
     if (!existing) return;
     const gone = store.deleteTasks([existing.id]);
@@ -47,13 +88,26 @@ export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
   };
 
   return (
-    <dialog ref={ref} onClose={onClose} onClick={(e) => { if (e.target === ref.current) onClose(); }} aria-labelledby="editor-title"
-      className="m-auto w-[min(94vw,520px)] rounded-xl bg-surface-sheet p-0 text-text shadow-float backdrop:bg-deep-900/40 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:pb-[env(safe-area-inset-bottom,0px)]">
+    <dialog ref={ref} onClose={onClose} onCancel={(e) => { e.preventDefault(); requestClose(); }} onClick={(e) => { if (e.target === ref.current) requestClose(); }} aria-labelledby="editor-title"
+      data-closing={closing} data-placed={spot ? 'beside' : undefined}
+      style={spot ? { left: spot.left, top: spot.top, right: 'auto', bottom: 'auto', margin: 0 } : undefined}
+      // the dialog is only a frame: the panel inside is the surface, so it can slide and fade without the frame moving
+      className="m-auto w-[min(94vw,420px)] overflow-visible bg-transparent p-0 text-text backdrop:bg-transparent backdrop:transition-colors backdrop:duration-200 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:backdrop:bg-deep-900/40 max-sm:data-[closing=true]:backdrop:bg-transparent">
       {editing && (
-        <form method="dialog" className="flex flex-col gap-5 p-5 sm:p-6" onSubmit={(e) => { e.preventDefault(); if (isNew) save(); else onClose(); }}>
-          <div className="flex items-center justify-between gap-3">
-            <h2 id="editor-title" className="text-[20px]">{isNew ? 'New task' : 'Edit task'}</h2>
-            <button type="button" onClick={onClose} aria-label="Close" className="grid size-11 cursor-pointer place-items-center rounded-full hover:bg-surface-well"><X size={18} aria-hidden="true" /></button>
+        <motion.div initial={wide ? AWAY.wide : AWAY.sheet} animate={closing ? (wide ? AWAY.wide : AWAY.sheet) : wide ? SHOWN.wide : SHOWN.sheet}
+          onAnimationComplete={() => { if (closing) onClose(); }}
+          drag={wide ? false : 'y'} dragListener={false} dragControls={grip} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 1 }}
+          onDragEnd={(_, info) => { if (info.offset.y > DISMISS.distance || info.velocity.y > DISMISS.speed) requestClose(); }}
+          style={{ transformOrigin: 'top left' }}
+          className="max-h-[calc(100dvh-24px)] overflow-y-auto rounded-xl bg-surface-sheet shadow-float max-sm:rounded-b-none max-sm:pb-[env(safe-area-inset-bottom,0px)]">
+        <form method="dialog" className="flex flex-col gap-4 p-5" onSubmit={(e) => { e.preventDefault(); if (isNew) save(); else requestClose(); }}>
+          {/* on phones the header is the handle: drag it down to close */}
+          <div onPointerDown={(e) => { if (!wide) grip.start(e); }} style={{ touchAction: wide ? undefined : 'none' }} className="-mx-5 -mt-5 px-5 pt-2.5 max-sm:cursor-grab max-sm:select-none sm:pt-5" data-grip>
+            <span aria-hidden="true" className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-paper-300 sm:hidden" />
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="editor-title" className="text-[20px]">{isNew ? 'New task' : 'Edit task'}</h2>
+              <button type="button" onClick={requestClose} aria-label="Close" className="grid size-11 cursor-pointer place-items-center rounded-full hover:bg-surface-well"><X size={18} aria-hidden="true" /></button>
+            </div>
           </div>
           <label className="flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted">Title
             <input autoFocus required maxLength={140} value={value.title} onChange={(e) => change({ title: e.target.value })}
@@ -94,9 +148,11 @@ export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
               </>
             )}
             {existing && <button type="button" onClick={remove} className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-port-600 hover:bg-port-100"><Trash2 size={15} aria-hidden="true" />Delete</button>}
-            <button type="submit" className="ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-deep-700">{isNew ? 'Add task' : 'Done'}</button>
+            {/* on wider screens changes save as they are made, so there is nothing to confirm; it stays in the form so Enter still closes */}
+            <button type="submit" className={`ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-deep-700 ${isNew ? '' : 'sm:hidden'}`}>{isNew ? 'Add task' : 'Done'}</button>
           </div>
         </form>
+        </motion.div>
       )}
     </dialog>
   );

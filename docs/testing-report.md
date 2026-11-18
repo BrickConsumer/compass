@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | Date | 16 November 2026 |
-| Build | Branch `reward-loop`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, and the reward loop in section 6 |
+| Build | Branch `home-motion`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, and the motion and editor work in section 7 |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 108 unit tests pass and 25 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 113 unit tests pass and 32 browser tests pass.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -49,9 +49,9 @@ Updated screenshots are in [screenshots/home/](screenshots/home/).
 
 | Check | Tool | Result |
 |---|---|---|
-| Type-check and production build | `npm run build` | Passes. Main bundle 136 kB compressed, 3D chunk 256 kB compressed and loaded lazily. |
-| Unit tests | `npm test` (Vitest) | 108 of 108 pass |
-| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 25 of 25 pass, three runs in a row |
+| Type-check and production build | `npm run build` | Passes. Main bundle 156 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
+| Unit tests | `npm test` (Vitest) | 113 of 113 pass |
+| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 32 of 32 pass, three runs in a row |
 | Screenshots and state capture | Playwright scripts, six widths and nine states | No console errors in any capture |
 | Contrast, text size, touch targets | A script run inside the live page at 390 and 1440 | Section 4 |
 | Frame rate | The same, at phone size with the processor slowed four times | Section 5 |
@@ -230,7 +230,34 @@ A dinghy and a sloop, each with nothing earned and then with the first four fitt
 - **On phones the announcement replaces the miles** under the window until the voyage is opened.
 - **The lettering is to scale,** about 0.2 m tall on the sloop. It is small in the Home window and readable in the voyage view.
 
-## 7. Built differently from the approved spec
+## 7. Motion, the editor and the shortcut list
+
+Built on 16 November, from the Home spec (sections 7, 13 and 14). This finishes Stage 3.
+
+| | Behaviour |
+|---|---|
+| **Task rows** | A finished task holds its place for 600 ms, then slides below the open ones in 320 ms. A row fades in when added and out when deleted, and the rows around it slide to close the gap. Choosing another day swaps the list at once. |
+| **Week strip** | The new week arrives from the side the calendar moved toward. The strip follows a finger or a mouse drag: past 56 px, or a quick flick, it changes the week, and otherwise it settles back. |
+| **Editor on wider screens** | A popover beside the task's row, which is tinted while it is being edited. Beside the row if there is room, otherwise below or above, and always wholly on screen. No Done button: changes save as they are made. Escape or a click outside closes it and focus returns to the row. |
+| **Editor on phones** | A bottom sheet that rises on a spring with no overshoot. Dragging its header down follows the finger; past 110 px, or a quick flick, it closes. |
+| **Shortcut list** | `?` shows every shortcut, grouped by where it works. It is also in the command menu. |
+| **Reduced motion** | Nothing slides or scales. Changes cross-fade. |
+
+![The editor as a popover](screenshots/home/home-1440-edit-task.png)
+
+### How it was built
+
+- Motion 14.14, which the brief's stack lists, is now installed. Its animation engine is loaded after the first paint, which keeps the main bundle at 156 kB compressed against the spec's ceiling of 200.
+- Single-key shortcuts now do nothing while any dialog is open.
+- Key hints are set in the interface typeface. They were in the browser's monospace, which the type system does not include.
+
+### Checked
+
+- Browser tests: the shortcut list opens and closes; the popover sits beside its row, on screen, with no Done button, saves as you type, and returns focus; a click outside closes it; the phone sheet settles back after a short drag and closes after a long one; the week strip does the same; a finished task moves below the open ones; and everything works with reduced motion.
+- Unit tests: where the popover sits in six cases, including a window too small for it.
+- No console errors or warnings.
+
+## 8. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -239,16 +266,12 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | The water is a mesh, 128 by 128 on the high tier and 64 by 64 on the low | The water is one flat sheet shaded per pixel, so there is no mesh to coarsen. The low tier saves by drawing fewer pixels. |
 | The high tier reflects the boat with a half-resolution pass | Both tiers use a mirrored copy of the boat, which the spec gives as the low tier's method |
 | The high tier's shadow map is 1024 px | It is 2048 px, kept from the look review |
-| The week strip slides when the week changes, and follows the finger on a swipe | The week changes at once. A swipe past 56 px changes the week. |
-| A completed row slides down after 600 ms | It waits 600 ms and then moves at once |
-| The editor is a popover anchored to the row on desktop | It is a centred dialog |
-| `?` shows the list of shortcuts | Not built |
+| The week strip slides when the week changes | It moves 28 px in the direction of travel while it fades, and does not sweep the full width. The outgoing week leaves the other way. |
 | The folded window shows a strip of horizon | It shows a strip of the same view, which cuts through the sail |
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
-| Motion is in the stack | Not installed. All animation is CSS or the scene. |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 8. Known limitations
+## 9. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.

@@ -9,7 +9,8 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 - **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Three branches, each cut from the one before. `main` still holds only the first commit.
   - `phase-1-home`: Phase 1. Pushed, with pull request 1 open to `main`.
   - `sea-performance`: the performance work. Pushed, with pull request 2 open against `phase-1-home`.
-  - `reward-loop`: the reward loop. Local only.
+  - `reward-loop`: the reward loop. Pushed, with pull request 3 open against `sea-performance`.
+  - `home-motion`: motion, the popover editor and the shortcut list. Local only.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 
@@ -24,7 +25,7 @@ Written 16 November 2026, to carry the work into a new chat. Start the new chat 
 | The boat's look review | Two rounds done. **Parked by Oliver** ("we will look at the boat later"). |
 | E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it yet. Findings and fixes are in `docs/testing-report.md`, section 2. |
 
-**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Both its commits are pushed: `7e72a5e` (tiers and sleeping) and `98a179d` (draw calls). The reward loop is one commit on `reward-loop`, approved by Oliver. **It has not been pushed and has no pull request.**
+**What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Both its commits are pushed: `7e72a5e` (tiers and sleeping) and `98a179d` (draw calls). The reward loop is commit `6e9730f` on `reward-loop`, pushed. The motion work is one commit on `home-motion`, approved by Oliver. **It has not been pushed and has no pull request.**
 
 ## 3. Decisions
 
@@ -105,7 +106,7 @@ These versions are installed.
 | Vitest | 5.1.0 |
 | @playwright/test | 1.65.1 |
 
-**Motion is not installed.** All animation is CSS transitions or the 3D scene.
+**Motion 14.14 is installed.** Components use `m` from `motion/react-m`, and the engine is loaded after the first paint (`src/design/motionFeatures.ts`). Using `motion` from `motion/react` inside the app throws, on purpose.
 
 ### Commands
 ```bash
@@ -115,7 +116,7 @@ Opens on http://localhost:5173. It is also set up in `.claude/launch.json` as "c
 ```bash
 npm test
 ```
-Runs 102 unit tests, all passing.
+Runs 113 unit tests, all passing.
 ```bash
 npm run build
 ```
@@ -123,7 +124,7 @@ Type-checks and builds; passing. The main bundle is 136 kB compressed. The 3D ch
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 25 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
+Runs 32 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
@@ -139,6 +140,7 @@ Runs 25 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 
 **`design/`**
 - `tokens.css`: every token. Never use hex values in components.
+- `motion.ts`: the durations and curves for Motion, matching the tokens.
 - `fonts.css`: the self-hosted fonts.
 
 **`domain/`** (pure functions, unit-tested)
@@ -168,7 +170,7 @@ Runs 25 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 **`features/home/`**
 - `HomePage`, `HomeWindow` (the sea window and voyage plate), `WeekStrip`.
 - `DaySheet` (the only raised sheet), `SideLists` (any time this week, coming up, next week).
-- `TaskRow`, `TaskComposer`, `TaskEditor` (a dialog; a bottom sheet on phones).
+- `TaskRow`, `TaskComposer`, `TaskEditor` (a popover beside the row on wider screens; a draggable bottom sheet on phones), `place.ts` (where the popover sits).
 
 **`features/voyage/`**
 - `boat/specs.ts`: the measurements of all four boats, shared by the 2D and 3D boats. `fitOut(spec, earned)` returns a boat wearing the fittings that have been earned. A boat's measurements never include fittings.
@@ -190,7 +192,7 @@ Runs 25 browser tests in the installed Chrome, all passing. Without `PW_CHANNEL`
 - `lookdev/`: the look-review page.
 
 ### Keyboard
-- **Anywhere on Home:** `N` add a task, `T` today, `V` voyage, Cmd or Ctrl and `K` command menu.
+- **Anywhere on Home:** `N` add a task, `T` today, `V` voyage, `?` the list of shortcuts, Cmd or Ctrl and `K` command menu. Single keys do nothing while a dialog is open.
 - **On a focused task:** Space completes it, `P` changes priority, Delete removes it with Undo.
 - **In the week strip:** arrows, Home, End, Page Up and Page Down.
 
@@ -248,8 +250,8 @@ All eleven now exist. The last three (the Phase E pass, the testing report and t
 
 The full list is in `docs/next-stages.md`.
 
-1. **Push `reward-loop`** when Oliver says so, and open its pull request against `sea-performance`.
+1. **Push `home-motion`** when Oliver says so, and open its pull request against `reward-loop`.
 2. **A founder opens Home on a real phone,** and in Safari.
 3. **Merge pull request 1,** then pull request 2.
-4. **Finish Stage 3:** the motion in the spec, the shortcut list, and the editor as a popover.
+4. **Stage 4, Habits.** It needs a mock of where today's habits sit on Home, and a founder's sign-off, before any build.
 5. **Boat look review round three**, when Oliver is ready.

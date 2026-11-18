@@ -1,4 +1,7 @@
-import { useRef } from 'react';
+import { AnimatePresence, useIsPresent, useReducedMotion } from 'motion/react';
+import * as motion from 'motion/react-m';
+import { type Ref, useRef } from 'react';
+import { EXIT, MOVE } from '../../design/motion';
 import { addDaysISO, dayOfMonth, longDate, weekDays, weekdayShort } from '../../domain/dates';
 import type { Progress } from '../../domain/tasks';
 import type { Assessment, ISODate } from '../../domain/types';
@@ -23,29 +26,44 @@ function Marks({ done, total, inverse }: Progress & { inverse: boolean }) {
   );
 }
 
-/** The week: seven days, each showing its load. Arrows move within it and across weeks. */
-export function WeekStrip({ weekStart, selected, today, marks, assessments, onSelect }: Props) {
-  const days = weekDays(weekStart), touch = useRef<number | null>(null), row = useRef<HTMLDivElement>(null);
-  // the new day may be in another week, which has to render before it can take focus
-  const focusDay = (date: ISODate) => { onSelect(date); window.setTimeout(() => row.current?.querySelector<HTMLButtonElement>(`[data-date="${date}"]`)?.focus(), 90); };
-  const onKey = (e: React.KeyboardEvent) => {
-    const step: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, PageUp: -7, PageDown: 7 };
-    // move from the day that has focus, which is the selected day unless focus was put elsewhere
-    const from = (e.target as HTMLElement).closest<HTMLElement>('[data-date]')?.dataset.date ?? selected;
-    if (e.key in step) { e.preventDefault(); focusDay(addDaysISO(from, step[e.key]!)); }
-    else if (e.key === 'Home') { e.preventDefault(); focusDay(days[0]!); }
-    else if (e.key === 'End') { e.preventDefault(); focusDay(days[6]!); }
-  };
+/** How far the strip travels as one week gives way to the next: a nudge in the direction of travel, not a full sweep. */
+const TRAVEL = 28;
+/** A drag or flick past this changes the week. */
+const SWIPE = { distance: 56, speed: 420 };
+
+/**
+ * Seven days. It arrives from the side the calendar moved toward and leaves by the other, and it follows the finger:
+ * dragged far enough it changes the week, and otherwise it settles back.
+ */
+function Week({ weekStart, selected, today, marks, assessments, onSelect, direction, ref }: Props & { direction: number; ref?: Ref<HTMLDivElement> }) {
+  const present = useIsPresent(), reduced = useReducedMotion(), dragged = useRef(false);
   return (
-    <div ref={row} role="group" aria-label="Days of the week" onKeyDown={onKey}
-      onTouchStart={(e) => { touch.current = e.touches[0]?.clientX ?? null; }}
-      onTouchEnd={(e) => { const x = e.changedTouches[0]?.clientX; if (touch.current !== null && x !== undefined && Math.abs(x - touch.current) > 56) onSelect(addDaysISO(selected, x < touch.current ? 7 : -7)); touch.current = null; }}
+    <motion.div ref={ref} custom={direction}
+      variants={{
+        enter: (d: number) => ({ x: d * TRAVEL, opacity: 0 }),
+        centre: { x: 0, opacity: 1, transition: reduced ? EXIT : MOVE },
+        exit: (d: number) => ({ x: -d * TRAVEL, opacity: 0, transition: EXIT }),
+      }}
+      initial="enter" animate="centre" exit="exit"
+      // the week on its way out cannot be clicked, focused or read
+      inert={!present}
+      drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.5} dragMomentum={false}
+      onDragStart={() => { dragged.current = true; }}
+      onDragEnd={(_, info) => {
+        const far = Math.abs(info.offset.x) > SWIPE.distance || Math.abs(info.velocity.x) > SWIPE.speed;
+        if (far) onSelect(addDaysISO(selected, info.offset.x < 0 ? 7 : -7));
+        // a click follows a mouse drag; let it pass before taps count again
+        window.setTimeout(() => { dragged.current = false; }, 0);
+      }}
+      // sideways belongs to the strip, up and down to the page
+      style={{ touchAction: 'pan-y' }}
       className="grid grid-cols-7 gap-[3px] sm:gap-2">
-      {days.map((date, i) => {
+      {weekDays(weekStart).map((date, i) => {
         const on = date === selected, isToday = date === today, m = marks[i] ?? { done: 0, total: 0 }, due = assessments.find((a) => a.date === date);
         const name = [longDate(date), isToday ? 'today' : '', m.total ? `${m.done} of ${m.total} tasks done` : 'nothing planned', due ? due.title : '', on ? 'selected' : ''].filter(Boolean).join(', ');
         return (
-          <button key={date} type="button" data-date={date} tabIndex={on ? 0 : -1} aria-pressed={on} aria-current={isToday ? 'date' : undefined} aria-label={name} onClick={() => onSelect(date)}
+          <button key={date} type="button" data-date={date} tabIndex={on ? 0 : -1} aria-pressed={on} aria-current={isToday ? 'date' : undefined} aria-label={name}
+            onClick={() => { if (!dragged.current) onSelect(date); }} draggable={false}
             className={`relative flex h-[68px] cursor-pointer flex-col justify-between rounded-[14px] px-0 py-2 text-left transition-colors duration-[140ms] max-sm:items-center sm:h-[86px] sm:rounded-lg sm:px-3.5 sm:py-2.5 lg:px-5 ${on ? 'bg-surface-inverse text-text-inverse outline-marine-300' : 'hover:bg-surface-well'}`}>
             <span className={`flex w-full justify-between text-[12.5px] font-semibold max-sm:justify-center ${on ? 'text-paper-0/75' : isToday ? 'text-marine-600' : 'text-text-muted'}`}>
               <span><span className="sm:hidden">{weekdayShort(date)[0]}</span><span className="max-sm:hidden">{weekdayShort(date)}</span></span>
@@ -65,6 +83,32 @@ export function WeekStrip({ weekStart, selected, today, marks, assessments, onSe
           </button>
         );
       })}
+    </motion.div>
+  );
+}
+
+/** The week: seven days, each showing its load. Arrows move within it and across weeks. */
+export function WeekStrip(props: Props) {
+  const { weekStart, selected, onSelect } = props, days = weekDays(weekStart), row = useRef<HTMLDivElement>(null);
+  // which way the calendar last moved: +1 forward in time, -1 back
+  const travel = useRef({ week: weekStart, direction: 1 });
+  if (travel.current.week !== weekStart) travel.current = { week: weekStart, direction: weekStart > travel.current.week ? 1 : -1 };
+  const direction = travel.current.direction;
+  // the new day may be in another week, which has to render before it can take focus
+  const focusDay = (date: ISODate) => { onSelect(date); window.setTimeout(() => row.current?.querySelector<HTMLButtonElement>(`[data-date="${date}"]`)?.focus(), 90); };
+  const onKey = (e: React.KeyboardEvent) => {
+    const step: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, PageUp: -7, PageDown: 7 };
+    // move from the day that has focus, which is the selected day unless focus was put elsewhere
+    const from = (e.target as HTMLElement).closest<HTMLElement>('[data-date]')?.dataset.date ?? selected;
+    if (e.key in step) { e.preventDefault(); focusDay(addDaysISO(from, step[e.key]!)); }
+    else if (e.key === 'Home') { e.preventDefault(); focusDay(days[0]!); }
+    else if (e.key === 'End') { e.preventDefault(); focusDay(days[6]!); }
+  };
+  return (
+    <div ref={row} role="group" aria-label="Days of the week" onKeyDown={onKey} className="relative">
+      <AnimatePresence initial={false} custom={direction} mode="popLayout">
+        <Week key={weekStart} {...props} direction={direction} />
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { BookOpen, CalendarCheck, FileText, House, type LucideIcon, Repeat, Search, SlidersHorizontal } from 'lucide-react';
+import { BookOpen, CalendarCheck, FileText, House, type LucideIcon, Repeat, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { CompassMark } from '../ui/CompassMark';
@@ -15,7 +15,7 @@ const PLACES: { to: string; label: string; short: string; icon: LucideIcon }[] =
 const typing = (e: KeyboardEvent) => { const t = e.target as HTMLElement | null; return !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)); };
 
 /** Jump to a place or run a command. Opens with Cmd or Ctrl and K. */
-function CommandMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: () => void; onShortcuts: () => void }) {
   const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState('');
   useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) { setQuery(''); d.showModal(); } else if (!open && d.open) d.close(); }, [open]);
   const commands: { label: string; hint?: string; run: () => void }[] = [
@@ -24,6 +24,7 @@ function CommandMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
     { label: 'Add a task', hint: 'N', run: () => { navigate('/'); window.setTimeout(() => document.getElementById('composer-day')?.focus(), 60); } },
     { label: 'Open the voyage', hint: 'V', run: () => navigate('/voyage') },
     { label: 'Go to Settings', run: () => navigate('/settings') },
+    { label: 'Keyboard shortcuts', hint: '?', run: onShortcuts },
   ];
   const shown = commands.filter((c) => c.label.toLowerCase().includes(query.trim().toLowerCase()));
   const choose = (c: (typeof commands)[number]) => { onClose(); c.run(); };
@@ -51,14 +52,53 @@ function CommandMenu({ open, onClose }: { open: boolean; onClose: () => void }) 
   );
 }
 
+const KEY = 'rounded-xs border border-line-strong bg-surface-sheet px-1.5 py-0.5 text-[12.5px] font-semibold text-text-muted';
+const SHORTCUTS: { title: string; keys: [string[], string][] }[] = [
+  { title: 'Anywhere', keys: [[['⌘ K', 'Ctrl K'], 'Search and commands'], [['N'], 'New task on the selected day'], [['T'], 'Go to today'], [['V'], 'Open the voyage'], [['?'], 'Show this list'], [['Esc'], 'Close what is open']] },
+  { title: 'In the week', keys: [[['←', '→'], 'Previous and next day'], [['Home', 'End'], 'First and last day of the week'], [['Page Up', 'Page Down'], 'Previous and next week']] },
+  { title: 'On a task', keys: [[['Space'], 'Complete or reopen'], [['Enter'], 'Edit'], [['P'], 'Change priority'], [['Delete'], 'Delete, with Undo']] },
+];
+
+/** Every keyboard shortcut, shown when ? is pressed. */
+function Shortcuts({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) d.showModal(); else if (!open && d.open) d.close(); }, [open]);
+  return (
+    <dialog ref={ref} onClose={onClose} onClick={(e) => { if (e.target === ref.current) onClose(); }} aria-labelledby="shortcuts-title"
+      className="m-auto max-h-[calc(100dvh-32px)] w-[min(92vw,460px)] overflow-y-auto rounded-xl bg-surface-sheet p-0 text-text shadow-float backdrop:bg-deep-900/40">
+      <div className="flex flex-col gap-5 p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="shortcuts-title" className="text-[20px]">Keyboard shortcuts</h2>
+          <button type="button" autoFocus onClick={onClose} aria-label="Close" className="grid size-11 cursor-pointer place-items-center rounded-full hover:bg-surface-well"><X size={18} aria-hidden="true" /></button>
+        </div>
+        {SHORTCUTS.map((group) => (
+          <section key={group.title} aria-label={group.title}>
+            <h3 className="font-sans text-[13.5px] font-semibold text-text-muted">{group.title}</h3>
+            <dl className="mt-1">
+              {group.keys.map(([keys, what]) => (
+                <div key={what} className="flex min-h-10 items-center justify-between gap-4 border-t border-line text-[14.5px] first:border-t-0">
+                  <dt>{what}</dt>
+                  <dd className="flex shrink-0 items-center gap-1.5">{keys.map((k, i) => <span key={k} className="flex items-center gap-1.5">{i > 0 && <span className="text-[12.5px] text-text-muted">or</span>}<kbd className={KEY}>{k}</kbd></span>)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+    </dialog>
+  );
+}
+
 /** The frame around every page: a rail on wider screens, a five-item bar on phones, toasts, and the command menu. */
 export function AppShell() {
-  const [menu, setMenu] = useState(false), navigate = useNavigate();
+  const [menu, setMenu] = useState(false), [shortcuts, setShortcuts] = useState(false), navigate = useNavigate();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setMenu((m) => !m); return; }
-      if (typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key.toLowerCase() === 'v') navigate('/voyage');
+      // single keys are for when nothing is being typed and nothing is open on top
+      if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || document.querySelector('dialog[open]')) return;
+      if (e.key === '?') { e.preventDefault(); setShortcuts(true); }
+      else if (e.key.toLowerCase() === 'v') navigate('/voyage');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -103,7 +143,8 @@ export function AppShell() {
         </ul>
       </nav>
       <ToastRegion />
-      <CommandMenu open={menu} onClose={() => setMenu(false)} />
+      <CommandMenu open={menu} onClose={() => setMenu(false)} onShortcuts={() => setShortcuts(true)} />
+      <Shortcuts open={shortcuts} onClose={() => setShortcuts(false)} />
     </div>
   );
 }
