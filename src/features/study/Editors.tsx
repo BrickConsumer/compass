@@ -5,6 +5,7 @@ import { weekdayName, weekOrder } from '../../domain/habits';
 import { colourName, COLOURS, KINDS } from '../../domain/study';
 import { type Assessment, type ISODate, SUBJECT_COLOURS } from '../../domain/types';
 import { useCompass } from '../../state/store';
+import { DraftInput } from '../../ui/DraftField';
 import { chip, EditorFrame } from '../../ui/EditorFrame';
 import { toast } from '../../ui/Toast';
 
@@ -28,7 +29,7 @@ export function SubjectEditor({ id, onClose }: { id: string | null; onClose: () 
       {(close) => subject && (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); close(); }}>
           <label className={label}>Name
-            <input autoFocus required maxLength={40} value={subject.name} onChange={(e) => update(subject.id, { name: e.target.value })} className={field} />
+            <DraftInput autoFocus required maxLength={40} value={subject.name} onSave={(name) => update(subject.id, { name })} className={field} />
           </label>
           <fieldset>
             <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Colour</legend>
@@ -73,7 +74,7 @@ export function AssessmentEditor({ editing, today, onClose }: { editing: Editing
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew || store.addAssessment(draft)) close(); }}>
           <label className={label}>Title
-            <input autoFocus required maxLength={80} value={value.title} onChange={(e) => change({ title: e.target.value })} className={field} />
+            <DraftInput autoFocus required maxLength={80} value={value.title} onSave={(title) => change({ title })} className={field} />
           </label>
           <fieldset>
             <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Kind</legend>
@@ -122,7 +123,7 @@ export function SessionEditor({ editing, onClose }: { editing: EditingSession | 
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew) close(); else if (store.addSession({ subjectId, ...draft })) close(); else setTried(true); }}>
           <label className={label}>Name
-            <input autoFocus required maxLength={80} value={value.name} onChange={(e) => change({ name: e.target.value })} className={field} />
+            <DraftInput autoFocus required maxLength={80} value={value.name} onSave={(name) => change({ name })} className={field} />
           </label>
           <fieldset>
             <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Days</legend>

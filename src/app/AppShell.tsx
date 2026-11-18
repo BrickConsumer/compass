@@ -1,6 +1,7 @@
 import { BookOpen, CalendarCheck, FileText, House, type LucideIcon, Repeat, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
+import { kindOf, searchPages } from '../domain/pages';
 import { useCompass } from '../state/store';
 import { useToday } from '../state/useToday';
 import { CompassMark } from '../ui/CompassMark';
@@ -18,9 +19,10 @@ const typing = (e: KeyboardEvent) => { const t = e.target as HTMLElement | null;
 
 /** Jump to a place or run a command. Opens with Cmd or Ctrl and K. */
 function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: () => void; onShortcuts: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState('');
+  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState(''), pages = useCompass((s) => s.pages);
   useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) { setQuery(''); d.showModal(); } else if (!open && d.open) d.close(); }, [open]);
-  const commands: { label: string; hint?: string; run: () => void }[] = [
+  type Command = { label: string; hint?: string; note?: string; run: () => void };
+  const commands: Command[] = [
     ...PLACES.map((p) => ({ label: `Go to ${p.label}`, run: () => navigate(p.to) })),
     { label: 'Go to today', hint: 'T', run: () => navigate('/') },
     { label: 'Add a task', hint: 'N', run: () => { navigate('/'); window.setTimeout(() => document.getElementById('composer-day')?.focus(), 60); } },
@@ -28,8 +30,10 @@ function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: (
     { label: 'Go to Settings', run: () => navigate('/settings') },
     { label: 'Keyboard shortcuts', hint: '?', run: onShortcuts },
   ];
-  const shown = commands.filter((c) => c.label.toLowerCase().includes(query.trim().toLowerCase()));
-  const choose = (c: (typeof commands)[number]) => { onClose(); c.run(); };
+  // once something is typed, the user's own pages are found by title as well
+  const found: Command[] = searchPages(pages, query).map((p) => ({ label: p.title, note: kindOf(p.kind).label, run: () => { navigate(`/pages/${p.id}`); } }));
+  const shown = [...commands.filter((c) => c.label.toLowerCase().includes(query.trim().toLowerCase())), ...found];
+  const choose = (c: Command) => { onClose(); c.run(); };
   return (
     <dialog ref={ref} onClose={onClose} onClick={(e) => { if (e.target === ref.current) onClose(); }} aria-label="Search and commands"
       className="m-auto mt-[12vh] w-[min(92vw,520px)] rounded-xl bg-surface-sheet p-0 text-text shadow-float backdrop:bg-deep-900/40">
@@ -40,10 +44,10 @@ function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: (
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search or jump to" className="h-13 w-full bg-transparent text-[16px] outline-none placeholder:text-text-subtle" />
         </label>
         <ul className="max-h-[50vh] overflow-auto p-2">
-          {shown.map((c) => (
-            <li key={c.label}>
+          {shown.map((c, i) => (
+            <li key={`${i} ${c.label}`}>
               <button type="button" onClick={() => choose(c)} className="flex min-h-11 w-full cursor-pointer items-center justify-between rounded-md px-3 text-left text-[15px] hover:bg-surface-well">
-                {c.label}{c.hint && <kbd className="rounded-xs border border-line-strong bg-surface-sheet px-1.5 text-[12.5px] font-semibold text-text-muted">{c.hint}</kbd>}
+                <span className="min-w-0 truncate">{c.label}</span>{c.hint && <kbd className="rounded-xs border border-line-strong bg-surface-sheet px-1.5 text-[12.5px] font-semibold text-text-muted">{c.hint}</kbd>}{c.note && <span className="shrink-0 pl-3 text-[13px] text-text-muted">{c.note}</span>}
               </button>
             </li>
           ))}

@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { weekdayName, weekOrder } from '../../domain/habits';
 import { useCompass } from '../../state/store';
+import { DraftInput } from '../../ui/DraftField';
 import { chip, EditorFrame } from '../../ui/EditorFrame';
 import { toast } from '../../ui/Toast';
 
@@ -25,7 +26,7 @@ export function HabitEditor({ id, onClose }: { id: string | null; onClose: () =>
       {(close) => habit && (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); close(); }}>
           <label className={label}>Name
-            <input autoFocus required maxLength={60} value={habit.name} onChange={(e) => update(habit.id, { name: e.target.value })}
+            <DraftInput autoFocus required maxLength={60} value={habit.name} onSave={(name) => update(habit.id, { name })}
               className="h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]" />
           </label>
           <fieldset>

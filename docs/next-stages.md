@@ -72,7 +72,9 @@ Not built: reordering habits, pausing one without deleting it, and a view of con
 ## Stage 6. Weekly review, then My pages
 
 - ~~**Weekly review:** a saved reflection, a summary of tasks and habits, and next week's priorities, which Home already shows. Saving one earns ten miles under the existing rule.~~ **Built on 17 November** as a first version, to [review-spec.md](review-spec.md). No founder has reviewed it, and it was not mocked first. Its open calls are in section 7 of that document; the largest is that an old review's figures are live and not a snapshot.
-- **My pages:** notes, checklists, goals, reading and project pages. This is the largest and least defined destination, so it should have its own short spec before any design.
+- ~~**My pages:** notes, checklists, goals, reading and project pages.~~ **Built on 17 November** as a first version, to [my-pages-spec.md](my-pages-spec.md). Oliver chose its approach the same day: one page shape with five ways to start. It also recommends that pages stand apart from tasks and miles at first. Its layout and three options for a list's tick are drawn in a [mock](https://claude.ai/artifact/NPCbrcPSUbkeHzv3q9UXu7) (private; share it from its Share menu). Oliver chose the layout and the smaller square tick from that mock. Six smaller decisions were built to their recommendations and are still open, the largest being that pages earn no miles and that an item cannot yet become a task. Josh and Aditya have not weighed in.
+
+All five destinations in the brief now exist. What is left in this stage is for the founders: reviewing the pages that were built without them.
 
 ## Stage 7. The boat grows up
 

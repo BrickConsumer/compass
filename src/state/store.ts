@@ -3,18 +3,19 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { todayISO, weekStartOf } from '../domain/dates';
 import { type CompassData, empty, sampleLog, seed } from '../domain/seed';
 import { cleanDays, isDue, tickKey } from '../domain/habits';
+import { addItem, cleanPageTitle, editItem, insertItem, moveItem, newPage, PAGE_LIMITS, removeItem, toggleItem, untickAll } from '../domain/pages';
 import { canReview, isBlank, reviewAward } from '../domain/review';
 import { madeKey, sessionTasksDue } from '../domain/sessions';
 import { nextColour } from '../domain/study';
 import { cleanTitle } from '../domain/tasks';
-import type { Assessment, Boat, Habit, ISODate, Priority, Review, Session, Settings, Subject, SubjectColour, Task } from '../domain/types';
+import type { Assessment, Boat, Habit, ISODate, Page, PageItem, PageKind, Priority, Review, Session, Settings, Subject, SubjectColour, Task } from '../domain/types';
 import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
 
 export interface NewTask { title: string; date: ISODate; scope: 'day' | 'week'; priority?: Priority; subjectId?: string; notes?: string }
 
 /** A deleted subject, with its assessments, its study sessions and the tasks that carried it. */
-export interface RemovedSubject { subject: Subject; assessments: Assessment[]; sessions: Session[]; taskIds: string[] }
+export interface RemovedSubject { subject: Subject; assessments: Assessment[]; sessions: Session[]; taskIds: string[]; pageIds: string[] }
 
 export interface CompassStore extends CompassData {
   /** Add a task. Returns its id, or null when the title is empty. */
@@ -54,6 +55,26 @@ export interface CompassStore extends CompassData {
   writeReview: (weekStart: ISODate, patch: Partial<Pick<Review, 'wentWell' | 'gotInWay' | 'change'>>) => void;
   /** Save a week's review, which lists it among earlier reviews and logs its miles once. Returns false when there is nothing written. */
   saveReview: (weekStart: ISODate) => boolean;
+  /** Start a page of this kind, named "Untitled". Returns its id. */
+  addPage: (kind: PageKind) => string;
+  /** Change a page. `null` clears its date or its subject. An empty title keeps the last good one. */
+  updatePage: (id: string, patch: { title?: string; kind?: PageKind; text?: string; aimFor?: ISODate | null; subjectId?: string | null }) => void;
+  deletePage: (id: string) => Page | null;
+  restorePage: (page: Page) => void;
+  /** Mark a goal as reached today, or reopen it. Other kinds of page cannot be reached. */
+  setReached: (id: string, reached: boolean) => void;
+  /** Add an item to a page's list. Returns false when it is empty or the list is full. */
+  addPageItem: (pageId: string, text: string) => boolean;
+  /** Tick or untick an item. It earns nothing and moves nothing: an item is not a task. */
+  togglePageItem: (pageId: string, itemId: string) => void;
+  editPageItem: (pageId: string, itemId: string, text: string) => void;
+  movePageItem: (pageId: string, itemId: string, direction: -1 | 1) => void;
+  /** Remove an item, and return it with its place so the caller can offer Undo. */
+  deletePageItem: (pageId: string, itemId: string) => { item: PageItem; index: number } | null;
+  restorePageItem: (pageId: string, item: PageItem, index: number) => void;
+  /** Untick every item on a page. Returns the ids that were ticked, for Undo. */
+  untickPageItems: (pageId: string) => string[];
+  tickPageItems: (pageId: string, itemIds: string[]) => void;
   /** Add a habit, for every day unless days are given. Returns its id, or null when the name is empty. */
   addHabit: (name: string, days?: number[]) => string | null;
   updateHabit: (id: string, patch: { name?: string; days?: number[] }) => void;
@@ -74,6 +95,9 @@ let counter = 0;
 const newId = () => `t-${Date.now().toString(36)}-${(counter++).toString(36)}`;
 const NEXT: Record<Priority, Priority> = { high: 'normal', normal: 'low', low: 'high' };
 const siblings = (tasks: Task[], t: Pick<Task, 'scope' | 'date'>) => tasks.filter((x) => x.scope === t.scope && x.date === t.date);
+
+/** Change one page, and note when: the list of pages is ordered by the last change. A change that changes nothing is not one. */
+const changePage = (pages: Page[], id: string, change: (p: Page) => Page): Page[] => pages.map((p) => { if (p.id !== id) return p; const next = change(p); return next === p ? p : { ...next, updatedAt: new Date().toISOString() }; });
 
 /** Keep the boat being sailed within what has been earned. */
 function clampStage(boat: Boat, miles: number, days: number): Boat {
@@ -160,8 +184,8 @@ export const useCompass = create<CompassStore>()(
       deleteSubject: (id) => {
         const subject = get().subjects.find((x) => x.id === id);
         if (!subject) return null;
-        const removed: RemovedSubject = { subject, assessments: get().assessments.filter((a) => a.subjectId === id), sessions: get().sessions.filter((x) => x.subjectId === id), taskIds: get().tasks.filter((t) => t.subjectId === id).map((t) => t.id) };
-        set((s) => ({ subjects: s.subjects.filter((x) => x.id !== id), assessments: s.assessments.filter((a) => a.subjectId !== id), sessions: s.sessions.filter((x) => x.subjectId !== id), tasks: s.tasks.map((t) => (t.subjectId === id ? { ...t, subjectId: undefined } : t)) }));
+        const removed: RemovedSubject = { subject, assessments: get().assessments.filter((a) => a.subjectId === id), sessions: get().sessions.filter((x) => x.subjectId === id), taskIds: get().tasks.filter((t) => t.subjectId === id).map((t) => t.id), pageIds: get().pages.filter((p) => p.subjectId === id).map((p) => p.id) };
+        set((s) => ({ subjects: s.subjects.filter((x) => x.id !== id), assessments: s.assessments.filter((a) => a.subjectId !== id), sessions: s.sessions.filter((x) => x.subjectId !== id), tasks: s.tasks.map((t) => (t.subjectId === id ? { ...t, subjectId: undefined } : t)), pages: s.pages.map((p) => (p.subjectId === id ? { ...p, subjectId: undefined } : p)) }));
         return removed;
       },
       restoreSubject: (removed) => set((s) => ({
@@ -169,6 +193,7 @@ export const useCompass = create<CompassStore>()(
         assessments: [...s.assessments.filter((a) => !removed.assessments.some((r) => r.id === a.id)), ...removed.assessments],
         sessions: [...s.sessions.filter((x) => !removed.sessions.some((r) => r.id === x.id)), ...removed.sessions],
         tasks: s.tasks.map((t) => (removed.taskIds.includes(t.id) ? { ...t, subjectId: removed.subject.id } : t)),
+        pages: s.pages.map((p) => (removed.pageIds.includes(p.id) ? { ...p, subjectId: removed.subject.id } : p)),
       })),
       addAssessment: (input) => {
         const title = cleanTitle(input.title).slice(0, 80);
@@ -241,6 +266,54 @@ export const useCompass = create<CompassStore>()(
         });
         return true;
       },
+      addPage: (kind) => {
+        const id = newId().replace('t-', 'p-');
+        set((s) => ({ pages: [...s.pages, newPage(kind, id, new Date().toISOString())] }));
+        return id;
+      },
+      updatePage: (id, patch) => set((s) => ({
+        pages: changePage(s.pages, id, (p) => {
+          const kind = patch.kind ?? p.kind;
+          return {
+            ...p, kind,
+            title: patch.title !== undefined ? cleanPageTitle(patch.title) || p.title : p.title,
+            text: patch.text !== undefined ? patch.text.slice(0, PAGE_LIMITS.text) : p.text,
+            aimFor: patch.aimFor === null ? undefined : patch.aimFor ?? p.aimFor,
+            subjectId: patch.subjectId === null ? undefined : patch.subjectId ?? p.subjectId,
+            // only a goal can be reached, so a page that stops being one is open again
+            reachedOn: kind === 'goal' ? p.reachedOn : undefined,
+          };
+        }),
+      })),
+      deletePage: (id) => {
+        const gone = get().pages.find((p) => p.id === id) ?? null;
+        if (gone) set((s) => ({ pages: s.pages.filter((p) => p.id !== id) }));
+        return gone;
+      },
+      restorePage: (page) => set((s) => ({ pages: [...s.pages.filter((p) => p.id !== page.id), page] })),
+      setReached: (id, reached) => set((s) => ({ pages: changePage(s.pages, id, (p) => (p.kind !== 'goal' || !!p.reachedOn === reached ? p : { ...p, reachedOn: reached ? todayISO() : undefined })) })),
+      addPageItem: (pageId, text) => {
+        const before = get().pages.find((p) => p.id === pageId), id = newId().replace('t-', 'i-');
+        if (!before || addItem(before, text, id) === before) return false;
+        set((s) => ({ pages: changePage(s.pages, pageId, (p) => addItem(p, text, id)) }));
+        return true;
+      },
+      togglePageItem: (pageId, itemId) => set((s) => ({ pages: changePage(s.pages, pageId, (p) => toggleItem(p, itemId)) })),
+      editPageItem: (pageId, itemId, text) => set((s) => ({ pages: changePage(s.pages, pageId, (p) => editItem(p, itemId, text)) })),
+      movePageItem: (pageId, itemId, direction) => set((s) => ({ pages: changePage(s.pages, pageId, (p) => moveItem(p, itemId, direction)) })),
+      deletePageItem: (pageId, itemId) => {
+        const page = get().pages.find((p) => p.id === pageId), removed = page ? removeItem(page, itemId) : null;
+        if (!removed) return null;
+        set((s) => ({ pages: changePage(s.pages, pageId, (p) => removeItem(p, itemId)?.page ?? p) }));
+        return { item: removed.item, index: removed.index };
+      },
+      restorePageItem: (pageId, item, index) => set((s) => ({ pages: changePage(s.pages, pageId, (p) => insertItem(p, item, index)) })),
+      untickPageItems: (pageId) => {
+        const page = get().pages.find((p) => p.id === pageId), ticked = page ? untickAll(page).ticked : [];
+        if (ticked.length) set((s) => ({ pages: changePage(s.pages, pageId, (p) => untickAll(p).page) }));
+        return ticked;
+      },
+      tickPageItems: (pageId, itemIds) => set((s) => ({ pages: changePage(s.pages, pageId, (p) => ({ ...p, items: p.items.map((i) => (itemIds.includes(i.id) ? { ...i, done: true } : i)) })) })),
       addHabit: (name, days) => {
         const clean = cleanTitle(name).slice(0, 60), on = cleanDays(days ?? [0, 1, 2, 3, 4, 5, 6]);
         if (!clean || on.length === 0) return null;
@@ -284,14 +357,14 @@ export const useCompass = create<CompassStore>()(
       name: 'compass:v1',
       version: 1,
       storage: createJSONStorage(safeStorage),
-      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, boat, settings, sample }),
+      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, boat, settings, sample }),
       // anything unreadable falls back to the sample, so a bad save can never stop the app opening
       merge: (saved, current) => {
         const s = saved as Partial<CompassData> | undefined;
         if (!s || !Array.isArray(s.tasks) || !Array.isArray(s.log) || !s.boat || !s.settings) return current;
         // a save from before habits existed gets the sample habits if it is still the sample, and none if it is the user's own
         const fresh = s.sample !== false, habits = Array.isArray(s.habits) ? s.habits : fresh ? current.habits : [], ticks = Array.isArray(s.ticks) ? s.ticks : fresh ? current.ticks : [];
-        return { ...current, ...s, habits, ticks, sessions: Array.isArray(s.sessions) ? s.sessions : [], sessionsMade: Array.isArray(s.sessionsMade) ? s.sessionsMade : [], reviews: Array.isArray(s.reviews) ? s.reviews : fresh ? current.reviews : [], subjects: Array.isArray(s.subjects) && s.subjects.length ? s.subjects : current.subjects, assessments: Array.isArray(s.assessments) ? s.assessments : current.assessments };
+        return { ...current, ...s, habits, ticks, sessions: Array.isArray(s.sessions) ? s.sessions : [], sessionsMade: Array.isArray(s.sessionsMade) ? s.sessionsMade : [], reviews: Array.isArray(s.reviews) ? s.reviews : fresh ? current.reviews : [], pages: Array.isArray(s.pages) ? s.pages : fresh ? current.pages : [], subjects: Array.isArray(s.subjects) && s.subjects.length ? s.subjects : current.subjects, assessments: Array.isArray(s.assessments) ? s.assessments : current.assessments };
       },
     },
   ),

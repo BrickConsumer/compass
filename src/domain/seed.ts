@@ -1,6 +1,6 @@
 import { addDaysISO, weekdayOf, weekStartOf } from './dates';
 import { isDue, tickKey } from './habits';
-import type { Assessment, Boat, Habit, ISODate, LogEntry, Review, Session, Settings, Subject, Task } from './types';
+import type { Assessment, Boat, Habit, ISODate, LogEntry, Page, Review, Session, Settings, Subject, Task } from './types';
 
 export interface CompassData {
   subjects: Subject[];
@@ -16,6 +16,8 @@ export interface CompassData {
   sessionsMade: string[];
   /** Weekly reflections, at most one for each week. */
   reviews: Review[];
+  /** The user's own pages: notes, checklists, goals, and reading and project pages. */
+  pages: Page[];
   boat: Boat;
   settings: Settings;
   /** True while the data is the generated sample. */
@@ -39,6 +41,28 @@ export function sampleLog(miles: number, days: number, today: ISODate): LogEntry
   if (n === 0 || total === 0) return [];
   const base = Math.floor(total / n), extra = total - base * n;
   return Array.from({ length: n }, (_, i) => ({ id: `sample:${i}`, date: addDaysISO(today, -(i + 1) * 2 + 1), source: 'sample' as const, sourceId: `sample:${i}`, miles: base + (i < extra ? 1 : 0) }));
+}
+
+/** Sample pages, one of each kind, last changed in the order they are listed. Every change is before today, so a page changed now comes first. */
+export function samplePages(today: ISODate): Page[] {
+  const stamp = (daysAgo: number, hour: number) => `${addDaysISO(today, -daysAgo)}T${String(hour).padStart(2, '0')}:00:00.000Z`;
+  const list = (id: string, items: [string, boolean][]) => items.map(([text, done], i) => ({ id: `${id}-${i + 1}`, text, done }));
+  return [
+    { id: 'pg-goal', title: 'A B in Mathematics', kind: 'goal', subjectId: 'mat', aimFor: addDaysISO(today, 24), createdAt: stamp(9, 17), updatedAt: stamp(1, 20),
+      items: list('pg-goal', [['Redo the last test without notes', true], ['One past paper each week', false], ['Ask about logarithms on Thursday', false]]),
+      text: 'I need it to take Economics next year, and the last test showed it is the algebra that lets me down.' },
+    { id: 'pg-trip', title: 'Biology field trip', kind: 'checklist', subjectId: 'bio', createdAt: stamp(4, 19), updatedAt: stamp(2, 19),
+      items: list('pg-trip', [['Permission slip, signed', true], ['Waterproof jacket', true], ['Notebook and two pencils', false], ['Packed lunch and water', false], ['Phone charger', false]]),
+      text: 'The coach leaves from the front gate at 8.15. Back by 4.' },
+    { id: 'pg-read', title: 'Reading for English', kind: 'reading', subjectId: 'eng', createdAt: stamp(14, 16), updatedAt: stamp(3, 21),
+      items: list('pg-read', [['The set novel, chapters 1 to 4', true], ['The set play, Act 1', false], ['Three poems from the anthology', false], ['One article of my own choosing', false]]),
+      text: '' },
+    { id: 'pg-oral', title: 'Ideas for the English oral', kind: 'note', subjectId: 'eng', createdAt: stamp(5, 20), updatedAt: stamp(4, 20), items: [],
+      text: 'Open with the lighthouse scene, then the letter.\n\nKeep it to four minutes. Practise the ending most, because that is where I rush.' },
+    { id: 'pg-case', title: 'Economics case study', kind: 'project', subjectId: 'eco', aimFor: addDaysISO(today, 10), createdAt: stamp(12, 15), updatedAt: stamp(5, 18),
+      items: list('pg-case', [['Choose the company', true], ['Read the annual report summary', true], ['Collect five years of prices', true], ['Draw the supply and demand diagrams', false], ['Write the analysis', false], ['Write the evaluation', false], ['Check the references', false]]),
+      text: 'About 1,200 words. Diagrams count toward the mark, so label every axis.' },
+  ];
 }
 
 /**
@@ -102,10 +126,10 @@ export function seed(today: ISODate): CompassData {
   ];
   // last week's review, already saved, so the list of earlier reviews has something in it
   const reviews: Review[] = [{ weekStart: addDaysISO(week, -7), wentWell: 'Kept up with Biology revision most days.', gotInWay: 'Left the Economics case study too late.', change: 'Start the Economics essay on Monday.', savedAt: at(addDaysISO(week, -1), 18) }];
-  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), sessions: [], sessionsMade: [], reviews, boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
+  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), sessions: [], sessionsMade: [], reviews, pages: samplePages(today), boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
 }
 
 /** A clean start: the same subjects, nothing else, and the first boat. */
 export function empty(): CompassData {
-  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
+  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], pages: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
 }

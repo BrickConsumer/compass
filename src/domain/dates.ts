@@ -31,6 +31,8 @@ export const shortDate = (iso: ISODate): string => f(d(iso), 'EEE d MMMM');
 /** A day in a list, where the year is understood: "Thu 19 Nov". */
 export const shortDay = (iso: ISODate): string => f(d(iso), 'EEE d MMM');
 /** 0 for Sunday to 6 for Saturday. */
+/** "11 Dec". */
+export const dayMonth = (iso: ISODate): string => f(d(iso), 'd MMM');
 export const weekdayOf = (iso: ISODate): number => d(iso).getDay();
 export const weekdayShort = (iso: ISODate): string => f(d(iso), 'EEE');
 export const weekdayLong = (iso: ISODate): string => f(d(iso), 'EEEE');

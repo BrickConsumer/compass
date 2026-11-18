@@ -43,7 +43,14 @@ export function EditorFrame({ open, anchor, title, labelId, onClose, children }:
   useLayoutEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (open && !d.open) { setClosing(false); d.showModal(); }
+    if (open && !d.open) {
+      setClosing(false); d.showModal();
+      // A dialog gives focus to the first thing in it that can take it, which is the Close button.
+      // An editor is opened to write in, so focus goes to its first text box instead: always with a keyboard to hand,
+      // and on a phone only when the box is empty, so that opening something to look at it does not raise the keyboard.
+      const first = d.querySelector<HTMLInputElement | HTMLTextAreaElement>('input:not([type="checkbox"]):not([type="date"]), textarea');
+      if (first && (matchMedia(WIDE).matches || !first.value)) first.focus();
+    }
     else if (!open && d.open) d.close();
   }, [open]);
   useLayoutEffect(() => {
