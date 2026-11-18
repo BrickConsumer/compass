@@ -63,6 +63,14 @@ The browser tests had never been run before this pass. Two failed on the first r
 
 `PW_CHANNEL=chrome` is new. It runs the suite in an installed Chrome, so the 100 MB test browser does not need downloading.
 
+### On GitHub
+
+Added on 17 November: `.github/workflows/ci.yml` builds and tests every pull request, in two jobs. One runs the build and the unit tests. The other runs the browser tests in Playwright's own Chromium.
+
+- **The six sea tests are skipped there.** They measure frame rate, the performance tier and draw calls, which depend on a graphics card. A CI runner has none and draws in software, so the scene would step down and the numbers would mean nothing. They still run on a real machine, and the figures in section 5 come from one.
+- **Checked on this machine only, when this was written.** Run as CI runs it, the suite reports 64 passed and 6 skipped. The workflow itself had not yet run on GitHub. Two look-review tests need the 3D scene to start, which on a runner means drawing WebGL in software; the workflow allows that, and whether it works there is the first thing its first run will show.
+- **Only the top of the stack is checked.** GitHub runs a workflow for a pull request only if the branch holds the workflow file, so the earlier pull requests get no checks until they are merged.
+
 ## 4. The brief's completion criteria
 
 ### Home

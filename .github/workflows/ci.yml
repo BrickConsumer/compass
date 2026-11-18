@@ -1,0 +1,59 @@
+name: CI
+
+# Every pull request is built and tested, and so is main once the work reaches it.
+# A pull request is only checked if its branch holds this file, so until the stack is merged
+# this runs on the pull requests at and above the one that added it.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# The checks only read the code. Nothing here can write to the repository.
+permissions:
+  contents: read
+
+# A new push to the same branch replaces the run that was in progress.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      # type-checks, then builds
+      - run: npm run build
+      - run: npm test
+
+  browser:
+    name: Browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      # the Chromium that matches the installed Playwright, with the system libraries it needs
+      - run: npx playwright install --with-deps chromium
+      # CI is set by GitHub. With it, the tests that measure the sea on real graphics hardware are skipped:
+      # see playwright.config.ts and tests/e2e/sea.spec.ts
+      - run: npm run test:e2e
+      - name: Keep what the failing tests left behind
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

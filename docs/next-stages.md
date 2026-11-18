@@ -17,6 +17,7 @@ Small, and mostly decisions and checks that need a founder.
 | Founders review Home and approve the Phase E changes | The brief's approval gate. Nothing is committed without it. | A meeting |
 | A founder opens Home on a real phone | The only way to settle speed, heat and battery. The spec's pass bar ends with this. | Ten minutes |
 | Open Home in Safari and Firefox | Only Chrome has been tested | An hour |
+| Look at the first CI run | A workflow that builds and tests every pull request was added on 17 November. It has only been checked on one machine, and it covers only the top of the stack until the stack is merged. | Ten minutes |
 | One pass with VoiceOver | Names and structure were checked by script, never by ear | An hour |
 | Boat look review, round three | Parked by Oliver. The storm crests and the folded strip are the known weak points. | Depends on the review |
 
