@@ -17,12 +17,12 @@ export const FITTINGS: readonly Fitting[] = [
   { id: 'portlights', name: 'Brass portlights', phrase: 'brass portlights', miles: 350, stage: 'sloop', modelled: true },
   // the id is kept from when the name was to go on the transom, so saved voyages still match
   { id: 'transom-name', name: 'Name lettered on the quarter', phrase: 'a name on the quarter', miles: 500, stage: 'sloop', modelled: true },
-  { id: 'dress-flags', name: 'Flags to dress ship', phrase: 'flags to dress ship', miles: 700, stage: 'sloop', modelled: false },
-  { id: 'ratlines', name: 'Ratlines and lazy jacks', phrase: 'ratlines and lazy jacks', miles: 1300, stage: 'cutter', modelled: false },
-  { id: 'stern-lantern', name: 'Stern lantern', phrase: 'a stern lantern', miles: 1700, stage: 'cutter', modelled: false },
-  { id: 'tender', name: 'A tender on deck', phrase: 'a tender on deck', miles: 2200, stage: 'cutter', modelled: false },
-  { id: 'topsail', name: 'A topsail', phrase: 'a topsail', miles: 3600, stage: 'schooner', modelled: false },
-  { id: 'gilded-stripe', name: 'Gilded cove stripe', phrase: 'a gilded cove stripe', miles: 4500, stage: 'schooner', modelled: false },
+  { id: 'dress-flags', name: 'Flags to dress ship', phrase: 'flags to dress ship', miles: 700, stage: 'sloop', modelled: true },
+  { id: 'ratlines', name: 'Ratlines and lazy jacks', phrase: 'ratlines and lazy jacks', miles: 1300, stage: 'cutter', modelled: true },
+  { id: 'stern-lantern', name: 'Stern lantern', phrase: 'a stern lantern', miles: 1700, stage: 'cutter', modelled: true },
+  { id: 'tender', name: 'A tender on deck', phrase: 'a tender on deck', miles: 2200, stage: 'cutter', modelled: true },
+  { id: 'topsail', name: 'A topsail', phrase: 'a topsail', miles: 3600, stage: 'schooner', modelled: true },
+  { id: 'gilded-stripe', name: 'Gilded cove stripe', phrase: 'a gilded cove stripe', miles: 4500, stage: 'schooner', modelled: true },
 ];
 
 /** The running total. It can only grow, because the log only grows. */

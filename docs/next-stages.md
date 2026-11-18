@@ -17,7 +17,7 @@ Small, and mostly decisions and checks that need a founder.
 | Founders review Home and approve the Phase E changes | The brief's approval gate. Nothing is committed without it. | A meeting |
 | A founder opens Home on a real phone | The only way to settle speed, heat and battery. The spec's pass bar ends with this. | Ten minutes |
 | Open Home in Safari and Firefox | Only Chrome has been tested | An hour |
-| Look at the first CI run | A workflow that builds and tests every pull request was added on 17 November. It has only been checked on one machine, and it covers only the top of the stack until the stack is merged. | Ten minutes |
+| ~~Look at the first CI run~~ | **Passed on 17 November, both jobs.** A workflow now builds and tests every pull request. It covers only the top of the stack until the stack is merged. | Done |
 | One pass with VoiceOver | Names and structure were checked by script, never by ear | An hour |
 | Boat look review, round three | Parked by Oliver. The storm crests and the folded strip are the known weak points. | Depends on the review |
 
@@ -79,7 +79,8 @@ All five destinations in the brief now exist. What is left in this stage is for 
 
 ## Stage 7. The boat grows up
 
-- The cutter and schooner fittings that are listed but not drawn.
+- ~~The cutter and schooner fittings that are listed but not drawn.~~ **Drawn on 17 November:** flags to dress ship, ratlines and lazy jacks, the stern lantern, the tender, the topsail and the gilded cove stripe. All eleven fittings are now on the boat, in 3D and in the still image. Screenshots are in `docs/screenshots/fittings/`. Oliver has seen them; Josh and Aditya have not.
+  - **Decided by Oliver on 17 November: the dress flags fly in port only,** on a day with nothing planned, as a real boat dresses at rest with her sails furled. Under sail they are stowed. The voyage view says so beside the fitting.
 - Flags, banners and decorations.
 - New waters earned by distance, and seasonal items that arrive with the calendar.
 - Dusk, night and the dark theme, designed together.

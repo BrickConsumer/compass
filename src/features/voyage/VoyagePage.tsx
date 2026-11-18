@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { daysAtSea, earnedFittings, earnedIds, earnedStage, FITTINGS, milesLogged, nextFitting, nextStage, STAGE_GATES, unseenRewards } from '../../domain/voyage';
 import { useCompass } from '../../state/store';
 import { DraftInput } from '../../ui/DraftField';
-import { STAGE_ORDER, STAGES, type StageId } from './boat/specs';
+import { carries, STAGE_ORDER, STAGES, type StageId } from './boat/specs';
 import { SeaWindow } from './SeaWindow';
 
 const HULLS: [string, string][] = [['Deep navy', '#0E243A'], ['Marine', '#1A619B'], ['Teal', '#256F75'], ['Ivory', '#F6F0E4'], ['Bottle green', '#1C6048'], ['Oxblood', '#8C2D2B']];
@@ -95,7 +95,7 @@ export function VoyagePage() {
               return (
                 <li key={f.id} className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 border-t border-line py-2.5 text-[15px] first:border-t-0">
                   <span aria-hidden="true" className={`grid size-[22px] place-items-center rounded-full ${got ? 'bg-positive text-paper-0' : 'shadow-[inset_0_0_0_1.5px_var(--color-control)]'}`}>{got && <Check size={13} strokeWidth={3.2} />}</span>
-                  <span className={got ? 'font-medium' : 'text-text-muted'}>{f.name}<span className="sr-only">{got ? ', earned' : ', not earned yet'}</span>{fresh.fittings.some((x) => x.id === f.id) && newTag}{got && !f.modelled ? <span className="text-[13px] font-normal text-text-muted"> (earned, not yet drawn on the boat)</span> : null}</span>
+                  <span className={got ? 'font-medium' : 'text-text-muted'}>{f.name}<span className="sr-only">{got ? ', earned' : ', not earned yet'}</span>{fresh.fittings.some((x) => x.id === f.id) && newTag}{got && f.id === 'dress-flags' ? <span className="text-[13px] font-normal text-text-muted" data-in-port> (flown in port, on a day with nothing planned)</span> : null}{got && !carries(STAGES[viewing], f.id) ? <span className="text-[13px] font-normal text-text-muted" data-not-carried> (the {STAGES[viewing].name.toLowerCase()} has no place for it)</span> : null}</span>
                   <span className="text-[13.5px] font-semibold text-brass-700">{f.miles.toLocaleString('en-GB')}</span>
                 </li>
               );

@@ -98,7 +98,7 @@ export function LookdevPage() {
           <fieldset>
             <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Fittings earned</legend>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[14.5px]">
-              {([['pennant', 'Masthead pennant'], ['lantern', 'Bow lantern'], ['sheer-stripe', 'Sheer stripe'], ['portlights', 'Brass portlights'], ['transom-name', 'Name on the quarter']] as const).map(([id, name]) => (
+              {([['pennant', 'Masthead pennant'], ['lantern', 'Bow lantern'], ['sheer-stripe', 'Sheer stripe'], ['portlights', 'Brass portlights'], ['transom-name', 'Name on the quarter'], ['dress-flags', 'Flags to dress ship'], ['ratlines', 'Ratlines and lazy jacks'], ['stern-lantern', 'Stern lantern'], ['tender', 'Tender on deck'], ['topsail', 'Topsail'], ['gilded-stripe', 'Gilded stripe']] as const).map(([id, name]) => (
                 <label key={id} className="flex items-center gap-2"><input type="checkbox" checked={worn.includes(id)} onChange={(e) => setWorn(e.target.checked ? [...worn, id] : worn.filter((x) => x !== id))} /> {name}</label>
               ))}
             </div>

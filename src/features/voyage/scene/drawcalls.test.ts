@@ -91,6 +91,40 @@ describe('fittings on the boat', () => {
   });
 });
 
+describe('flags to dress ship', () => {
+  const flagPoints = (earned: readonly string[], furled: boolean) => {
+    let points = 0;
+    buildBoat(fitOut(BARE.cutter, earned), DEFAULT_COLOURS, { furled }).group.traverse((o) => { const m = o as Mesh; if (m.isMesh && (m.material as { vertexColors?: boolean; userData: { paint?: boolean } }).vertexColors && m.geometry.getAttribute('aSurf') === undefined) points += m.geometry.getAttribute('position').count; });
+    return points;
+  };
+
+  it('are flown in port, with the sails furled, and stowed under sail', () => {
+    // the cutter always has her ensign, so there is a flag mesh either way
+    const ensign = flagPoints([], true);
+    expect(ensign).toBeGreaterThan(0);
+    expect(flagPoints(['dress-flags'], true)).toBeGreaterThan(ensign + 8 * 8);
+    expect(flagPoints(['dress-flags'], false)).toBe(flagPoints([], false));
+  });
+});
+
+describe('every part of every boat', () => {
+  for (const id of STAGE_ORDER) {
+    for (const [what, opts] of [['under sail', {}], ['furled in port', { furled: true }], ['as a reflection', { mirror: true }]] as const) {
+      it(`${id}, ${what}: no point is a broken number`, () => {
+        const boat = buildBoat(STAGES[id], DEFAULT_COLOURS, opts);
+        boat.update(1.3, 0.8, 0.7);
+        boat.group.traverse((o) => {
+          const m = o as Mesh;
+          if (!m.isMesh) return;
+          const pos = m.geometry.getAttribute('position'), bad: number[] = [];
+          for (let i = 0; i < pos.count * 3; i++) if (!Number.isFinite(pos.array[i]!)) bad.push(i);
+          expect(bad, `${(m.material as { type: string }).type} with ${pos.count} points`).toEqual([]);
+        });
+      });
+    }
+  }
+});
+
 describe('the name on the quarter', () => {
   it('is painted by the hull itself, so it adds no mesh and no draw call', () => {
     const count = (earned: readonly string[]) => meshes(buildBoat(fitOut(BARE.sloop, earned), DEFAULT_COLOURS).group);
