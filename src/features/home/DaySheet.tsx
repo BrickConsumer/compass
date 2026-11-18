@@ -6,6 +6,7 @@ import type { Assessment, ISODate, Subject, Task } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { SegmentedProgress } from '../../ui/SegmentedProgress';
 import { toast } from '../../ui/Toast';
+import { HabitsToday } from '../habits/HabitsToday';
 import { TaskComposer } from './TaskComposer';
 import { TaskRow } from './TaskRow';
 
@@ -68,6 +69,7 @@ export function DaySheet({ date, today, tasks, subjects, assessment, carried, on
         </ul>
         <div className={ordered.length ? '' : '[&>form]:border-t-0'}><TaskComposer id="composer-day" date={date} scope="day" hint="N" /></div>
       </div>
+      <HabitsToday layout="foot" date={date} today={today} className="xl:hidden max-sm:pb-2" />
     </section>
   );
 }

@@ -1,11 +1,15 @@
-import { addDaysISO, weekStartOf } from './dates';
-import type { Assessment, Boat, ISODate, LogEntry, Settings, Subject, Task } from './types';
+import { addDaysISO, weekdayOf, weekStartOf } from './dates';
+import { isDue, tickKey } from './habits';
+import type { Assessment, Boat, Habit, ISODate, LogEntry, Settings, Subject, Task } from './types';
 
 export interface CompassData {
   subjects: Subject[];
   tasks: Task[];
   assessments: Assessment[];
   log: LogEntry[];
+  habits: Habit[];
+  /** One entry for each habit ticked on each day: see `tickKey`. */
+  ticks: string[];
   boat: Boat;
   settings: Settings;
   /** True while the data is the generated sample. */
@@ -29,6 +33,28 @@ export function sampleLog(miles: number, days: number, today: ISODate): LogEntry
   if (n === 0 || total === 0) return [];
   const base = Math.floor(total / n), extra = total - base * n;
   return Array.from({ length: n }, (_, i) => ({ id: `sample:${i}`, date: addDaysISO(today, -(i + 1) * 2 + 1), source: 'sample' as const, sourceId: `sample:${i}`, miles: base + (i < extra ? 1 : 0) }));
+}
+
+/**
+ * Sample habits, the four named in the brief, with three weeks of ticks behind them.
+ * Three are for every day. Exercise is for three days a week, one of which is always today, so the first run shows all four.
+ * Today starts with two of the four ticked.
+ */
+export function sampleHabits(today: ISODate): { habits: Habit[]; ticks: string[] } {
+  const w = weekdayOf(today), every = [0, 1, 2, 3, 4, 5, 6], createdOn = addDaysISO(today, -21);
+  const habits: Habit[] = [
+    { id: 'hab-read', name: 'Read for 20 minutes', days: every, order: 1, createdOn },
+    { id: 'hab-revise', name: 'Complete daily revision', days: every, order: 2, createdOn },
+    { id: 'hab-move', name: 'Exercise', days: [w, (w + 2) % 7, (w + 4) % 7].sort((a, b) => a - b), order: 3, createdOn },
+    { id: 'hab-plan', name: 'Plan tomorrow', days: every, order: 4, createdOn },
+  ];
+  // how many days in seven each habit tends to be kept: a believable record, not a perfect one
+  const kept = [5, 6, 6, 4], ticks: string[] = [];
+  habits.forEach((h, i) => {
+    for (let back = 21; back >= 1; back--) { const date = addDaysISO(today, -back); if (isDue(h, date) && (back * 3 + i * 2) % 7 < kept[i]!) ticks.push(tickKey(h.id, date)); }
+  });
+  ticks.push(tickKey('hab-revise', today), tickKey('hab-move', today));
+  return { habits, ticks };
 }
 
 /**
@@ -68,10 +94,10 @@ export function seed(today: ISODate): CompassData {
     { id: 'as-2', title: 'Economics examination', subjectId: 'eco', date: d(9), kind: 'exam' },
     { id: 'as-3', title: 'English oral presentation', subjectId: 'eng', date: d(12), kind: 'presentation' },
   ];
-  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
+  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
 }
 
 /** A clean start: the same subjects, nothing else, and the first boat. */
 export function empty(): CompassData {
-  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
+  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
 }

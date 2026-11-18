@@ -30,7 +30,20 @@ export interface Task {
 export interface Assessment { id: string; title: string; subjectId: string; date: ISODate; kind: 'test' | 'exam' | 'presentation' | 'assignment' }
 
 /** One entry in the voyage log. The log only grows. */
-export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'sample'; sourceId: string; miles: number }
+export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'habit' | 'sample'; sourceId: string; miles: number }
+
+/** Something to do on most days. It comes back on each of its days, so it is never finished, only ticked for a day. */
+export interface Habit {
+  id: string;
+  /** 1 to 60 characters after trimming. */
+  name: string;
+  /** The weekdays it falls on: 0 is Sunday, 6 is Saturday. All seven means every day. */
+  days: number[];
+  /** Position in the list. */
+  order: number;
+  /** The first day it counts for. Earlier days are not days for it, so a new habit starts with a clean record. */
+  createdOn: ISODate;
+}
 
 export interface Boat {
   name: string;

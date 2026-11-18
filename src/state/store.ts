@@ -2,9 +2,10 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { todayISO } from '../domain/dates';
 import { type CompassData, empty, sampleLog, seed } from '../domain/seed';
+import { cleanDays, isDue, tickKey } from '../domain/habits';
 import { cleanTitle } from '../domain/tasks';
-import type { Boat, ISODate, Priority, Settings, Task } from '../domain/types';
-import { awardsFor, daysAtSea, earnedStage, milesLogged } from '../domain/voyage';
+import type { Boat, Habit, ISODate, Priority, Settings, Task } from '../domain/types';
+import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
 
 export interface NewTask { title: string; date: ISODate; scope: 'day' | 'week'; priority?: Priority; subjectId?: string; notes?: string }
@@ -23,6 +24,14 @@ export interface CompassStore extends CompassData {
   moveToDate: (ids: string[], date: ISODate) => Task[];
   /** Swap a task with its neighbour among its siblings. */
   nudge: (id: string, direction: -1 | 1) => void;
+  /** Add a habit, for every day unless days are given. Returns its id, or null when the name is empty. */
+  addHabit: (name: string, days?: number[]) => string | null;
+  updateHabit: (id: string, patch: { name?: string; days?: number[] }) => void;
+  /** Remove a habit and its record, and return both so the caller can offer Undo. */
+  deleteHabit: (id: string) => { habit: Habit; ticks: string[] } | null;
+  restoreHabit: (removed: { habit: Habit; ticks: string[] }) => void;
+  /** Tick or untick a habit for a day. The first tick logs a mile; unticking removes nothing. A day still to come cannot be ticked. */
+  toggleHabit: (id: string, date: ISODate) => void;
   setBoat: (patch: Partial<Boat>) => void;
   setSettings: (patch: Partial<Settings>) => void;
   resetSample: () => void;
@@ -103,6 +112,36 @@ export const useCompass = create<CompassStore>()(
         if (!other) return s;
         return { tasks: s.tasks.map((t) => (t.id === id ? { ...t, order: other.order } : t.id === other.id ? { ...t, order: task.order } : t)) };
       }),
+      addHabit: (name, days) => {
+        const clean = cleanTitle(name).slice(0, 60), on = cleanDays(days ?? [0, 1, 2, 3, 4, 5, 6]);
+        if (!clean || on.length === 0) return null;
+        const id = newId().replace('t-', 'h-'), order = Math.max(0, ...get().habits.map((h) => h.order)) + 1;
+        set((s) => ({ habits: [...s.habits, { id, name: clean, days: on, order, createdOn: todayISO() }] }));
+        return id;
+      },
+      updateHabit: (id, patch) => set((s) => ({
+        habits: s.habits.map((h) => {
+          if (h.id !== id) return h;
+          const days = patch.days ? cleanDays(patch.days) : h.days;
+          // a habit keeps its last good name and at least one day
+          return { ...h, name: patch.name !== undefined ? cleanTitle(patch.name).slice(0, 60) || h.name : h.name, days: days.length ? days : h.days };
+        }),
+      })),
+      deleteHabit: (id) => {
+        const habit = get().habits.find((h) => h.id === id);
+        if (!habit) return null;
+        const mine = get().ticks.filter((t) => t.startsWith(`${id}|`));
+        set((s) => ({ habits: s.habits.filter((h) => h.id !== id), ticks: s.ticks.filter((t) => !t.startsWith(`${id}|`)) }));
+        return { habit, ticks: mine };
+      },
+      restoreHabit: (removed) => set((s) => ({ habits: [...s.habits.filter((h) => h.id !== removed.habit.id), removed.habit], ticks: [...new Set([...s.ticks, ...removed.ticks])] })),
+      toggleHabit: (id, date) => set((s) => {
+        const habit = s.habits.find((h) => h.id === id), today = todayISO(), key = tickKey(id, date);
+        if (!habit || date > today || !isDue(habit, date)) return s;
+        if (s.ticks.includes(key)) return { ticks: s.ticks.filter((t) => t !== key) };
+        const award = habitAward(id, date, s.log, today);
+        return { ticks: [...s.ticks, key], log: award ? [...s.log, award] : s.log };
+      }),
       setBoat: (patch) => set((s) => ({ boat: clampStage({ ...s.boat, ...patch, name: patch.name !== undefined ? patch.name.trim().slice(0, 40) || s.boat.name : s.boat.name }, milesLogged(s.log), daysAtSea(s.log)) })),
       setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
       resetSample: () => set(seed(todayISO())),
@@ -116,12 +155,14 @@ export const useCompass = create<CompassStore>()(
       name: 'compass:v1',
       version: 1,
       storage: createJSONStorage(safeStorage),
-      partialize: ({ subjects, tasks, assessments, log, boat, settings, sample }) => ({ subjects, tasks, assessments, log, boat, settings, sample }),
+      partialize: ({ subjects, tasks, assessments, log, habits, ticks, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, boat, settings, sample }),
       // anything unreadable falls back to the sample, so a bad save can never stop the app opening
       merge: (saved, current) => {
         const s = saved as Partial<CompassData> | undefined;
         if (!s || !Array.isArray(s.tasks) || !Array.isArray(s.log) || !s.boat || !s.settings) return current;
-        return { ...current, ...s, subjects: Array.isArray(s.subjects) && s.subjects.length ? s.subjects : current.subjects, assessments: Array.isArray(s.assessments) ? s.assessments : current.assessments };
+        // a save from before habits existed gets the sample habits if it is still the sample, and none if it is the user's own
+        const fresh = s.sample !== false, habits = Array.isArray(s.habits) ? s.habits : fresh ? current.habits : [], ticks = Array.isArray(s.ticks) ? s.ticks : fresh ? current.ticks : [];
+        return { ...current, ...s, habits, ticks, subjects: Array.isArray(s.subjects) && s.subjects.length ? s.subjects : current.subjects, assessments: Array.isArray(s.assessments) ? s.assessments : current.assessments };
       },
     },
   ),
