@@ -2,11 +2,7 @@ import { Link } from 'react-router';
 
 interface Place { title: string; lead: string; will: string[]; examples?: { label: string; items: string[] } }
 
-const PLACES: Record<'review' | 'pages', Place> = {
-  review: {
-    title: 'Weekly review', lead: 'A few minutes at the end of the week to look back and set what matters next.',
-    will: ['Saved weekly reflections', 'A summary of tasks and habits', "Next week's priorities, which appear on Home"],
-  },
+const PLACES: Record<'pages', Place> = {
   pages: {
     title: 'My pages', lead: 'Your own space for everything that is not a task.',
     will: ['Personal notes', 'Checklists', 'Goals', 'Reading and project pages'],

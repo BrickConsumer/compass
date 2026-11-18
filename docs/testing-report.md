@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026 |
-| Build | Branch `study`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, and Study in section 9 |
+| Date | 16 November 2026, with section 10 added on 17 November |
+| Build | Branch `weekly-review`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, and the Weekly review in section 10 |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 155 unit tests pass and 48 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 170 unit tests pass and 56 browser tests pass.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -49,9 +49,9 @@ Updated screenshots are in [screenshots/home/](screenshots/home/).
 
 | Check | Tool | Result |
 |---|---|---|
-| Type-check and production build | `npm run build` | Passes. Main bundle 164 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
-| Unit tests | `npm test` (Vitest) | 155 of 155 pass |
-| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 48 of 48 pass, three runs in a row |
+| Type-check and production build | `npm run build` | Passes. Main bundle 167 kB compressed. Loaded afterwards: the animation engine, 34 kB, and the 3D scene, 259 kB. |
+| Unit tests | `npm test` (Vitest) | 170 of 170 pass |
+| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 56 of 56 pass, three runs in a row |
 | Screenshots and state capture | Playwright scripts, six widths and nine states | No console errors in any capture |
 | Contrast, text size, touch targets | A script run inside the live page at 390 and 1440 | Section 4 |
 | Frame rate | The same, at phone size with the processor slowed four times | Section 5 |
@@ -316,7 +316,36 @@ Built on 16 November. The rules are in [study-spec.md](study-spec.md). No founde
 - Unit tests: a subject's tasks and their order, when a task is for, assessments ahead and past, the one-line summary, a new subject's colour, which session tasks are made and when, a session's days in words, and the store's actions.
 - Two of the new browser tests failed on their first run because of their own selectors, and one led to a fix in the page: the Notes label now names its text box properly.
 
-## 10. Built differently from the approved spec
+## 10. Weekly review
+
+Built on 17 November as a first version, to [review-spec.md](review-spec.md). No founder has reviewed the page, and it was not mocked before it was built.
+
+### What was built
+
+- **The page at `/review`,** in place of the "Not built yet" page. It opens on this week, with earlier weeks one step back. A week still to come cannot be opened.
+- **The week's summary:** tasks done of planned, habits ticked of due, miles logged and the days they were logged on, each day's tasks, each habit's count, and the week's assessments. All of it is worked out from the existing records. Nothing is stored.
+- **A reflection** of three questions. It is kept as it is typed. Saving it needs something written, and lists it among the saved reviews.
+- **Priorities for the week after,** which are that week's any-time tasks: the same ones Home shows under "Next week".
+- **Miles:** 10 for saving a review, once for each week, and only for this week or the one just ended.
+- **The sample** has last week's review, already saved.
+
+### Checked
+
+- Browser tests, eight new: the page and its figures; a task ticked on Home changing the figures; saving needing words, logging ten miles once and listing the review; words kept before saving; opening a saved review from the list; a priority added here showing on Home; an older week saving with no miles and no plan; and the phone layout with no sideways scroll.
+- Unit tests, fifteen new: the summary's counts, which weeks can be reviewed, the award and its limits, a blank reflection, the list's excerpt, and the store's writing and saving.
+- No console errors or warnings in any capture.
+
+### Found on the way
+
+- **A saved review could have earned twice.** The sample's saved review has no entry of its own in the log, so saving it again would have logged ten miles. The store now gives nothing for a review that is already saved. Caught while the page was being built, and covered by a unit test.
+- **One Home browser test depended on the day of the week.** It chose the second day of the week and expected the date in the address, which fails on a Tuesday, when that day is today. It then failed now and then for a second reason: the week that has just slid away is still on the page for a moment. The test now chooses its day by date. The app is unchanged.
+- **One run of the full suite had four failures in the Study and sea tests,** each within a tenth of a second, which looks like the development server restarting under the run. They did not happen again in seven further runs, and the cause was not found.
+
+### Calls made here that the founders can overrule
+
+They are listed with the other way for each in [review-spec.md](review-spec.md), section 7. The one that matters most: the figures are live, so an old saved review shows that week as the records stand now, not as they stood when it was saved.
+
+## 11. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -330,11 +359,11 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 11. Known limitations
+## 12. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
 - The storm's breaking crests look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
-- Dark theme, the night scene, Weekly review, My pages, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
+- Dark theme, the night scene, My pages, drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
 - Tested in Chrome only. Safari and Firefox have not been opened.

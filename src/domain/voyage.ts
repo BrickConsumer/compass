@@ -2,7 +2,7 @@ import { type StageId, STAGE_ORDER, STAGES } from '../features/voyage/boat/specs
 import type { ISODate, LogEntry, Task } from './types';
 
 /** Starting values, to be tuned with real use (art direction, section 13). */
-export const MILES = { task: 2, highPriority: 3, dayClear: 3, dailyTaskCap: 40, habit: 1, dailyHabitCap: 8 } as const;
+export const MILES = { task: 2, highPriority: 3, dayClear: 3, dailyTaskCap: 40, habit: 1, dailyHabitCap: 8, review: 10 } as const;
 
 export const STAGE_GATES: Record<StageId, { miles: number; days: number }> = {
   dinghy: { miles: 0, days: 0 }, sloop: { miles: 250, days: 10 }, cutter: { miles: 1000, days: 40 }, schooner: { miles: 3000, days: 120 },
