@@ -12,6 +12,10 @@ export interface Subject {
   colour: SubjectColour;
   /** Free notes for the subject, kept on its page. */
   notes?: string;
+  /** What the subject is on now, in the syllabus's own words. Up to 200 characters, and never rewritten. */
+  topic?: string;
+  /** The subject's own links, such as flashcards. Six at most, each a web address. */
+  links?: QuickLink[];
 }
 
 export interface Task {
@@ -34,9 +38,28 @@ export interface Task {
   milesAwarded?: true;
   /** The study session this task was made from, if any. It is an ordinary task in every other way. */
   sessionId?: string;
+  /** One web address that goes with the task. */
+  link?: string;
+  /** The assessment this task is preparation for. It is an ordinary task in every other way, and only preparation while that assessment exists. */
+  assessmentId?: string;
 }
 
-export interface Assessment { id: string; title: string; subjectId: string; date: ISODate; kind: 'test' | 'exam' | 'presentation' | 'assignment' }
+export interface Assessment { id: string; title: string; subjectId: string; date: ISODate; kind: 'test' | 'exam' | 'presentation' | 'assignment'; /** One web address: its notification. */ link?: string }
+
+/** Something a teacher said about a subject's work, and what to work on because of it. */
+export interface Feedback {
+  id: string;
+  subjectId: string;
+  date: ISODate;
+  /** What it was on, such as "Essay on the set text". Up to 80 characters, and may be empty. */
+  about: string;
+  /** What was said. 1 to 2,000 characters. */
+  words: string;
+  /** What to work on. Up to 140 characters, and may be empty. */
+  work: string;
+  /** The task made from `work`, if one was. It is only that task while the task exists. */
+  taskId?: string;
+}
 
 /** One entry in the voyage log. The log only grows. */
 export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'habit' | 'review' | 'sample'; sourceId: string; miles: number }

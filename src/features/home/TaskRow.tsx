@@ -1,4 +1,4 @@
-import { CalendarSync, Check, Flag } from 'lucide-react';
+import { ArrowUpRight, CalendarSync, Check, Flag } from 'lucide-react';
 import * as m from 'motion/react-m';
 import type { Ref } from 'react';
 import { ENTER, EXIT, MOVE } from '../../design/motion';
@@ -45,6 +45,11 @@ export function TaskRow({ task, subject, onEdit, number, small = false, ref, whe
         <span className={small ? 'line-clamp-2 py-1.5 leading-[1.3] text-balance' : 'truncate'}>{task.title}</span>
       </button>
       <span className="flex items-center gap-1 pl-2 text-[13px] text-text-muted">
+        {/* the task's link: a link of its own beside the title, so it opens the address and not the editor */}
+        {task.link && (
+          <a data-task-link href={task.link} target="_blank" rel="noopener noreferrer" aria-label={`Link for ${task.title}, opens in a new tab`} title="Open the link in a new tab"
+            className="grid size-11 shrink-0 place-items-center rounded-[9px] text-text-link hover:bg-surface-well sm:size-7"><ArrowUpRight size={15} strokeWidth={2.2} aria-hidden="true" /></a>
+        )}
         <button type="button" onClick={() => cycle(task.id)} title="Change priority (P)"
           aria-label={`Priority ${task.priority}. Change priority of ${task.title}`}
           className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-[9px] px-1.5 text-[12.5px] font-semibold sm:min-w-7 sm:px-1 ${task.priority === 'high' && !done ? 'text-port-600' : task.priority === 'low' ? 'text-text-muted' : 'text-text-subtle opacity-0 focus-visible:opacity-100 group-hover:opacity-100 max-sm:hidden'}`}>

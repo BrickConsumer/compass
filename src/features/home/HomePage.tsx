@@ -101,7 +101,7 @@ export function HomePage() {
         <div className="grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-1 lg:pt-[18px] xl:contents">
           <div className="xl:pt-[18px]"><WeekList weekStart={week} current={week === thisWeek} tasks={tasksForWeek(tasks, week, rank)} subjects={subjects} onEdit={(id) => setEditing({ id })} rank={rank} /></div>
           <div className="flex flex-col gap-9 xl:pt-[18px]">
-            <ComingUp assessments={upcomingAssessments(assessments, today)} subjects={subjects} today={today} onSelect={select} />
+            <ComingUp assessments={upcomingAssessments(assessments, today)} tasks={tasks} subjects={subjects} today={today} onSelect={select} />
             <NextWeek tasks={nextWeekPriorities(tasks, today, startsOn)} subjects={subjects} today={today} weekStartsOn={startsOn} onEdit={(id) => setEditing({ id })} />
           </div>
         </div>

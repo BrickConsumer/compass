@@ -1,8 +1,10 @@
 import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { addDaysISO, dayOfMonth, isoWeek, relativeDay, weekdayShort, weekStartOf } from '../../domain/dates';
+import { preparationProgress } from '../../domain/study';
 import { progress } from '../../domain/tasks';
 import { type Assessment, type ISODate, type Subject, SUBJECT_COLOURS, type Task } from '../../domain/types';
+import { SegmentedProgress } from '../../ui/SegmentedProgress';
 import { TaskComposer } from './TaskComposer';
 import { useHeldOrder } from './DaySheet';
 import { TaskRow } from './TaskRow';
@@ -28,15 +30,15 @@ export function WeekList({ weekStart, tasks, subjects, onEdit, current, rank }: 
   );
 }
 
-/** Assessments in the next three weeks. Selecting one goes to its date. */
-export function ComingUp({ assessments, subjects, today, onSelect }: { assessments: Assessment[]; subjects: Subject[]; today: ISODate; onSelect: (date: ISODate) => void }) {
+/** Assessments in the next three weeks, each with how much of its preparation is done. Selecting one goes to its date. */
+export function ComingUp({ assessments, tasks, subjects, today, onSelect }: { assessments: Assessment[]; tasks: Task[]; subjects: Subject[]; today: ISODate; onSelect: (date: ISODate) => void }) {
   return (
     <section aria-labelledby="coming-title" className="min-w-0">
       <Heading id="coming-title" title="Coming up" />
       {assessments.length === 0 ? <p className="mt-2 text-[14.5px] text-text-muted">No assessments in the next three weeks.</p> : (
         <ul className="mt-1.5">
           {assessments.map((a) => {
-            const subject = subjects.find((s) => s.id === a.subjectId);
+            const subject = subjects.find((s) => s.id === a.subjectId), prepared = preparationProgress(tasks, a.id);
             return (
               <li key={a.id} className="border-t border-line first:border-t-0">
                 <button type="button" onClick={() => onSelect(a.date)} className="grid min-h-[58px] w-full cursor-pointer grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-[9px] py-1.5 text-left outline-offset-0 hover:bg-surface-well">
@@ -47,6 +49,8 @@ export function ComingUp({ assessments, subjects, today, onSelect }: { assessmen
                       {subject && <span aria-hidden="true" className="size-2 rounded-full" style={{ background: SUBJECT_COLOURS[subject.colour].dot }} />}
                       {subject ? `${subject.name}, ` : ''}{relativeDay(a.date, today)}
                     </span>
+                    {/* how much of its preparation is done, for an assessment that has any */}
+                    {prepared.total > 0 && <span data-prepared className="mt-[3px] flex items-center gap-2 text-[13px] font-medium text-text-muted"><SegmentedProgress done={prepared.done} total={prepared.total} className="[&>span]:w-2.5" /><span>{prepared.done} of {prepared.total} prepared</span></span>}
                   </span>
                 </button>
               </li>

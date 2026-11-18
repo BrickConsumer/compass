@@ -1,11 +1,11 @@
 import { ArrowLeft, CalendarSync, Plus } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { dayOfMonth, relativeDay, shortDay, weekdayShort, weekStartOf } from '../../domain/dates';
 import { byLevel, levelRank, levelsFor } from '../../domain/levels';
 import { daysSentence, subjectSessions } from '../../domain/sessions';
-import { KINDS, subjectAssessments, subjectSummary, subjectTasks, summaryLine, taskWhen } from '../../domain/study';
+import { KINDS, shownElsewhere, subjectAssessments, subjectSummary, subjectTasks, summaryLine, taskWhen } from '../../domain/study';
 import { type Assessment, SUBJECT_COLOURS, type Subject } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { useToday } from '../../state/useToday';
@@ -14,6 +14,10 @@ import { TaskComposer } from '../home/TaskComposer';
 import { type Editing, TaskEditor } from '../home/TaskEditor';
 import { TaskRow } from '../home/TaskRow';
 import { AssessmentEditor, type EditingAssessment, type EditingSession, SessionEditor, SubjectEditor } from './Editors';
+import { FeedbackPart } from './Feedback';
+import { Preparation } from './Preparation';
+import { SubjectLinksPart } from './SubjectLinks';
+import { SubjectPagesPart } from './SubjectPages';
 
 const quiet = 'min-h-11 cursor-pointer rounded-[9px] px-1 text-[14.5px] font-semibold text-text-link sm:min-h-9';
 const kindLabel = (a: Assessment) => KINDS.find((k) => k.id === a.kind)?.label ?? '';
@@ -21,15 +25,18 @@ const kindLabel = (a: Assessment) => KINDS.find((k) => k.id === a.kind)?.label ?
 /** One subject's page: its assessments, its tasks wherever they are planned, and its notes. */
 function SubjectSheet({ subject }: { subject: Subject }) {
   const today = useToday();
-  const tasks = useCompass((s) => s.tasks), assessments = useCompass((s) => s.assessments), update = useCompass((s) => s.updateSubject), startsOn = useCompass((s) => s.settings.weekStartsOn);
+  const tasks = useCompass((s) => s.tasks), assessments = useCompass((s) => s.assessments), feedback = useCompass((s) => s.feedback), update = useCompass((s) => s.updateSubject), startsOn = useCompass((s) => s.settings.weekStartsOn);
   const sessions = subjectSessions(useCompass((s) => s.sessions), subject.id), colours = SUBJECT_COLOURS[subject.colour];
-  const [editingTask, setEditingTask] = useState<Editing | null>(null), [editingTest, setEditingTest] = useState<EditingAssessment | null>(null), [editingSubject, setEditingSubject] = useState(false), [editingSession, setEditingSession] = useState<EditingSession | null>(null);
+  const [editingTask, setEditingTask] = useState<Editing | null>(null), [editingTest, setEditingTest] = useState<EditingAssessment | null>(null), [editingSubject, setEditingSubject] = useState<false | 'name' | 'topic'>(false), [editingSession, setEditingSession] = useState<EditingSession | null>(null);
   const [showDone, setShowDone] = useState(false), [showPast, setShowPast] = useState(false);
-  const { open, done } = subjectTasks(tasks, subject.id), { ahead, past } = subjectAssessments(assessments, subject.id, today), thisWeek = weekStartOf(today, startsOn);
+  // a task this page shows under an assessment or beside feedback is left out of "Tasks": one thing in one place
+  const elsewhere = shownElsewhere(tasks, assessments, feedback, subject.id);
+  const { open, done } = subjectTasks(tasks.filter((t) => !elsewhere.has(t.id)), subject.id), { ahead, past } = subjectAssessments(assessments, subject.id, today), thisWeek = weekStartOf(today, startsOn);
   const heading = 'text-[20px] leading-[1.3]', aside = 'text-[13.5px] font-semibold text-text-muted';
   const setLevel = useCompass((s) => s.setLevel), level = levelsFor(useCompass((s) => s.levels), thisWeek, [subject]).levels[subject.id];
   const row = (a: Assessment, faded = false) => (
-    <li key={a.id} data-assessment={a.id} className="border-t border-line first:border-t-0 data-[editing=true]:bg-surface-well">
+    <Fragment key={a.id}>
+    <li data-assessment={a.id} className="border-t border-line first:border-t-0 data-[editing=true]:bg-surface-well">
       <button type="button" onClick={() => setEditingTest({ id: a.id })} className={`grid min-h-[58px] w-full cursor-pointer grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-[9px] py-1.5 text-left outline-offset-0 hover:bg-surface-well ${faded ? 'text-text-muted' : ''}`}>
         <span className="flex flex-col pl-1 leading-[1.05]"><span className="text-[12.5px] font-semibold text-text-muted">{weekdayShort(a.date)}</span><span className="font-display text-[23px] font-medium">{dayOfMonth(a.date)}</span></span>
         <span className="min-w-0">
@@ -38,6 +45,9 @@ function SubjectSheet({ subject }: { subject: Subject }) {
         </span>
       </button>
     </li>
+    {/* what is left to prepare for it, and its notification. A past assessment keeps its preparation and takes no more */}
+    <li><Preparation assessment={a} ahead={!faded} onEdit={(id) => setEditingTask({ id })} /></li>
+    </Fragment>
   );
   return (
     <section aria-labelledby="subject-title" className="flex flex-col gap-7 rounded-xl bg-surface-sheet px-5 pb-5 pt-[18px] shadow-sheet ring-1 ring-line max-sm:-mx-4 max-sm:rounded-[26px]">
@@ -46,8 +56,15 @@ function SubjectSheet({ subject }: { subject: Subject }) {
           <h2 id="subject-title" className="flex min-w-0 items-center gap-3 text-[25px] leading-[1.2]">
             <span aria-hidden="true" className="size-3 shrink-0 rounded-full" style={{ background: SUBJECT_COLOURS[subject.colour].dot }} /><span className="truncate">{subject.name}</span>
           </h2>
-          <button type="button" onClick={() => setEditingSubject(true)} className={quiet} data-edit-subject>Edit subject</button>
+          <button type="button" onClick={() => setEditingSubject('name')} className={quiet} data-edit-subject>Edit subject</button>
         </div>
+        {/* what the subject is on now, in the syllabus's own words. Pressing it opens the subject's editor at the topic */}
+        <button type="button" data-topic onClick={() => setEditingSubject('topic')} aria-label={subject.topic ? `Change the topic. It is: ${subject.topic}` : undefined}
+          className="mt-1 flex min-h-11 w-fit max-w-full cursor-pointer items-center rounded-[9px] text-left text-[15.5px] font-medium leading-[1.4] outline-offset-0 hover:bg-surface-well sm:min-h-9">
+          {subject.topic
+            ? <span className="flex min-w-0 items-baseline gap-2.5"><span className={`${aside} shrink-0`}>Topic</span><span className="min-w-0 [overflow-wrap:anywhere]">{subject.topic}</span></span>
+            : <span className="px-1 text-[14.5px] font-semibold text-text-link">Set the topic</span>}
+        </button>
         {/* how much the subject matters this week: the same levels the Weekly review sets for the week after it */}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <p className={aside}>This week</p>
@@ -65,6 +82,24 @@ function SubjectSheet({ subject }: { subject: Subject }) {
         {past.length > 0 && <button type="button" onClick={() => setShowPast(!showPast)} aria-expanded={showPast} className={quiet}>{showPast ? 'Hide past' : `${past.length} past`}</button>}
         {showPast && <ul>{past.map((a) => row(a, true))}</ul>}
       </div>
+
+      <div data-own-tasks>
+        <div className="flex items-baseline justify-between gap-3"><h3 className={heading}>Tasks</h3><p className={aside}>{open.length ? `${open.length} open` : 'Nothing open'}</p></div>
+        <ul className="relative mt-1">
+          <AnimatePresence initial={false} mode="popLayout">
+            {open.map((t) => <TaskRow key={t.id} task={t} when={taskWhen(t, today, startsOn)} onEdit={(id) => setEditingTask({ id })} />)}
+          </AnimatePresence>
+        </ul>
+        <div className={open.length ? '' : '[&>form]:border-t-0'}><TaskComposer date={thisWeek} scope="week" subjectId={subject.id} label={`Add a task for ${subject.name}`} /></div>
+        {done.length > 0 && <button type="button" onClick={() => setShowDone(!showDone)} aria-expanded={showDone} className={`${quiet} mt-1`}>{showDone ? 'Hide done' : `${done.length} done`}</button>}
+        {showDone && <ul className="relative"><AnimatePresence initial={false} mode="popLayout">{done.map((t) => <TaskRow key={t.id} task={t} when={taskWhen(t, today, startsOn)} onEdit={(id) => setEditingTask({ id })} />)}</AnimatePresence></ul>}
+      </div>
+
+      <FeedbackPart subject={subject} onEditTask={(id) => setEditingTask({ id })} />
+
+      <SubjectPagesPart subject={subject} />
+
+      <SubjectLinksPart subject={subject} />
 
       <div>
         <div className="flex items-baseline justify-between gap-3">
@@ -84,18 +119,6 @@ function SubjectSheet({ subject }: { subject: Subject }) {
         </ul>
       </div>
 
-      <div>
-        <div className="flex items-baseline justify-between gap-3"><h3 className={heading}>Tasks</h3><p className={aside}>{open.length ? `${open.length} open` : 'Nothing open'}</p></div>
-        <ul className="relative mt-1">
-          <AnimatePresence initial={false} mode="popLayout">
-            {open.map((t) => <TaskRow key={t.id} task={t} when={taskWhen(t, today, startsOn)} onEdit={(id) => setEditingTask({ id })} />)}
-          </AnimatePresence>
-        </ul>
-        <div className={open.length ? '' : '[&>form]:border-t-0'}><TaskComposer date={thisWeek} scope="week" subjectId={subject.id} label={`Add a task for ${subject.name}`} /></div>
-        {done.length > 0 && <button type="button" onClick={() => setShowDone(!showDone)} aria-expanded={showDone} className={`${quiet} mt-1`}>{showDone ? 'Hide done' : `${done.length} done`}</button>}
-        {showDone && <ul className="relative"><AnimatePresence initial={false} mode="popLayout">{done.map((t) => <TaskRow key={t.id} task={t} when={taskWhen(t, today, startsOn)} onEdit={(id) => setEditingTask({ id })} />)}</AnimatePresence></ul>}
-      </div>
-
       <div className="flex flex-col gap-2">
         <label htmlFor="subject-notes" className={`${heading} font-display font-medium`}>Notes</label>
         <textarea id="subject-notes" rows={4} value={subject.notes ?? ''} onChange={(e) => update(subject.id, { notes: e.target.value })} placeholder={`Anything worth keeping about ${subject.name}`}
@@ -105,7 +128,7 @@ function SubjectSheet({ subject }: { subject: Subject }) {
       <TaskEditor editing={editingTask} today={today} viewWeek={thisWeek} onClose={() => setEditingTask(null)} />
       <AssessmentEditor editing={editingTest} today={today} onClose={() => setEditingTest(null)} />
       <SessionEditor editing={editingSession} onClose={() => setEditingSession(null)} />
-      <SubjectEditor id={editingSubject ? subject.id : null} onClose={() => setEditingSubject(false)} />
+      <SubjectEditor id={editingSubject ? subject.id : null} focus={editingSubject === 'topic' ? 'topic' : undefined} onClose={() => setEditingSubject(false)} />
     </section>
   );
 }
@@ -140,6 +163,7 @@ export function StudyPage() {
                   <span aria-hidden="true" className="size-2.5 rounded-full" style={{ background: SUBJECT_COLOURS[s.colour].dot }} />
                   <span className="min-w-0">
                     <span className="block truncate text-[15.5px] font-semibold max-sm:text-[16px]">{s.name}</span>
+                    {s.topic && <span data-topic-line className="block truncate text-[13px] font-medium leading-[1.45]">{s.topic}</span>}
                     <span className="block truncate text-[13px] text-text-muted">{summaryLine(subjectSummary(s, tasks, assessments, today), today)}</span>
                   </span>
                   {levelRank(applied.levels[s.id]) < 2 && <span className="text-[13px] font-semibold text-text-muted"><span data-level>{applied.levels[s.id] === 'high' ? 'High' : 'Medium'}</span><span className="sr-only"> this week</span></span>}

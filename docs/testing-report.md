@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 13 added on 17 November |
-| Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November and section 14 on 18 November |
+| Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it. Section 14, the Study detail, is on the branch `study-detail`, cut from that |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 256 unit tests pass and 115 browser tests pass. Those counts include the additions in section 13; before them it was 225 and 72, and all of those still pass unchanged.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 284 unit tests pass and 147 browser tests pass. Those counts include the additions in section 13 and the Study detail in section 14; before the two it was 225 and 72, and all of those still pass unchanged.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -481,7 +481,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 15). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 16). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -500,7 +500,75 @@ None of the three is fixed here.
 
 The larger calls are in the specification, section 12.
 
-## 14. Built differently from the approved spec
+## 14. Study detail
+
+Built on 18 November on the branch `study-detail`, to [study-detail-spec.md](study-detail-spec.md). It is the second of five pieces of Aditya's plan. The sample gains a topic and one piece of feedback on Biology. No sample task was changed, so every count on Home, in Study and in the Weekly review is as it was.
+
+![A subject's page at 1440 px with every new part in use](screenshots/study-detail/1-subject-1440.png)
+
+### What was built
+
+- **A topic** for each subject, kept exactly as typed, under its name and in the list of subjects.
+- **Preparation tasks** under an assessment. Each is an ordinary task that belongs to the assessment: listed under it and not again under "Tasks", on Home in its day or week, and counted under "Coming up" as "1 of 3 prepared".
+- **One link** on a task and one on an assessment, each opening in a new tab.
+- **Feedback** on a subject, dated, with something to work on that "Make it a task" turns into an ordinary task.
+- **A subject's pages:** the My pages that carry the subject, and four starters that make a page already carrying it.
+- **A subject's links,** up to six, changed with the same rows Settings uses.
+- **The order of a subject's page:** assessments, tasks, feedback, pages, links, study sessions, notes.
+- **The saved data:** one new list (feedback) and five new optional fields. A save from before this piece opens with nothing lost, and "Clear everything" clears the new parts too.
+
+### Checked
+
+- **Unit tests, 28 new:** a topic kept as typed within its limit; which tasks are preparation, their order and their count; a preparation task while its assessment is deleted and after Undo; one link on a task and on an assessment, and what is refused; a subject's links added, changed, moved, removed and held to six; feedback tidied, ordered and kept with its subject; what to work on made into one task, once; a subject's pages in My pages' order, the starters, and the line a page shows; an older save, a save edited by hand, and "Clear everything".
+- **Browser tests, 32 new:** the topic set, shown and cleared; preparation added under an assessment, shown on Home, counted under "Coming up" and earning its miles once; an assessment deleted and brought back; a task freed from its assessment; links on a task, an assessment and a subject, each refusing what is not a web address; feedback added, changed, deleted and made into a task; a subject's pages listed and started; links changed in place and removed with Undo; the order of the page; the whole of it by keyboard alone; and no sideways scroll at 375, 390, 768, 1024 and 1440 px with every new part at its longest.
+- **Everything from before:** the 256 unit tests and 115 browser tests pass unchanged. Their files were not edited.
+- **As CI runs it:** 141 pass and the six sea tests are skipped, as designed.
+- **Against the mock:** the built pages were pictured and compared with the mock. The pictures are in `screenshots/study-detail/`, numbered, beside the mocks. Where the build differs is in the specification, section 16.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 18 November, ran the unit tests and the build, and probed the running app at 1440 and 390 px with saved data edited by hand. It found nothing critical. It confirmed that only web addresses reach a link, that deleting a subject and undoing it puts everything back once, and that the fix to the editors' frame holds. Seven findings were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| A link typed in a task's or an assessment's editor was lost when the editor was closed with Escape | What is in the box is checked and kept when the editor closes, however it closes |
+| A save with an entry that is not a record among its tasks, assessments or subjects stopped the app opening. This was so before this piece too. | A save's lists keep only records with an id and the words a page needs. A subject whose colour is not one of the eight is given one. |
+| The notice in the subject's editor did not say that deleting a subject also removes its feedback and links | It names them, and says that pages are kept |
+| A task made from feedback was listed twice on the subject's page, beside its entry and under "Tasks", and pressing one opened the editor beside the other | It is listed once, beside its entry, as the mock draws it. The rule goes by the page, so a task moved to another subject is under that subject's "Tasks". |
+| On a phone, "Change the topic" opened the editor with the cursor on Close | The topic box takes the cursor on a phone too |
+| "Preparation for" followed by a title of one long word pushed a phone's editor sideways | The line wraps inside a word |
+| A change to a task would have kept a link without checking it, had anything passed one. Nothing did. | A task's link is set only by the action that checks it |
+
+Eleven smaller findings were left as they are, for the founders to decide:
+
+- Undo can bring back a seventh link after another was added in its place. Settings has had the same gap since piece 1.
+- On a new assessment or task, a link that is refused moves the "Add" button, so the first press misses. The second adds it without the link.
+- "Make it a task" leaves the keyboard on no control. In Chrome the next Tab goes to the new tick; other browsers were not tried.
+- The list of assessments has an extra item for each assessment's preparation, which is empty for a past assessment with none. A screen reader counts them.
+- Every "Add a preparation task" box has the same spoken name, and so does every "Make it a task".
+- Deleting a feedback task, making another and then pressing Undo leaves two tasks with the same words.
+- Feedback shows its month and day, and no year.
+- "Add feedback" with only spaces in "What was said" does nothing and says nothing.
+- Rows slide over the "Tasks" heading for a moment when a preparation task is added above them.
+- Feedback whose subject does not exist is kept in the save, unseen.
+- Two tests could say more: the one for a save from before this piece checks counts only, and a task's link in the Weekly review has no test of its own.
+
+It also noted two things that are older than this piece: a subject brought back with Undo goes to the end of the list, and the toast's "Undo" is 36 px tall on a phone and lasts six seconds.
+
+### Found on the way
+
+- **An editor opened in the moment after another closed was shut again.** The browser reports a dialog's close slightly after it happens, and the frame the editors share took the late report to be about the editor now open. An older Study test began to fail once the page's order changed, which is how it was found. It is fixed in the frame, so for every editor.
+- **A feedback entry of one short line was 41 px tall on a phone,** under the 44 px a thumb needs. The test that measures every new control found it. Fixed.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 16).
+
+### Calls made in the build that the founders can overrule
+
+They are in the specification: section 13 for the calls made in the design, and section 16 for those made in the build. The largest is that a subject's links are changed in place on its page, not in a pop-up editor.
+
+## 15. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -514,7 +582,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 15. Known limitations
+## 16. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.

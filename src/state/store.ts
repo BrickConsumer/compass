@@ -1,29 +1,31 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { todayISO, weekStartOf } from '../domain/dates';
+import { isISODate, todayISO, weekStartOf } from '../domain/dates';
 import { type CompassData, empty, sampleLog, seed } from '../domain/seed';
 import { cleanDays, isDue, tickKey } from '../domain/habits';
 import { addItem, cleanPageTitle, editItem, insertItem, moveItem, newPage, PAGE_LIMITS, removeItem, toggleItem, untickAll } from '../domain/pages';
 import { rekeyed, withLevel } from '../domain/levels';
-import { cleanUrl, LINK_LIMITS, linkName, storedLinks } from '../domain/links';
+import { cleanFeedback, feedbackTask, storedFeedback } from '../domain/feedback';
+import { cleanUrl, LINK_LIMITS, linkName, storedLink, storedLinks } from '../domain/links';
 import { AREA_LIMITS, cleanRating, storedAreas } from '../domain/ratings';
 import { canReview, isBlank, reviewAward } from '../domain/review';
 import { madeKey, sessionTasksDue } from '../domain/sessions';
-import { nextColour } from '../domain/study';
+import { cleanTopic, nextColour } from '../domain/study';
 import { cleanTitle } from '../domain/tasks';
-import type { Assessment, Boat, Habit, ISODate, Level, Page, PageItem, PageKind, Priority, QuickLink, RatingArea, Review, Session, Settings, Subject, SubjectColour, Task } from '../domain/types';
+import { type Assessment, type Boat, type Feedback, type Habit, type ISODate, type Level, type Page, type PageItem, type PageKind, type Priority, type QuickLink, type RatingArea, type Review, type Session, type Settings, type Subject, SUBJECT_COLOURS, type SubjectColour, type Task } from '../domain/types';
 import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
 
-export interface NewTask { title: string; date: ISODate; scope: 'day' | 'week'; priority?: Priority; subjectId?: string; notes?: string }
+export interface NewTask { title: string; date: ISODate; scope: 'day' | 'week'; priority?: Priority; subjectId?: string; notes?: string; /** One web address. Anything else is left off. */ link?: string; /** The assessment it is preparation for. Kept only if that assessment exists. */ assessmentId?: string }
 
 /** A deleted subject, with its assessments, its study sessions and the tasks that carried it. */
-export interface RemovedSubject { subject: Subject; assessments: Assessment[]; sessions: Session[]; taskIds: string[]; pageIds: string[] }
+export interface RemovedSubject { subject: Subject; assessments: Assessment[]; sessions: Session[]; feedback: Feedback[]; taskIds: string[]; pageIds: string[] }
 
 export interface CompassStore extends CompassData {
   /** Add a task. Returns its id, or null when the title is empty. */
   addTask: (input: NewTask) => string | null;
-  updateTask: (id: string, patch: Partial<Pick<Task, 'title' | 'notes' | 'subjectId' | 'priority' | 'scope' | 'date' | 'order'>>) => void;
+  /** Change a task. `assessmentId: null` frees it from the assessment it was preparation for. */
+  updateTask: (id: string, patch: Partial<Pick<Task, 'title' | 'notes' | 'subjectId' | 'priority' | 'scope' | 'date' | 'order'>> & { assessmentId?: string | null }) => void;
   /** Complete or reopen. The first completion logs its miles; reopening removes nothing. */
   toggleTask: (id: string) => void;
   cyclePriority: (id: string) => void;
@@ -36,7 +38,8 @@ export interface CompassStore extends CompassData {
   nudge: (id: string, direction: -1 | 1) => void;
   /** Add a subject, in the first colour not yet used. Returns its id, or null when the name is empty. */
   addSubject: (name: string) => string | null;
-  updateSubject: (id: string, patch: { name?: string; colour?: SubjectColour; notes?: string }) => void;
+  /** Change a subject. An empty name keeps the last good one; an empty topic means the subject has none. */
+  updateSubject: (id: string, patch: { name?: string; colour?: SubjectColour; notes?: string; topic?: string }) => void;
   /** Remove a subject and its assessments. Its tasks stay, without a subject. Returns what Undo needs to put it all back. */
   deleteSubject: (id: string) => RemovedSubject | null;
   restoreSubject: (removed: RemovedSubject) => void;
@@ -68,6 +71,24 @@ export interface CompassStore extends CompassData {
   deleteArea: (id: string) => { area: RatingArea; index: number } | null;
   restoreArea: (area: RatingArea, index: number) => void;
   moveArea: (id: string, direction: -1 | 1) => void;
+  /** Set a task's link, or clear it with an empty address. Returns false, with nothing changed, when the address is not a web address. */
+  setTaskLink: (id: string, url: string) => boolean;
+  /** Set an assessment's link, or clear it with an empty address. Returns false, with nothing changed, when the address is not a web address. */
+  setAssessmentLink: (id: string, url: string) => boolean;
+  /** Add a link to a subject. Returns its id, or null when the address is not a web address, the subject is unknown or it has six already. */
+  addSubjectLink: (subjectId: string, input: { name: string; url: string }) => string | null;
+  updateSubjectLink: (subjectId: string, linkId: string, patch: { name?: string; url?: string }) => boolean;
+  deleteSubjectLink: (subjectId: string, linkId: string) => { link: QuickLink; index: number } | null;
+  restoreSubjectLink: (subjectId: string, link: QuickLink, index: number) => void;
+  moveSubjectLink: (subjectId: string, linkId: string, direction: -1 | 1) => void;
+  /** Add feedback to a subject. Returns its id, or null when nothing was said or the subject is unknown. */
+  addFeedback: (input: { subjectId: string; date: ISODate; about?: string; words: string; work?: string }) => string | null;
+  /** Change an entry. Empty words keep the last good ones. */
+  updateFeedback: (id: string, patch: { date?: ISODate; about?: string; words?: string; work?: string }) => void;
+  deleteFeedback: (id: string) => Feedback | null;
+  restoreFeedback: (entry: Feedback) => void;
+  /** Make an entry's "to work on" into a task for any time this week. Returns the task's id, or null when there is nothing to work on or its task still exists. */
+  makeFeedbackTask: (id: string) => string | null;
   /** Add a link. Returns its id, or null when the address is not a web address or there are six already. With no name it takes its site's. */
   addLink: (input: { name: string; url: string }) => string | null;
   /** Change a link. Returns false, with nothing changed, when the new address is not a web address. */
@@ -77,7 +98,8 @@ export interface CompassStore extends CompassData {
   restoreLink: (link: QuickLink, index: number) => void;
   moveLink: (id: string, direction: -1 | 1) => void;
   /** Start a page of this kind, named "Untitled". Returns its id. */
-  addPage: (kind: PageKind) => string;
+  /** A page started from a subject carries it, and may have its title. A subject that does not exist is left off. */
+  addPage: (kind: PageKind, start?: { title?: string; subjectId?: string }) => string;
   /** Change a page. `null` clears its date or its subject. An empty title keeps the last good one. */
   updatePage: (id: string, patch: { title?: string; kind?: PageKind; text?: string; aimFor?: ISODate | null; subjectId?: string | null }) => void;
   deletePage: (id: string) => Page | null;
@@ -133,6 +155,36 @@ function moved<T extends { id: string }>(list: T[], id: string, direction: -1 | 
 /** A list with a removed item back at the place it had. */
 const putBack = <T extends { id: string }>(list: T[], item: T, index: number): T[] => { const rest = list.filter((x) => x.id !== item.id); return [...rest.slice(0, index), item, ...rest.slice(index)]; };
 
+/** A subject's links after a change. A subject with none carries no list at all. */
+function withLinks(subjects: Subject[], subjectId: string, change: (links: QuickLink[]) => QuickLink[]): Subject[] {
+  return subjects.map((x) => {
+    if (x.id !== subjectId) return x;
+    const { links, ...rest } = x, next = change(links ?? []);
+    return next.length ? { ...rest, links: next } : rest;
+  });
+}
+
+/**
+ * A list from a save, keeping only the records that have the words a page cannot do without. A save can be edited
+ * by hand or cut short, and one entry that is not a record must not stop the app opening.
+ */
+function records<T>(list: unknown[], ...needs: string[]): T[] {
+  return list.filter((x) => !!x && typeof x === 'object' && !Array.isArray(x) && needs.every((key) => { const v = (x as Record<string, unknown>)[key]; return typeof v === 'string' && v !== ''; })) as T[];
+}
+
+/** A task or an assessment from a save, with its link kept only if it is a web address. */
+function storedWithLink<T extends { link?: string }>(item: T): T {
+  const { link, ...rest } = item, clean = storedLink(link);
+  return (clean ? { ...rest, link: clean } : rest) as T;
+}
+/** A subject from a save: its links checked as any saved links are, and its topic kept only if it is words. */
+function storedSubject(subject: Subject): Subject {
+  const { links, topic, ...rest } = subject, kept = storedLinks(links), words = typeof topic === 'string' ? cleanTopic(topic) : '';
+  // a colour that is not one of the eight would leave the subject with nothing to draw its dot in
+  const colour = Object.keys(SUBJECT_COLOURS).includes(rest.colour) ? rest.colour : 'marine';
+  return { ...rest, colour, ...(kept.length ? { links: kept } : {}), ...(words ? { topic: words } : {}) };
+}
+
 /** Keep the boat being sailed within what has been earned. */
 function clampStage(boat: Boat, miles: number, days: number): Boat {
   const earned = STAGE_ORDER.indexOf(earnedStage(miles, days)), sailing = STAGE_ORDER.indexOf(boat.stage);
@@ -155,13 +207,19 @@ export const useCompass = create<CompassStore>()(
         const title = cleanTitle(input.title);
         if (!title) return null;
         const id = newId(), order = Math.max(0, ...siblings(get().tasks, input).map((t) => t.order)) + 1;
-        set((s) => ({ tasks: [...s.tasks, { id, title, date: input.date, scope: input.scope, priority: input.priority ?? 'normal', subjectId: input.subjectId, notes: input.notes?.trim() || undefined, order, createdAt: new Date().toISOString() }] }));
+        // preparation is for an assessment that exists; a name for one that does not is left off
+        const assessmentId = get().assessments.some((a) => a.id === input.assessmentId) ? input.assessmentId : undefined, link = input.link ? cleanUrl(input.link) : null;
+        set((s) => ({ tasks: [...s.tasks, { id, title, date: input.date, scope: input.scope, priority: input.priority ?? 'normal', subjectId: input.subjectId, notes: input.notes?.trim() || undefined, order, createdAt: new Date().toISOString(), ...(assessmentId ? { assessmentId } : {}), ...(link ? { link } : {}) }] }));
         return id;
       },
       updateTask: (id, patch) => set((s) => ({
         tasks: s.tasks.map((t) => {
           if (t.id !== id) return t;
-          const next = { ...t, ...patch };
+          const { assessmentId, ...rest } = patch, next: Task = { ...t, ...rest };
+          // a link is set only by setTaskLink, which checks it. Whatever a patch holds, the task keeps the link it had
+          if (t.link) next.link = t.link; else delete next.link;
+          if (assessmentId === null) delete next.assessmentId;
+          else if (assessmentId !== undefined && s.assessments.some((a) => a.id === assessmentId)) next.assessmentId = assessmentId;
           if (patch.title !== undefined) next.title = cleanTitle(patch.title) || t.title;
           if (patch.notes !== undefined) next.notes = patch.notes.trim() || undefined;
           // a task moved to another list goes to the end of it
@@ -213,19 +271,21 @@ export const useCompass = create<CompassStore>()(
           name: patch.name !== undefined ? cleanTitle(patch.name).slice(0, 40) || x.name : x.name,
           colour: patch.colour ?? x.colour,
           notes: patch.notes !== undefined ? patch.notes.slice(0, 4000) || undefined : x.notes,
+          topic: patch.topic !== undefined ? cleanTopic(patch.topic) || undefined : x.topic,
         })),
       })),
       deleteSubject: (id) => {
         const subject = get().subjects.find((x) => x.id === id);
         if (!subject) return null;
-        const removed: RemovedSubject = { subject, assessments: get().assessments.filter((a) => a.subjectId === id), sessions: get().sessions.filter((x) => x.subjectId === id), taskIds: get().tasks.filter((t) => t.subjectId === id).map((t) => t.id), pageIds: get().pages.filter((p) => p.subjectId === id).map((p) => p.id) };
-        set((s) => ({ subjects: s.subjects.filter((x) => x.id !== id), assessments: s.assessments.filter((a) => a.subjectId !== id), sessions: s.sessions.filter((x) => x.subjectId !== id), tasks: s.tasks.map((t) => (t.subjectId === id ? { ...t, subjectId: undefined } : t)), pages: s.pages.map((p) => (p.subjectId === id ? { ...p, subjectId: undefined } : p)) }));
+        const removed: RemovedSubject = { subject, assessments: get().assessments.filter((a) => a.subjectId === id), sessions: get().sessions.filter((x) => x.subjectId === id), feedback: get().feedback.filter((f) => f.subjectId === id), taskIds: get().tasks.filter((t) => t.subjectId === id).map((t) => t.id), pageIds: get().pages.filter((p) => p.subjectId === id).map((p) => p.id) };
+        set((s) => ({ subjects: s.subjects.filter((x) => x.id !== id), assessments: s.assessments.filter((a) => a.subjectId !== id), sessions: s.sessions.filter((x) => x.subjectId !== id), feedback: s.feedback.filter((f) => f.subjectId !== id), tasks: s.tasks.map((t) => (t.subjectId === id ? { ...t, subjectId: undefined } : t)), pages: s.pages.map((p) => (p.subjectId === id ? { ...p, subjectId: undefined } : p)) }));
         return removed;
       },
       restoreSubject: (removed) => set((s) => ({
         subjects: [...s.subjects.filter((x) => x.id !== removed.subject.id), removed.subject],
         assessments: [...s.assessments.filter((a) => !removed.assessments.some((r) => r.id === a.id)), ...removed.assessments],
         sessions: [...s.sessions.filter((x) => !removed.sessions.some((r) => r.id === x.id)), ...removed.sessions],
+        feedback: [...s.feedback.filter((f) => !removed.feedback.some((r) => r.id === f.id)), ...removed.feedback],
         tasks: s.tasks.map((t) => (removed.taskIds.includes(t.id) ? { ...t, subjectId: removed.subject.id } : t)),
         pages: s.pages.map((p) => (removed.pageIds.includes(p.id) ? { ...p, subjectId: removed.subject.id } : p)),
       })),
@@ -233,11 +293,13 @@ export const useCompass = create<CompassStore>()(
         const title = cleanTitle(input.title).slice(0, 80);
         if (!title || !get().subjects.some((x) => x.id === input.subjectId)) return null;
         const id = newId().replace('t-', 'a-');
-        set((s) => ({ assessments: [...s.assessments, { ...input, id, title }] }));
+        const { link: typed, ...rest } = input, link = typed ? cleanUrl(typed) : null;
+        set((s) => ({ assessments: [...s.assessments, { ...rest, id, title, ...(link ? { link } : {}) }] }));
         return id;
       },
       updateAssessment: (id, patch) => set((s) => ({
-        assessments: s.assessments.map((a) => (a.id !== id ? a : { ...a, ...patch, id, title: patch.title !== undefined ? cleanTitle(patch.title).slice(0, 80) || a.title : a.title, date: patch.date || a.date })),
+        // a link is set and cleared by setAssessmentLink, which checks it; here one is only ever replaced by a web address
+        assessments: s.assessments.map((a) => (a.id !== id ? a : { ...a, ...patch, id, title: patch.title !== undefined ? cleanTitle(patch.title).slice(0, 80) || a.title : a.title, date: patch.date || a.date, link: (patch.link !== undefined ? cleanUrl(patch.link) : null) ?? a.link })),
       })),
       deleteAssessment: (id) => {
         const gone = get().assessments.find((a) => a.id === id) ?? null;
@@ -315,6 +377,68 @@ export const useCompass = create<CompassStore>()(
       },
       restoreArea: (area, index) => set((s) => ({ areas: putBack(s.areas, area, index) })),
       moveArea: (id, direction) => set((s) => ({ areas: moved(s.areas, id, direction) })),
+      setTaskLink: (id, url) => {
+        const clean = url.trim() ? cleanUrl(url) : undefined;
+        if (clean === null || !get().tasks.some((t) => t.id === id)) return false;
+        set((s) => ({ tasks: s.tasks.map((t) => { if (t.id !== id) return t; const { link, ...rest } = t; return clean ? { ...rest, link: clean } : rest; }) }));
+        return true;
+      },
+      setAssessmentLink: (id, url) => {
+        const clean = url.trim() ? cleanUrl(url) : undefined;
+        if (clean === null || !get().assessments.some((a) => a.id === id)) return false;
+        set((s) => ({ assessments: s.assessments.map((a) => { if (a.id !== id) return a; const { link, ...rest } = a; return clean ? { ...rest, link: clean } : rest; }) }));
+        return true;
+      },
+      addSubjectLink: (subjectId, input) => {
+        const subject = get().subjects.find((x) => x.id === subjectId), url = cleanUrl(input.url);
+        if (!subject || !url || (subject.links?.length ?? 0) >= LINK_LIMITS.max) return null;
+        const id = newId().replace('t-', 'l-');
+        set((s) => ({ subjects: withLinks(s.subjects, subjectId, (links) => [...links, { id, name: linkName(input.name, url), url }]) }));
+        return id;
+      },
+      updateSubjectLink: (subjectId, linkId, patch) => {
+        const link = get().subjects.find((x) => x.id === subjectId)?.links?.find((l) => l.id === linkId), url = link && patch.url !== undefined ? cleanUrl(patch.url) : link?.url;
+        if (!link || !url) return false;
+        set((s) => ({ subjects: withLinks(s.subjects, subjectId, (links) => links.map((l) => (l.id === linkId ? { ...l, url, name: patch.name !== undefined ? linkName(patch.name, url) : l.name } : l))) }));
+        return true;
+      },
+      deleteSubjectLink: (subjectId, linkId) => {
+        const links = get().subjects.find((x) => x.id === subjectId)?.links ?? [], index = links.findIndex((l) => l.id === linkId), link = links[index];
+        if (!link) return null;
+        set((s) => ({ subjects: withLinks(s.subjects, subjectId, (all) => all.filter((l) => l.id !== linkId)) }));
+        return { link, index };
+      },
+      restoreSubjectLink: (subjectId, link, index) => set((s) => ({ subjects: withLinks(s.subjects, subjectId, (links) => putBack(links, link, index)) })),
+      moveSubjectLink: (subjectId, linkId, direction) => set((s) => ({ subjects: withLinks(s.subjects, subjectId, (links) => moved(links, linkId, direction)) })),
+      addFeedback: (input) => {
+        const clean = cleanFeedback(input);
+        if (!clean || !isISODate(input.date) || !get().subjects.some((x) => x.id === input.subjectId)) return null;
+        const id = newId().replace('t-', 'f-');
+        set((s) => ({ feedback: [...s.feedback, { id, subjectId: input.subjectId, date: input.date, ...clean }] }));
+        return id;
+      },
+      updateFeedback: (id, patch) => set((s) => ({
+        feedback: s.feedback.map((f) => {
+          if (f.id !== id) return f;
+          // an entry keeps its last good words: feedback with nothing said is not feedback
+          const clean = cleanFeedback({ about: patch.about ?? f.about, words: patch.words?.trim() ? patch.words : f.words, work: patch.work ?? f.work });
+          return { ...f, ...clean, date: patch.date && isISODate(patch.date) ? patch.date : f.date };
+        }),
+      })),
+      deleteFeedback: (id) => {
+        const gone = get().feedback.find((f) => f.id === id) ?? null;
+        if (gone) set((s) => ({ feedback: s.feedback.filter((f) => f.id !== id) }));
+        return gone;
+      },
+      restoreFeedback: (entry) => set((s) => ({ feedback: [...s.feedback.filter((f) => f.id !== entry.id), entry] })),
+      makeFeedbackTask: (id) => {
+        const entry = get().feedback.find((f) => f.id === id);
+        // one live task at most: asking again while it exists makes nothing
+        if (!entry || !entry.work || feedbackTask(entry, get().tasks)) return null;
+        const taskId = get().addTask({ title: entry.work, date: weekStartOf(todayISO(), get().settings.weekStartsOn), scope: 'week', subjectId: entry.subjectId });
+        if (taskId) set((s) => ({ feedback: s.feedback.map((f) => (f.id === id ? { ...f, taskId } : f)) }));
+        return taskId;
+      },
       addLink: (input) => {
         const url = cleanUrl(input.url);
         if (!url || get().links.length >= LINK_LIMITS.max) return null;
@@ -346,9 +470,9 @@ export const useCompass = create<CompassStore>()(
         });
         return true;
       },
-      addPage: (kind) => {
+      addPage: (kind, start) => {
         const id = newId().replace('t-', 'p-');
-        set((s) => ({ pages: [...s.pages, newPage(kind, id, new Date().toISOString())] }));
+        set((s) => ({ pages: [...s.pages, newPage(kind, id, new Date().toISOString(), { title: start?.title, subjectId: s.subjects.some((x) => x.id === start?.subjectId) ? start?.subjectId : undefined })] }));
         return id;
       },
       updatePage: (id, patch) => set((s) => ({
@@ -449,7 +573,7 @@ export const useCompass = create<CompassStore>()(
       name: 'compass:v1',
       version: 1,
       storage: createJSONStorage(safeStorage),
-      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, boat, settings, sample }),
+      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, boat, settings, sample }),
       // anything unreadable falls back to the sample, so a bad save can never stop the app opening
       merge: (saved, current) => {
         const s = saved as Partial<CompassData> | undefined;
@@ -460,7 +584,11 @@ export const useCompass = create<CompassStore>()(
           // a save from before links, areas and levels existed starts with none set, and the four starting areas
           // and nothing in those lists is taken on trust: a save can be edited by hand, and a link is only a link if it is a web address
           links: storedLinks(s.links), areas: storedAreas(s.areas), levels: s.levels && typeof s.levels === 'object' && !Array.isArray(s.levels) ? s.levels : {},
-          subjects: Array.isArray(s.subjects) && s.subjects.length ? s.subjects : current.subjects, assessments: Array.isArray(s.assessments) ? s.assessments : current.assessments };
+          feedback: storedFeedback(s.feedback),
+          // a link is only kept if it is a web address, wherever it is kept, and a topic only if it is words
+          tasks: records<Task>(s.tasks, 'id', 'title', 'date').map(storedWithLink),
+          subjects: Array.isArray(s.subjects) && s.subjects.length ? records<Subject>(s.subjects, 'id', 'name').map(storedSubject) : current.subjects,
+          assessments: Array.isArray(s.assessments) ? records<Assessment>(s.assessments, 'id', 'title', 'date').map(storedWithLink) : current.assessments };
       },
     },
   ),

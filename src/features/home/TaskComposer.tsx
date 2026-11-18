@@ -5,14 +5,14 @@ import { useState } from 'react';
 import type { ISODate } from '../../domain/types';
 import { useCompass } from '../../state/store';
 
-interface Props { date: ISODate; scope: 'day' | 'week'; id?: string; label?: string; hint?: string; subjectId?: string }
+interface Props { date: ISODate; scope: 'day' | 'week'; id?: string; label?: string; hint?: string; subjectId?: string; /** The assessment the new task is preparation for. */ assessmentId?: string }
 
 /** The last row of a list: type a title and press Enter. Focus stays for the next one. */
-export function TaskComposer({ date, scope, id, label = 'Add a task', hint, subjectId }: Props) {
+export function TaskComposer({ date, scope, id, label = 'Add a task', hint, subjectId, assessmentId }: Props) {
   const [title, setTitle] = useState(''), add = useCompass((s) => s.addTask);
   return (
     <m.form layout="position" transition={MOVE} className="flex min-h-[46px] items-center gap-1 border-t border-line max-sm:min-h-[54px]"
-      onSubmit={(e) => { e.preventDefault(); if (add({ title, date, scope, subjectId })) setTitle(''); }}>
+      onSubmit={(e) => { e.preventDefault(); if (add({ title, date, scope, subjectId, assessmentId })) setTitle(''); }}>
       <span aria-hidden="true" className="-ml-[11px] grid size-11 shrink-0 place-items-center text-text-muted">
         <span className="grid size-[22px] place-items-center rounded-[7px] shadow-[inset_0_0_0_1.5px_var(--color-line-strong)]"><Plus size={13} strokeWidth={2.4} /></span>
       </span>

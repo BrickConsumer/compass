@@ -19,7 +19,10 @@ const oneLine = (s: string) => s.trim().replace(/\s+/g, ' ');
 export const cleanPageTitle = (title: string): string => oneLine(title).slice(0, PAGE_LIMITS.title);
 const cleanItem = (text: string): string => oneLine(text).slice(0, PAGE_LIMITS.item);
 
-export const newPage = (kind: PageKind, id: string, now: string): Page => ({ id, title: 'Untitled', kind, items: [], text: '', createdAt: now, updatedAt: now });
+/** A new page. One started from a subject already has its subject, and may have its title. */
+export const newPage = (kind: PageKind, id: string, now: string, start: { title?: string; subjectId?: string } = {}): Page => ({
+  id, title: cleanPageTitle(start.title ?? '') || 'Untitled', kind, items: [], text: '', ...(start.subjectId ? { subjectId: start.subjectId } : {}), createdAt: now, updatedAt: now,
+});
 
 /** The date a page aims for. Only goals and projects show one. */
 export const aimOf = (page: Page): ISODate | undefined => (kindOf(page.kind).dated ? page.aimFor : undefined);
@@ -77,6 +80,34 @@ export function sortPages(pages: Page[]): { open: Page[]; reached: Page[] } {
     open: pages.filter((p) => !isReached(p)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.title.localeCompare(b.title)),
     reached: pages.filter(isReached).sort((a, b) => b.reachedOn!.localeCompare(a.reachedOn!) || a.title.localeCompare(b.title)),
   };
+}
+
+/** A subject's own pages, in the order My pages lists them: open ones, most recently changed first, then reached goals. */
+export function subjectPages(pages: Page[], subjectId: string): Page[] {
+  const { open, reached } = sortPages(pages.filter((p) => p.subjectId === subjectId));
+  return [...open, ...reached];
+}
+
+/** A page's line on its subject's page: its kind, then what My pages says about it. A list's count is left out, because the row shows it beside the line. */
+export function subjectPageLine(page: Page): string {
+  const kind = kindOf(page.kind).label;
+  if (!page.items.length || isReached(page)) return `${kind}. ${pageLine(page)}`;
+  const aim = aimOf(page), rest = aim ? `Aim for ${dayMonth(aim)}` : excerpt(page.text);
+  return rest ? `${kind}. ${rest}` : kind;
+}
+
+/** A page a subject can start in one press: a kind and, for all but a plain note, a title. */
+export interface Starter { id: string; label: string; kind: PageKind; title?: string }
+export const STARTERS: Starter[] = [
+  { id: 'revision', label: 'Revision checklist', kind: 'checklist', title: 'Revision checklist' },
+  { id: 'weak', label: 'Weak areas', kind: 'checklist', title: 'Weak areas' },
+  { id: 'formula', label: 'Formula sheet', kind: 'note', title: 'Formula sheet' },
+  { id: 'note', label: 'Note', kind: 'note' },
+];
+/** The starters a subject has not used. One is left out once the subject has a page with its title; a plain note always stays. */
+export function startersFor(pages: Page[], subjectId: string): Starter[] {
+  const titles = new Set(pages.filter((p) => p.subjectId === subjectId).map((p) => p.title.trim().toLowerCase()));
+  return STARTERS.filter((s) => !s.title || !titles.has(s.title.toLowerCase()));
 }
 
 /** Pages whose title holds the words typed. Nothing typed finds nothing. */
