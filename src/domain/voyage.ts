@@ -1,4 +1,4 @@
-import { type StageId, STAGE_ORDER } from '../features/voyage/boat/specs';
+import { type StageId, STAGE_ORDER, STAGES } from '../features/voyage/boat/specs';
 import type { ISODate, LogEntry, Task } from './types';
 
 /** Starting values, to be tuned with real use (art direction, section 13). */
@@ -8,14 +8,15 @@ export const STAGE_GATES: Record<StageId, { miles: number; days: number }> = {
   dinghy: { miles: 0, days: 0 }, sloop: { miles: 250, days: 10 }, cutter: { miles: 1000, days: 40 }, schooner: { miles: 3000, days: 120 },
 };
 
-/** `phrase` is how the fitting reads inside a sentence: "88 more for a name on the transom". */
+/** `phrase` is how the fitting reads inside a sentence: "88 more for a name on the quarter". */
 export interface Fitting { id: string; name: string; phrase: string; miles: number; stage: StageId; modelled: boolean }
 export const FITTINGS: readonly Fitting[] = [
   { id: 'pennant', name: 'Masthead pennant', phrase: 'a masthead pennant', miles: 25, stage: 'dinghy', modelled: true },
   { id: 'lantern', name: 'Bow lantern', phrase: 'a bow lantern', miles: 60, stage: 'dinghy', modelled: true },
   { id: 'sheer-stripe', name: 'Painted sheer stripe', phrase: 'a painted sheer stripe', miles: 120, stage: 'dinghy', modelled: true },
   { id: 'portlights', name: 'Brass portlights', phrase: 'brass portlights', miles: 350, stage: 'sloop', modelled: true },
-  { id: 'transom-name', name: 'Name lettered on the transom', phrase: 'a name on the transom', miles: 500, stage: 'sloop', modelled: false },
+  // the id is kept from when the name was to go on the transom, so saved voyages still match
+  { id: 'transom-name', name: 'Name lettered on the quarter', phrase: 'a name on the quarter', miles: 500, stage: 'sloop', modelled: true },
   { id: 'dress-flags', name: 'Flags to dress ship', phrase: 'flags to dress ship', miles: 700, stage: 'sloop', modelled: false },
   { id: 'ratlines', name: 'Ratlines and lazy jacks', phrase: 'ratlines and lazy jacks', miles: 1300, stage: 'cutter', modelled: false },
   { id: 'stern-lantern', name: 'Stern lantern', phrase: 'a stern lantern', miles: 1700, stage: 'cutter', modelled: false },
@@ -38,6 +39,36 @@ export function earnedStage(miles: number, days: number): StageId {
 
 export const earnedFittings = (miles: number): Fitting[] => FITTINGS.filter((f) => miles >= f.miles);
 export const nextFitting = (miles: number): Fitting | undefined => FITTINGS.find((f) => miles < f.miles);
+
+/** The ids of every boat and fitting earned so far, boats first. This is what the voyage view marks as seen. */
+export const earnedIds = (miles: number, days: number): string[] =>
+  [...STAGE_ORDER.slice(0, STAGE_ORDER.indexOf(earnedStage(miles, days)) + 1), ...earnedFittings(miles).map((f) => f.id)];
+
+/** What has been earned since the voyage view was last opened. */
+export interface Unseen {
+  /** The furthest boat earned and not yet seen. */
+  stage?: StageId;
+  fittings: Fitting[];
+}
+
+export function unseenRewards(miles: number, days: number, seen: readonly string[]): Unseen {
+  const reached = STAGE_ORDER.indexOf(earnedStage(miles, days));
+  return {
+    stage: STAGE_ORDER.slice(0, reached + 1).reverse().find((id) => !seen.includes(id)),
+    fittings: earnedFittings(miles).filter((f) => !seen.includes(f.id)),
+  };
+}
+
+/**
+ * The one quiet line that says something was earned: "New: bow lantern", or "The cutter is ready".
+ * In three parts, because the name is set in italic (the chart rule) and the words around it are not.
+ */
+export function announcement(unseen: Unseen): { lead: string; name: string; tail: string } | null {
+  if (unseen.stage) return { lead: '', name: `The ${STAGES[unseen.stage].name.toLowerCase()}`, tail: ' is ready' };
+  const latest = unseen.fittings[unseen.fittings.length - 1];
+  if (!latest) return null;
+  return { lead: 'New: ', name: latest.phrase.replace(/^an? /, ''), tail: unseen.fittings.length > 1 ? ` and ${unseen.fittings.length - 1} more` : '' };
+}
 
 /** The next stage and what is still needed for it, or undefined at the last stage. */
 export function nextStage(miles: number, days: number): { id: StageId; miles: number; days: number } | undefined {

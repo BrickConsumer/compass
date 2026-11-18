@@ -1,9 +1,12 @@
 import { type BufferAttribute, Group, type Mesh, MeshBasicMaterial, type Object3D, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_COLOURS, sheer, STAGE_ORDER, STAGES } from '../boat/specs';
+import { DEFAULT_COLOURS, DRAWN_FITTINGS, fitOut, sheer, STAGE_ORDER, STAGES as BARE } from '../boat/specs';
 import { buildBoat } from './boat/buildBoat';
 import { paintMaterial } from './boat/materials';
 import { buildFlock, buildPerson, buildPort } from './scenery';
+
+/** Every boat with all its fittings on, which is the most there is to draw. */
+const STAGES = Object.fromEntries(STAGE_ORDER.map((id) => [id, fitOut(BARE[id], DRAWN_FITTINGS)])) as typeof BARE;
 
 /** Every mesh is one draw call, so counting meshes counts the cost of drawing a thing once. */
 const meshes = (root: Object3D): number => { let n = 0; root.traverse((o) => { if ((o as Mesh).isMesh) n += 1; }); return n; };
@@ -63,5 +66,41 @@ describe('draw calls', () => {
     expect(a.distanceTo(new Vector3(10, 5, 0))).toBeGreaterThan(0.5);
     flock.place(1, new Vector3(3, 3, 3), 0, 0, 1, false, 0.1);
     for (let k = 0; k < 12; k++) expect(new Vector3().fromBufferAttribute(pos, 12 + k).distanceTo(new Vector3(3, 3, 3))).toBeCloseTo(0);
+  });
+});
+
+describe('fittings on the boat', () => {
+  const count = (root: Object3D) => { let meshes = 0, vertices = 0; root.traverse((o) => { const m = o as Mesh; if (m.isMesh) { meshes += 1; vertices += m.geometry.getAttribute('position').count; } }); return { meshes, vertices }; };
+
+  it('a bare boat has no pennant, lantern or portlights, and each one earned adds to it', () => {
+    const bare = count(buildBoat(BARE.sloop, DEFAULT_COLOURS).group);
+    const pennant = count(buildBoat(fitOut(BARE.sloop, ['pennant']), DEFAULT_COLOURS).group);
+    const lantern = count(buildBoat(fitOut(BARE.sloop, ['lantern']), DEFAULT_COLOURS).group);
+    const ports = count(buildBoat(fitOut(BARE.sloop, ['portlights']), DEFAULT_COLOURS).group);
+    // the pennant flies as its own mesh; the lantern and portlights are baked into the paint
+    expect(pennant.meshes).toBe(bare.meshes + 1);
+    expect(lantern.meshes).toBe(bare.meshes);
+    expect(lantern.vertices).toBeGreaterThan(bare.vertices);
+    expect(ports.vertices).toBeGreaterThan(bare.vertices);
+  });
+
+  it('a pennant and a lantern earned on the dinghy are on the dinghy', () => {
+    const bare = count(buildBoat(BARE.dinghy, DEFAULT_COLOURS).group), fitted = count(buildBoat(fitOut(BARE.dinghy, ['pennant', 'lantern']), DEFAULT_COLOURS).group);
+    expect(fitted.meshes).toBe(bare.meshes + 1);
+    expect(fitted.vertices).toBeGreaterThan(bare.vertices);
+  });
+});
+
+describe('the name on the quarter', () => {
+  it('is painted by the hull itself, so it adds no mesh and no draw call', () => {
+    const count = (earned: readonly string[]) => meshes(buildBoat(fitOut(BARE.sloop, earned), DEFAULT_COLOURS).group);
+    expect(count(['transom-name'])).toBe(count([]));
+  });
+
+  it('can be set and changed without a page to draw on, and on a boat that has not earned it', () => {
+    const named = buildBoat(fitOut(BARE.sloop, ['transom-name']), DEFAULT_COLOURS), plain = buildBoat(BARE.sloop, DEFAULT_COLOURS);
+    let calls = 0;
+    expect(() => { named.setName('The Kestrel', () => { calls += 1; }); named.setName('   '); plain.setName('The Kestrel'); named.dispose(); }).not.toThrow();
+    expect(calls).toBe(1);
   });
 });

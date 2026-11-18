@@ -91,7 +91,7 @@ describe('voyage', () => {
     expect(nextStage(9999, 999)).toBeUndefined();
   });
 
-  it('at 412 miles the sloop has portlights and the transom name is next', () => {
+  it('at 412 miles the sloop has portlights and the name on the quarter is next', () => {
     expect(earnedFittings(412).map((f) => f.id)).toEqual(['pennant', 'lantern', 'sheer-stripe', 'portlights']);
     expect(nextFitting(412)!.id).toBe('transom-name');
     expect(nextFitting(412)!.miles - 412).toBe(88);

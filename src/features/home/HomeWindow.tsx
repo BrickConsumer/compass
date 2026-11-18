@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, Maximize2, Pause, Play } from 'lucide-react';
+import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { daysAtSea, milesLogged, nextFitting } from '../../domain/voyage';
+import { announcement, daysAtSea, earnedFittings, milesLogged, nextFitting, unseenRewards } from '../../domain/voyage';
 import { useCompass } from '../../state/store';
 import { SeaWindow } from '../voyage/SeaWindow';
 
@@ -11,20 +12,27 @@ export function HomeWindow({ progress, missedYesterday }: { progress: number | n
   const boat = useCompass((s) => s.boat), log = useCompass((s) => s.log), settings = useCompass((s) => s.settings), set = useCompass((s) => s.setSettings);
   const miles = milesLogged(log), days = daysAtSea(log), next = nextFitting(miles), folded = settings.seaFolded;
   const colours = { hull: boat.hull, sail: boat.sail, pennant: boat.pennant };
+  const fittings = useMemo(() => earnedFittings(miles).map((f) => f.id), [miles]);
+  // anything earned since the voyage was last opened: one quiet line, with the name in the voyage's italic
+  const news = announcement(unseenRewards(miles, days, boat.seen)), newsText = news ? `${news.lead}${news.name}${news.tail}` : '';
+  const newsLine = news && (
+    <span className="flex min-w-0 items-center gap-2 font-medium text-brass-700" data-news>
+      <span aria-hidden="true" className="size-[7px] shrink-0 rounded-full bg-highlight" />
+      <span className="truncate">{news.lead}<i className="font-display text-[1.15em]">{news.name}</i>{news.tail}</span>
+    </span>
+  );
   const span = next ? Math.max(1, next.miles - (next.miles > 350 ? 350 : 0)) : 1, got = next ? Math.max(0, miles - (next.miles > 350 ? 350 : 0)) : 1;
   return (
     <div>
       <div className="relative">
-        <SeaWindow stage={boat.stage} progress={progress} colours={colours} boatName={boat.name} missedYesterday={missedYesterday} paused={settings.seaPaused} still={folded}
+        <SeaWindow stage={boat.stage} progress={progress} colours={colours} fittings={fittings} boatName={boat.name} missedYesterday={missedYesterday} paused={settings.seaPaused} still={folded}
           className={`rounded-[24px] transition-[height] duration-[320ms] ease-[var(--ease-in-out)] motion-reduce:transition-none sm:rounded-2xl ${folded ? 'h-16' : 'h-[184px] sm:h-[220px] lg:h-[240px] min-[1440px]:h-[276px]'}`} />
         {!folded && (
-          <Link to="/voyage" className="absolute bottom-4 left-4 hidden min-w-[262px] flex-col gap-1 rounded-md bg-surface-sheet px-4 pb-3 pt-2.5 shadow-float outline-offset-2 hover:bg-paper-50 lg:flex" aria-label={`Open the voyage. ${boat.name}, ${miles.toLocaleString('en-GB')} nautical miles logged, ${days} days at sea.`}>
+          <Link to="/voyage" className="absolute bottom-4 left-4 hidden min-w-[262px] flex-col gap-1 rounded-md bg-surface-sheet px-4 pb-3 pt-2.5 shadow-float outline-offset-2 hover:bg-paper-50 lg:flex" aria-label={`Open the voyage. ${boat.name}, ${miles.toLocaleString('en-GB')} nautical miles logged, ${days} days at sea.${news ? ` ${newsText}.` : ''}`}>
             <span className="font-display text-[20px] italic leading-[1.15]">{boat.name}</span>
             <span className="flex justify-between gap-4 text-[13px] font-medium text-text-muted"><span>{miles.toLocaleString('en-GB')} nautical miles logged</span><span>{days} days at sea</span></span>
-            {next && <>
-              <span aria-hidden="true" className="mt-1 block h-1 overflow-hidden rounded-full bg-track"><span className="block h-full rounded-full bg-brass-700" style={{ width: `${Math.min(100, (got / span) * 100)}%` }} /></span>
-              <span className="text-[13px] font-medium text-text-muted">{(next.miles - miles).toLocaleString('en-GB')} more for {next.phrase}</span>
-            </>}
+            {next && <span aria-hidden="true" className="mt-1 block h-1 overflow-hidden rounded-full bg-track"><span className="block h-full rounded-full bg-brass-700" style={{ width: `${Math.min(100, (got / span) * 100)}%` }} /></span>}
+            {newsLine ? <span className="text-[13px]">{newsLine}</span> : next && <span className="text-[13px] font-medium text-text-muted">{(next.miles - miles).toLocaleString('en-GB')} more for {next.phrase}</span>}
           </Link>
         )}
         <div className="absolute right-3 top-3 flex gap-2 sm:right-3.5 sm:top-3.5">
@@ -34,8 +42,9 @@ export function HomeWindow({ progress, missedYesterday }: { progress: number | n
         </div>
       </div>
       <Link to="/voyage" className="mt-1 flex min-h-11 items-baseline justify-between gap-3 rounded-[9px] px-1 pt-2 text-[13px] font-medium text-text-muted sm:px-3.5 lg:hidden">
-        <span className="font-display text-[17px] italic text-text">{boat.name}</span><span>{miles.toLocaleString('en-GB')} nautical miles logged</span>
+        <span className="shrink-0 font-display text-[17px] italic text-text">{boat.name}</span>{newsLine ?? <span>{miles.toLocaleString('en-GB')} nautical miles logged</span>}
       </Link>
+      <p aria-live="polite" className="sr-only">{newsText}</p>
     </div>
   );
 }

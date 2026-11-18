@@ -56,6 +56,8 @@ export interface SeaWindowProps {
   /** Share of the selected day done, 0 to 1, or null when nothing is planned. */
   progress: number | null;
   colours: BoatColours;
+  /** Ids of the fittings earned so far. The boat wears these and no others. */
+  fittings: readonly string[];
   boatName: string;
   /** The day before had tasks planned and none were done: today opens in a storm that clears as tasks are done. */
   missedYesterday?: boolean;
@@ -72,7 +74,7 @@ export interface SeaWindowProps {
  * The window onto the sea. The still image is drawn at once and reserves the space;
  * the 3D scene loads afterwards and fades in over it. Without WebGL the still image stays.
  */
-export function SeaWindow({ stage, progress, colours, boatName, missedYesterday = false, paused = false, still = false, tier, className = '' }: SeaWindowProps) {
+export function SeaWindow({ stage, progress, colours, fittings, boatName, missedYesterday = false, paused = false, still = false, tier, className = '' }: SeaWindowProps) {
   const reduced = useReducedMotion();
   const box = useRef<HTMLDivElement>(null), inView = useInView(box);
   const [running, setRunning] = useState<Tier>();
@@ -90,12 +92,12 @@ export function SeaWindow({ stage, progress, colours, boatName, missedYesterday 
 
   return (
     <div ref={box} className={`relative isolate overflow-hidden bg-[#9CC4CC] ${className}`} data-scene={live && ready ? 'live' : 'still'} data-tier={live ? running : undefined} data-asleep={live && !inView ? '' : undefined}>
-      <BoatPoster stage={stage} progress={progress} colours={colours} boatName={boatName} missedYesterday={missedYesterday} className="absolute inset-0 size-full" />
+      <BoatPoster stage={stage} progress={progress} colours={colours} fittings={fittings} boatName={boatName} missedYesterday={missedYesterday} className="absolute inset-0 size-full" />
       {live && (
         <div aria-hidden="true" className="absolute inset-0 transition-opacity duration-[400ms] ease-[var(--ease-out)] motion-reduce:duration-200" style={{ opacity: ready ? 1 : 0 }}>
           <KeepPoster onError={() => setFailed(true)}>
             <Suspense fallback={null}>
-              <Scene stage={stage} progress={progress} colours={colours} missedYesterday={missedYesterday} still={paused || reduced} asleep={!inView} tier={tier} onTier={setRunning} onReady={() => setReady(true)} />
+              <Scene stage={stage} progress={progress} colours={colours} fittings={fittings} boatName={boatName} missedYesterday={missedYesterday} still={paused || reduced} asleep={!inView} tier={tier} onTier={setRunning} onReady={() => setReady(true)} />
             </Suspense>
           </KeepPoster>
         </div>

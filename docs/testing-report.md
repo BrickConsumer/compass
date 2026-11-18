@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | Date | 16 November 2026 |
-| Build | Branch `sea-performance`: Phase 1 with the Phase E changes in section 2, and the performance work in section 5 |
+| Build | Branch `reward-loop`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, and the reward loop in section 6 |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 88 unit tests pass and 21 browser tests pass.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 108 unit tests pass and 25 browser tests pass.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -50,8 +50,8 @@ Updated screenshots are in [screenshots/home/](screenshots/home/).
 | Check | Tool | Result |
 |---|---|---|
 | Type-check and production build | `npm run build` | Passes. Main bundle 136 kB compressed, 3D chunk 256 kB compressed and loaded lazily. |
-| Unit tests | `npm test` (Vitest) | 88 of 88 pass |
-| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 21 of 21 pass, three runs in a row |
+| Unit tests | `npm test` (Vitest) | 108 of 108 pass |
+| Browser tests | `PW_CHANNEL=chrome npm run test:e2e` (Playwright, headless Chrome 157) | 25 of 25 pass, three runs in a row |
 | Screenshots and state capture | Playwright scripts, six widths and nine states | No console errors in any capture |
 | Contrast, text size, touch targets | A script run inside the live page at 390 and 1440 | Section 4 |
 | Frame rate | The same, at phone size with the processor slowed four times | Section 5 |
@@ -184,7 +184,53 @@ Draw calls in a frame, before and after:
 
 - **How a real phone copes.** A laptop's graphics chip is far stronger than a phone's, and none of this measures heat or battery. The spec's pass bar ends with a founder checking on a real phone. That has not happened.
 
-## 6. Built differently from the approved spec
+## 6. The reward loop
+
+Built on 16 November, from the art direction (section 13) and the Home spec (section 11).
+
+### What was missing
+
+Earning a fitting changed nothing you could see. The boat's pennant, lantern, stripe and portlights were fixed by the type of boat: every sloop had all four from its first mile, and a dinghy never had any. The plate did not say when something was earned.
+
+### What was built
+
+| | Behaviour |
+|---|---|
+| **Fittings on the boat** | The boat wears the fittings that have been earned and no others, in the 3D scene and the still image alike. A pennant earned on the dinghy flies from the dinghy, and carries to every later boat. |
+| **The plate** | When something has been earned since the voyage was last opened, a brass dot and one line replace the plate's last line: "New: *bow lantern*". Several at once read "New: *bow lantern* and 1 more". The name is in the voyage's italic, as the chart rule asks. |
+| **A new boat** | The plate says "*The cutter* is ready". The boat on Home does not change. |
+| **The voyage view** | It opens on the new boat, with one notice: "The cutter is ready. You are still sailing the sloop." and a button to sail it. New fittings carry a "New" tag in the list. Opening the view is what marks them as seen. |
+| **Phones** | The same line takes the place of the miles under the window. |
+| **The name on the quarter** | At 500 miles the boat's name is lettered on her quarter, on both sides, in the voyage's italic: gold leaf on a dark hull, navy on a light one. Renaming the boat repaints it at once. It is painted by the hull itself, so it adds no draw call. |
+| **Assistive technology** | The plate's name includes the line, and a polite live region states it once. Nothing pops up. |
+
+![The plate with a new fitting](screenshots/rewards/1-plate-new-fitting.png)
+
+![The voyage view with a new boat](screenshots/rewards/3-voyage-new-boat.png)
+
+The name on the quarter, enlarged three times. In the Home window it is under twenty pixels long, which is how a name reads on a boat at that distance:
+
+![The name on the quarter](screenshots/rewards/6-name-on-the-quarter.png)
+
+A dinghy and a sloop, each with nothing earned and then with the first four fittings:
+
+<img src="screenshots/rewards/5-fittings-bare-and-earned.png" alt="Bare and fitted boats" width="300">
+
+### Checked
+
+- Browser tests: a new fitting is announced, survives a reload, is tagged in the voyage view, and the plate returns to normal afterwards; a new boat is offered and not swapped in, and sailing it works; on a phone the line fits without sideways scroll.
+- Unit tests: what counts as new, the wording of the line, and each fitting adding to the 3D boat and to the still image.
+- The sample boat at 412 miles looks exactly as before, because it has earned all four drawn fittings.
+
+### Calls made here that the founders can overrule
+
+- **A boat with nothing earned is plainer than before.** A new sloop has no pennant, lantern, stripe or portlights until its miles earn them. This is what the art direction describes, but it has not been seen until now.
+- **The dinghy's lantern is 60% of full size,** so it does not overpower a 3.8 m boat.
+- **The voyage view opens on a newly earned boat** and not on the one being sailed.
+- **On phones the announcement replaces the miles** under the window until the voyage is opened.
+- **The lettering is to scale,** about 0.2 m tall on the sloop. It is small in the Home window and readable in the voyage view.
+
+## 7. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -193,7 +239,6 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | The water is a mesh, 128 by 128 on the high tier and 64 by 64 on the low | The water is one flat sheet shaded per pixel, so there is no mesh to coarsen. The low tier saves by drawing fewer pixels. |
 | The high tier reflects the boat with a half-resolution pass | Both tiers use a mirrored copy of the boat, which the spec gives as the low tier's method |
 | The high tier's shadow map is 1024 px | It is 2048 px, kept from the look review |
-| When something is earned, the plate shows a brass dot and "New: bow lantern" | The plate does not announce it. The voyage view lists it. |
 | The week strip slides when the week changes, and follows the finger on a swipe | The week changes at once. A swipe past 56 px changes the week. |
 | A completed row slides down after 600 ms | It waits 600 ms and then moves at once |
 | The editor is a popover anchored to the row on desktop | It is a centred dialog |
@@ -201,9 +246,9 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | The folded window shows a strip of horizon | It shows a strip of the same view, which cuts through the sail |
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | Motion is in the stack | Not installed. All animation is CSS or the scene. |
-| Five fittings are drawn: pennant, lantern, sheer stripe, transom name, portlights | Four are drawn. The transom name is listed as earned but not drawn. |
+| The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 7. Known limitations
+## 8. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.

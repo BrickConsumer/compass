@@ -1,4 +1,5 @@
 import { Color, DoubleSide, MeshStandardMaterial, ShaderMaterial } from 'three';
+import type { LetteringUniforms } from './lettering';
 
 /** Fixed paint and fittings. User-chosen colours are passed in separately. */
 export const PAINT = {
@@ -6,18 +7,24 @@ export const PAINT = {
   glass: '#16344F', brass: '#C9A552', spar: '#B88A55', rig: '#3A4A5C', lantern: '#F2D488', ensign: '#1A619B',
 } as const;
 
-/** Hull paint with a boot stripe at the waterline and a cove stripe under the sheer, drawn in the shader so the bands stay crisp. */
-export function hullMaterial(hull: string): MeshStandardMaterial {
+/**
+ * Hull paint with a boot stripe at the waterline and a cove stripe under the sheer, drawn in the shader so the bands stay crisp.
+ * Given lettering, it also paints the boat's name on the quarter, on the outside of both sides.
+ */
+export function hullMaterial(hull: string, stripe = true, lettering?: LetteringUniforms): MeshStandardMaterial {
   const m = new MeshStandardMaterial({ color: hull, roughness: 0.5, metalness: 0.05, side: DoubleSide });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uBoot = { value: new Color(PAINT.boot) };
     shader.uniforms.uCove = { value: new Color(PAINT.cove) };
+    shader.uniforms.uStripe = { value: stripe ? 1 : 0 };
+    // the same objects the lettering holds, so a new name shows without recompiling
+    Object.assign(shader.uniforms, lettering ?? { uName: { value: null }, uNameBox: { value: [0, 1, 0, 1] }, uNameInk: { value: new Color() }, uNameOn: { value: 0 } });
     shader.uniforms.uBottom = { value: new Color(PAINT.bottom) };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec2 aHull;\nvarying vec2 vHull;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvHull = aHull;');
+      .replace('#include <common>', '#include <common>\nattribute vec2 aHull;\nvarying vec2 vHull;\nvarying vec3 vHullAt;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvHull = aHull;\nvHullAt = position;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vHull;\nuniform vec3 uBoot;\nuniform vec3 uCove;\nuniform vec3 uBottom;')
+      .replace('#include <common>', '#include <common>\nvarying vec2 vHull;\nvarying vec3 vHullAt;\nuniform vec3 uBoot;\nuniform vec3 uCove;\nuniform vec3 uBottom;\nuniform float uStripe;\nuniform sampler2D uName;\nuniform vec4 uNameBox;\nuniform vec3 uNameInk;\nuniform float uNameOn;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         float aa = fwidth(vHull.x) + 0.0005;
         float boot = smoothstep(0.035 - aa, 0.035 + aa, vHull.x) * (1.0 - smoothstep(0.14 - aa, 0.14 + aa, vHull.x));
@@ -26,7 +33,14 @@ export function hullMaterial(hull: string): MeshStandardMaterial {
         float cove = smoothstep(0.095 - ab, 0.095 + ab, vHull.y) * (1.0 - smoothstep(0.13 - ab, 0.13 + ab, vHull.y));
         diffuseColor.rgb = mix(diffuseColor.rgb, uBottom, below);
         diffuseColor.rgb = mix(diffuseColor.rgb, uBoot, boot);
-        diffuseColor.rgb = mix(diffuseColor.rgb, uCove, cove);
+        diffuseColor.rgb = mix(diffuseColor.rgb, uCove, cove * uStripe);
+        // the name: read stern to bow on the starboard side and bow to stern on the port side, so it is never mirrored
+        float nu = (vHullAt.x - uNameBox.x) / (uNameBox.y - uNameBox.x);
+        nu = vHullAt.z < 0.0 ? 1.0 - nu : nu;
+        float nv = (vHull.y - uNameBox.z) / (uNameBox.w - uNameBox.z);
+        float lettered = texture2D(uName, vec2(nu, 1.0 - nv)).a * step(0.0, nu) * step(nu, 1.0) * step(0.0, nv) * step(nv, 1.0);
+        // only on the outside of the planking: an open boat shows the inside of her far side
+        diffuseColor.rgb = mix(diffuseColor.rgb, uNameInk, lettered * uNameOn * float(gl_FrontFacing));
         // a lighter band where the topsides catch the sky
         diffuseColor.rgb += 0.05 * (1.0 - smoothstep(0.0, 0.45, vHull.y)) * (1.0 - boot) * (1.0 - below);`);
   };
