@@ -20,6 +20,8 @@ export default defineConfig({
   use: {
     baseURL: URL,
     viewport: { width: 1320, height: 900 },
+    // PW_THEME=dark runs the whole suite as a device set to dark would see the app, which is how the dark theme is held to the same tests
+    colorScheme: process.env.PW_THEME === 'dark' ? 'dark' : 'light',
     // PW_CHANNEL=chrome runs the suite in an installed Chrome, so no test browser has to be downloaded
     channel: process.env.PW_CHANNEL,
     // with no graphics card, Chrome only draws WebGL in software when told it may; without this the sea would stay a still picture

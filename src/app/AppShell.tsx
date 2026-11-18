@@ -21,8 +21,10 @@ const typing = (e: KeyboardEvent) => { const t = e.target as HTMLElement | null;
 
 /** Jump to a place or run a command. Opens with Cmd or Ctrl and K. */
 function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: () => void; onShortcuts: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState(''), pages = useCompass((s) => s.pages), links = useCompass((s) => s.links);
-  useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) { setQuery(''); d.showModal(); } else if (!open && d.open) d.close(); }, [open]);
+  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState(''), pages = useCompass((s) => s.pages), links = useCompass((s) => s.links), setSettings = useCompass((s) => s.setSettings);
+  // The search is emptied when the menu closes, not when it opens. Emptied on opening, the box showed the last search for
+  // an instant, and a key pressed in that instant was added to it.
+  useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) d.showModal(); else if (!open) { if (d.open) d.close(); setQuery(''); } }, [open]);
   type Command = { label: string; hint?: string; note?: string; run: () => void };
   const commands: Command[] = [
     ...PLACES.map((p) => ({ label: `Go to ${p.label}`, run: () => navigate(p.to) })),
@@ -32,6 +34,9 @@ function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: (
     { label: 'Go to Settings', run: () => navigate('/settings') },
     { label: 'Add a link', run: () => navigate('/settings#links') },
     { label: 'Keyboard shortcuts', hint: '?', run: onShortcuts },
+    { label: 'Use the dark theme', run: () => setSettings({ theme: 'dark' }) },
+    { label: 'Use the light theme', run: () => setSettings({ theme: 'light' }) },
+    { label: 'Follow the device for the theme', run: () => setSettings({ theme: 'auto' }) },
   ];
   // once something is typed, the user's own pages are found by title as well
   const found: Command[] = searchPages(pages, query).map((p) => ({ label: p.title, note: kindOf(p.kind).label, run: () => { navigate(`/pages/${p.id}`); } }));
@@ -41,7 +46,7 @@ function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: (
   const choose = (c: Command) => { onClose(); c.run(); };
   return (
     <dialog ref={ref} onClose={onClose} onClick={(e) => { if (e.target === ref.current) onClose(); }} aria-label="Search and commands"
-      className="m-auto mt-[12vh] w-[min(92vw,520px)] rounded-xl bg-surface-sheet p-0 text-text shadow-float backdrop:bg-deep-900/40">
+      className="m-auto mt-[12vh] w-[min(92vw,520px)] rounded-xl bg-surface-sheet p-0 text-text shadow-float backdrop:bg-backdrop">
       <form method="dialog" onSubmit={(e) => { e.preventDefault(); if (shown[0]) choose(shown[0]); }}>
         <label className="flex items-center gap-3 border-b border-line px-4">
           <Search size={18} className="text-text-muted" aria-hidden="true" />
@@ -76,7 +81,7 @@ function Shortcuts({ open, onClose }: { open: boolean; onClose: () => void }) {
   useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) d.showModal(); else if (!open && d.open) d.close(); }, [open]);
   return (
     <dialog ref={ref} onClose={onClose} onClick={(e) => { if (e.target === ref.current) onClose(); }} aria-labelledby="shortcuts-title"
-      className="m-auto max-h-[calc(100dvh-32px)] w-[min(92vw,460px)] overflow-y-auto rounded-xl bg-surface-sheet p-0 text-text shadow-float backdrop:bg-deep-900/40">
+      className="m-auto max-h-[calc(100dvh-32px)] w-[min(92vw,460px)] overflow-y-auto rounded-xl bg-surface-sheet p-0 text-text shadow-float backdrop:bg-backdrop">
       <div className="flex flex-col gap-5 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 id="shortcuts-title" className="text-[20px]">Keyboard shortcuts</h2>

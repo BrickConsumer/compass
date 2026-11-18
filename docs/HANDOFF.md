@@ -6,7 +6,7 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
 
 - **Compass**: a calm student planner whose distinctive feature is a sailboat that develops as you make progress.
 - **Founders:** Josh, Oliver and Aditya. Oliver is driving these sessions.
-- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Eleven branches, each cut from the one before. `main` still holds only the first commit.
+- **Repository:** `/Users/oliveracciarito/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Twelve branches besides `main`, each cut from the one before; one of them also has a working folder of its own. `main` still holds only the first commit.
   - `phase-1-home`: Phase 1. Pushed, with pull request 1 open to `main`.
   - `sea-performance`: the performance work. Pushed, with pull request 2 open against `phase-1-home`.
   - `reward-loop`: the reward loop. Pushed, with pull request 3 open against `sea-performance`.
@@ -16,8 +16,9 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
   - `weekly-review`: Stage 6, the Weekly review. Pushed (`ba9a373`), with pull request 7 open against `study`. 
   - `my-pages`: Stage 6, My pages, with two fixes to the shared editors. Pushed (`f30ff1e`, `34e3b0b`), with pull request 8 open against `weekly-review`.
   - `ci`: a GitHub Actions workflow that builds and tests every pull request. Pushed (`c349987`), with pull request 9 open against `my-pages` and Auto-fix on. Its first run on GitHub passed, both jobs.
-  - `boat-fittings`: the first part of Stage 7, the six fittings that were not drawn. Committed on 17 November (`1c4dfb4`, `641255f`). Check whether it is pushed and has a pull request.
+  - `boat-fittings`: the first part of Stage 7, the six fittings that were not drawn. Pushed (`1c4dfb4`, `641255f`), with pull request 10 open against `ci` and Auto-fix on.
   - `home-review-additions`: the first piece of Aditya's plan, the Home and Weekly review additions. Cut from `boat-fittings`, and built in a separate working folder at `.claude/worktrees/home-review-additions` because another chat was working in the main folder. Committed on 17 November with Oliver's approval, after a fresh reviewer's findings were fixed, and pushed with a pull request against `boat-fittings`.
+  - `night-dark-theme`: night and the dark theme, the second part of Stage 7. Cut from `boat-fittings` and moved forward onto `home-review-additions`, so it is built on top of the additions. The work is built, approved by Oliver and committed. Check whether it is pushed and has a pull request. On 18 November, with Oliver's say, the branch was moved to start from `4ff1357`, the pushed commit of the additions. It had started from an earlier, unpushed copy of that commit which held a founder's personal plan; that copy was never pushed and must never be.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 
@@ -45,6 +46,7 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
 
 ### Decided by Oliver on 17 November, for Stage 7
 - **The flags to dress ship fly in port only,** on a day with nothing planned, and are stowed under sail. They are the one fitting that does not show on the boat at once.
+- **The rest of Stage 7:** Oliver approved all eleven recommendations on the options page. Night comes with a dark theme that opens on dusk; three new waters are earned along the way; decorations are a sail mark, a pennant shape and one keepsake a season. The full list is in `docs/next-stages.md`, Stage 7. Night and the dark theme are built on `night-dark-theme` and approved by Oliver; waters and decorations are not built.
 
 ### Decided by Oliver on 16 November, for Stage 5
 - **A study session becomes an ordinary task that repeats,** not a kind of its own and not a reminder. It counts in progress, earns miles and moves the day's light like any task.
@@ -92,6 +94,7 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
   - references, and the token source in section 17.
 - `docs/home-screen-spec.md`: layout at every width, the data model, calendar, task, progress and window behaviour, accessibility, states.
 - `docs/study-spec.md`: the Study page, subjects and assessments, and what is not built.
+- `docs/night-and-dark-theme-spec.md`: **approved by Oliver on 17 November, built on 17 and 18 November, and the look approved by him on 18 November.** The dark theme and the sea's night: a measured dark palette, the night's light table, and what every screen needs. Section 16 says what was built and where it differs. The pictures are in `docs/screenshots/night/`.
 - `docs/my-pages-spec.md`: My pages, built on 17 November. Four approaches; Oliver chose B (one page shape, five ways to start), the layout and the smaller square tick. Six smaller decisions are open, and section 13 says where the build differs from the mock.
 - `docs/review-spec.md`: the Weekly review: the summary, the reflection, priorities, miles, and the calls made in the build.
 - `docs/habits-spec.md`: what a habit is, what habits never do, miles, where they sit on Home, and the Habits page.
@@ -107,6 +110,7 @@ Written 16 November 2026 and brought up to date on 17 November, to carry the wor
 - `docs/art-direction/*.png`: images of the original review boards.
 - `docs/screenshots/lookdev/`: the second boat review, covering sailing, golden hour, port, storm and the four boats.
 - `docs/screenshots/home/`: Home at 375, 390, 768, 1024 and 1440, the new-task sheet, the task editor, and the voyage view. Retaken after Phase E.
+- **Stage 7 options:** https://claude.ai/artifact/Ax2cKW9qUbCgBXG6bTEvja. Private. Night and a dark theme, three new waters, and decorations, drawn by the app's own scene. Oliver approved every recommendation on 17 November; the decisions are in `docs/next-stages.md`, Stage 7. Not built.
 - **My pages mock:** https://claude.ai/artifact/NPCbrcPSUbkeHzv3q9UXu7. Private. The layout, a goal, a checklist, and three options for a list's tick. Oliver chose the approach, the layout and the tick on 17 November, and it is built; six smaller decisions are open.
 - **Recurring study sessions mock:** https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4. Private. Oliver chose option A on 16 November; three smaller decisions open.
 - **Habits on Home mock:** https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b. Private. Placement decided by Oliver on 16 November; three smaller decisions open.
@@ -297,7 +301,6 @@ Runs 115 browser tests in the installed Chrome, all passing (72 before the addit
 - The still image does not letter the name. At its size the name would be a few pixels long.
 
 ### Not built, by plan
-- Dark theme and night scene.
 - Drag to reorder.
 - Recurring tasks.
 - Accounts and sync.
@@ -322,6 +325,6 @@ The full list is in `docs/next-stages.md`.
 2. **A founder opens Home on a real phone,** and in Safari.
 3. **Merge pull request 1,** then pull request 2.
 4. **Aditya's plan.** The first of its five pieces is built and committed on `home-review-additions`, with a pull request against `boat-fittings`. Josh and Aditya have not seen it; the review page is https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot. Pieces 2 to 5 (Study detail, Fitness, interests in My pages, search and backup) each need their own design and review before they are built: see `docs/next-stages.md`, Stage 8.
-5. **Push `boat-fittings`** when Oliver says so, and open its pull request against `ci`. The rest of Stage 7 (decorations, new waters and seasons, night and the dark theme) needs creative decisions before any of it is built.
+5. **New waters, then decorations,** the two parts of Stage 7 still to build, each with a short spec of its own first. Night and the dark theme are built on `night-dark-theme`; Oliver kept the blue selection and approved the look on 18 November, and Josh and Aditya have seen nothing. From here on a component names a colour role, never a step: `src/design/roles.test.ts` holds that.
 6. **Three rules for study sessions are still open,** each built to the recommendation in the mock at https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4 (private; share it from its Share menu): whether sessions count toward the port and the storm, when a week's tasks are made, and what changing a session does to tasks already made. The rules are in `docs/habits-spec.md`, and the mock that settled its place on Home is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b (private; share it from its Share menu). Oliver has accepted the Habits page as a first version; Josh and Aditya have not seen it.
 7. **Boat look review round three**, when Oliver is ready.

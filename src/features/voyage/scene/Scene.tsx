@@ -25,6 +25,8 @@ const KNOTS = 2.4;
 const SKY_FRAG = `
 uniform vec3 uTop; uniform vec3 uMid; uniform vec3 uHz; uniform vec3 uSun; uniform vec3 uHaze; uniform vec3 uSunDir;
 uniform float uSunAmt; uniform float uHazeAmt; uniform float uTopElev; uniform float uSunSize; uniform float uDrift; uniform float uStorm;
+uniform float uStars;   // 0 by day
+uniform float uCloud;   // how white a cloud is: bright by day, a faint grey by moonlight
 varying vec3 vDir;
 float streak(float a, float e, float az, float el, float w, float h) {
   float da = a - az, de = e - el;
@@ -38,13 +40,19 @@ void main() {
   float cloud = 0.44 * streak(az, el, -0.34, T * 0.56, 0.12, T * 0.045) + 0.38 * streak(az, el, 0.16, T * 0.34, 0.16, T * 0.04)
     + 0.32 * streak(az, el, 0.42, T * 0.68, 0.1, T * 0.04) + 0.34 * streak(az, el, -0.1, T * 0.18, 0.2, T * 0.03)
     + 0.28 * streak(az, el, -0.56, T * 0.3, 0.09, T * 0.035) + 0.3 * streak(az, el, 0.7, T * 0.48, 0.14, T * 0.04);
-  col = mix(col, mix(uHz, vec3(1.0), 0.45), clamp(cloud, 0.0, 1.0) * 0.75 * (1.0 - uStorm));
+  col = mix(col, mix(uHz, vec3(1.0), uCloud), clamp(cloud, 0.0, 1.0) * 0.75 * (1.0 - uStorm));
   // storm: low, heavy cloud in rolling bands
   float bank = 0.5 + 0.5 * sin(az * 7.0 + sin(el * 60.0 + az * 3.0) * 1.3);
   col = mix(col, uTop * 0.72, uStorm * (0.22 + 0.5 * bank * smoothstep(0.05, 0.7, t)));
   float ang = acos(clamp(dot(d, uSunDir), -1.0, 1.0));
   col = mix(col, uSun, uSunAmt * 0.62 * exp(-ang * 9.0));
   col = mix(col, uSun, uSunAmt * smoothstep(uSunSize * 1.12, uSunSize, ang));
+  // stars: one in ten cells of the sky holds one, fixed in its place. They do not twinkle, and they fade into cloud and haze.
+  vec2 sp = vec2(az, el) * 90.0, cell = floor(sp);
+  float h = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
+  vec2 off = vec2(fract(h * 17.0), fract(h * 31.0)) - 0.5;
+  float star = step(0.9, h) * smoothstep(0.13, 0.0, length(fract(sp) - 0.5 - off * 0.6)) * (0.45 + 0.55 * fract(h * 91.0));
+  col += vec3(0.85, 0.9, 1.0) * star * uStars * smoothstep(0.03, 0.3, t) * (1.0 - clamp(cloud, 0.0, 1.0)) * (1.0 - 0.9 * uHazeAmt);
   col = mix(col, uHaze, uHazeAmt * exp(-t * 9.0));
   gl_FragColor = vec4(col, 1.0);
   #include <colorspace_fragment>
@@ -57,6 +65,7 @@ uniform vec2 uScroll;   // how far the water has slid past the boat
 uniform vec2 uHead;     // the boat's heading on the water
 uniform vec2 uHull;     // half length and half beam
 uniform float uSpeed; uniform float uWakeLen;
+uniform float uLit;      // how much light falls on the boat and her wake: 1 by day
 varying vec3 vW;
 ${WAVES_GLSL}
 void main() {
@@ -82,7 +91,7 @@ void main() {
   float swell = sin(p.x * 0.42 + uTime * 1.1 + 1.7 * sin(p.y * 0.23 + uTime * 0.2)) * (0.6 + 0.4 * sin(p.y * 0.61 - p.x * 0.17 + uTime * 0.5));
   float fleck = 0.7 + 0.3 * sin(p.x * 2.3 + p.y * 1.1 + uTime * 1.6);
   float crest = smoothstep(0.84, 1.0, swell) * fleck;
-  col = mix(col, vec3(0.86, 0.9, 0.93), crest * uStorm * 0.5 * (0.25 + 0.75 * t));
+  col = mix(col, vec3(0.86, 0.9, 0.93) * (0.3 + 0.7 * uLit), crest * uStorm * 0.5 * (0.25 + 0.75 * t));
   col = mix(col, uDeep * 0.8, uStorm * 0.25 * smoothstep(-0.2, -0.9, swell) * t);
   // the boat on the water: a soft shadow under the hull, foam along it, and a wake astern
   vec2 rel = vW.xz;
@@ -93,21 +102,21 @@ void main() {
   float skirt = exp(-pow(sqrt(e) - 1.05, 2.0) * 26.0) * smoothstep(-uHull.x, uHull.x, fore) * uSpeed;
   float astern = -(fore + uHull.x * 0.86), width = 0.4 + astern * 0.22;
   float wake = exp(-(side * side) / (width * width)) * smoothstep(0.0, 0.9, astern) * exp(-astern / uWakeLen) * uSpeed;
-  col = mix(col, mix(uHz, vec3(1.0), 0.65), clamp((wake * 0.42 + skirt * 0.6) * swirl, 0.0, 0.5));
+  col = mix(col, mix(uHz, vec3(1.0), 0.65 * uLit), clamp((wake * 0.42 + skirt * 0.6) * swirl, 0.0, 0.5));
   col = mix(col, uHaze, uHazeAmt * exp(-down * 55.0));
   gl_FragColor = vec4(col, 1.0);
   #include <colorspace_fragment>
 }`;
 
 const RAIN_FRAG = `
-uniform float uTime; uniform float uStorm; uniform float uAspect; varying vec2 vUv;
+uniform float uTime; uniform float uStorm; uniform float uAspect; uniform float uLit; varying vec2 vUv;
 void main() {
   vec2 p = vec2(vUv.x * uAspect + vUv.y * 0.28, vUv.y);
   float col = floor(p.x * 70.0), rnd = fract(sin(col * 12.9898) * 43758.5453);
   float y = fract(p.y * (0.9 + rnd * 0.5) + uTime * (1.5 + rnd * 0.9) + rnd * 7.0);
   float streak = smoothstep(0.0, 0.03, y) * (1.0 - smoothstep(0.03, 0.1 + rnd * 0.08, y));
   float line = 1.0 - smoothstep(0.0, 0.1, abs(fract(p.x * 70.0) - 0.5));
-  gl_FragColor = vec4(vec3(0.9, 0.93, 0.96), line * streak * step(0.35, rnd) * 0.34 * uStorm + 0.06 * uStorm);
+  gl_FragColor = vec4(vec3(0.9, 0.93, 0.96) * (0.45 + 0.55 * uLit), line * streak * step(0.35, rnd) * 0.34 * uStorm + 0.06 * uStorm);
 }`;
 
 const VERT_DIR = `varying vec3 vDir; void main() { vDir = position; vec4 p = projectionMatrix * viewMatrix * vec4(position + cameraPosition, 1.0); gl_Position = p.xyww; }`;
@@ -143,13 +152,13 @@ export interface SceneProps extends DayContext {
   onReady?: () => void;
 }
 
-function World({ stage, progress, colours, fittings, boatName, still, missedYesterday, onReady, asleep, shadows }: SceneProps & { shadows: boolean }) {
+function World({ stage, progress, colours, fittings, boatName, still, missedYesterday, night, onReady, asleep, shadows }: SceneProps & { shadows: boolean }) {
   const { camera, size, gl, invalidate } = useThree();
   // the list is compared by what is in it, so a new array with the same fittings does not rebuild the boat
   const worn = fittings.join();
   const spec = useMemo(() => fitOut(STAGES[stage], fittings), [stage, worn]);
-  const target = useMemo(() => sceneState(progress, { missedYesterday }), [progress, missedYesterday]);
-  const cur = useRef({ p: target.progress, wind: target.wind, fill: target.sailFill, amp: target.waveHeight, speed: target.speed, storm: target.storm, time: 2, travel: 0 });
+  const target = useMemo(() => sceneState(progress, { missedYesterday, night }), [progress, missedYesterday, night]);
+  const cur = useRef({ p: target.progress, wind: target.wind, fill: target.sailFill, amp: target.waveHeight, speed: target.speed, storm: target.storm, night: target.night ? 1 : 0, time: 2, travel: 0 });
   const ready = useRef(false);
   const waterline = useMemo(() => new Plane(new Vector3(0, 1, 0), 0), []);
   // scratch values, reused every frame
@@ -160,7 +169,7 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
     const sky = new Mesh(new SphereGeometry(1, 48, 24), new ShaderMaterial({
       side: BackSide, depthWrite: false, vertexShader: VERT_DIR, fragmentShader: SKY_FRAG,
       uniforms: { uTop: { value: new Color() }, uMid: { value: new Color() }, uHz: { value: new Color() }, uSun: { value: new Color() }, uHaze: { value: new Color() },
-        uSunDir: { value: new Vector3(0, 0, -1) }, uSunAmt: { value: 0 }, uHazeAmt: { value: 0 }, uTopElev: { value: 0.2 }, uSunSize: { value: 0.012 }, uDrift: { value: 0 }, uStorm: { value: 0 } },
+        uSunDir: { value: new Vector3(0, 0, -1) }, uSunAmt: { value: 0 }, uHazeAmt: { value: 0 }, uTopElev: { value: 0.2 }, uSunSize: { value: 0.012 }, uDrift: { value: 0 }, uStorm: { value: 0 }, uStars: { value: 0 }, uCloud: { value: 0.45 } },
     }));
     sky.frustumCulled = false; sky.renderOrder = -10;
     // the sea does not write depth, so the boat's reflection (drawn under it) can show; anything else below the surface is clipped at the waterline
@@ -168,12 +177,12 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
       vertexShader: VERT_WORLD, fragmentShader: SEA_FRAG, depthWrite: false,
       uniforms: { uDeep: { value: new Color() }, uHz: { value: new Color() }, uSun: { value: new Color() }, uHaze: { value: new Color() }, uSunDir: { value: new Vector3(0, 0, -1) },
         uTime: { value: 0 }, uAmp: { value: 0.1 }, uGlitter: { value: 0 }, uWind: { value: 0 }, uHazeAmt: { value: 0 }, uDownMax: { value: 0.2 }, uStorm: { value: 0 },
-        uScroll: { value: [0, 0] }, uHead: { value: [1, 0] }, uHull: { value: [3, 1] }, uSpeed: { value: 0 }, uWakeLen: { value: 8 } },
+        uScroll: { value: [0, 0] }, uHead: { value: [1, 0] }, uHull: { value: [3, 1] }, uSpeed: { value: 0 }, uWakeLen: { value: 8 }, uLit: { value: 1 } },
     }));
     sea.renderOrder = -1;
     const rain = new Mesh(new PlaneGeometry(2, 2), new ShaderMaterial({
       vertexShader: VERT_SCREEN, fragmentShader: RAIN_FRAG, transparent: true, depthTest: false, depthWrite: false,
-      uniforms: { uTime: { value: 0 }, uStorm: { value: 0 }, uAspect: { value: 4 } },
+      uniforms: { uTime: { value: 0 }, uStorm: { value: 0 }, uAspect: { value: 4 }, uLit: { value: 1 } },
     }));
     rain.frustumCulled = false; rain.renderOrder = 100;
 
@@ -210,10 +219,10 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
     return { sky, sea, rain, islands, flock, gullPaint, hemi, key, back };
   }, []);
 
-  // the boat and its reflection are rebuilt when the stage, colours or port state change
+  // the boat and its reflection are rebuilt when the stage, colours or port state change, and when night falls, which lights her portlights
   const boats = useMemo(() => {
     const rig = new Group(); rig.rotation.y = YAW;
-    const solidBoat = buildBoat(spec, colours, { furled: target.inPort, clip: waterline });
+    const solidBoat = buildBoat(spec, colours, { furled: target.inPort, clip: waterline, lit: target.night });
     const mirrorBoat = buildBoat(spec, colours, { furled: target.inPort, mirror: true });
     const flip = new Group(); flip.scale.y = -0.94; flip.add(mirrorBoat.group);
     rig.add(flip, solidBoat.group);
@@ -223,7 +232,7 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
       rig.add(port.group);
     }
     return { rig, solidBoat, mirrorBoat, port };
-  }, [spec, colours, target.inPort, waterline]);
+  }, [spec, colours, target.inPort, target.night, waterline]);
   useEffect(() => () => { boats.solidBoat.dispose(); boats.mirrorBoat.dispose(); boats.port?.dispose(); }, [boats]);
   // renaming the boat repaints the lettering and nothing else
   useEffect(() => { boats.solidBoat.setName(boatName, invalidate); }, [boats, boatName, invalidate]);
@@ -252,15 +261,18 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
 
   useFrame((_, delta) => {
     const c = cur.current, dt = Math.min(delta, 0.05), f = frame.current;
-    if (still) { c.p = target.progress; c.wind = target.wind; c.fill = target.sailFill; c.amp = target.waveHeight; c.speed = target.speed; c.storm = target.storm; }
+    const night = target.night ? 1 : 0;
+    if (still) { c.p = target.progress; c.wind = target.wind; c.fill = target.sailFill; c.amp = target.waveHeight; c.speed = target.speed; c.storm = target.storm; c.night = night; }
     else {
       // ease every value toward its target; a new target simply redirects the ease
       const k = 1 - Math.exp(-dt / 0.45);
       c.p += (target.progress - c.p) * k; c.wind += (target.wind - c.wind) * k; c.fill += (target.sailFill - c.fill) * k; c.amp += (target.waveHeight - c.amp) * k;
       c.speed += (target.speed - c.speed) * k; c.storm += (target.storm - c.storm) * k;
+      // a change of theme eases from one sky to the other, and settles exactly so that the day's sky is the day's sky
+      c.night += (night - c.night) * k; if (Math.abs(night - c.night) < 0.002) c.night = night;
       c.time += dt; c.travel += c.speed * KNOTS * dt;
     }
-    const Lt = lightFor(c.p, c.storm), t = c.time;
+    const Lt = lightFor(c.p, c.storm, c.night), t = c.time;
     const sunElev = Math.atan((c.p < 0.5 ? 0.012 : 0.012 + 0.1 * (c.p - 0.5) * 2) * 2 * TAN), sunAz = Math.atan((SUN_X - 0.5) * 2 * TAN * f.aspect);
     const sunDir = new Vector3(Math.sin(sunAz) * Math.cos(sunElev), Math.sin(sunElev), -Math.cos(sunAz) * Math.cos(sunElev));
     const hx = Math.cos(YAW), hz = -Math.sin(YAW);
@@ -269,12 +281,13 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
     su.uTop!.value.set(Lt.skyTop); su.uMid!.value.set(Lt.skyMid); su.uHz!.value.set(Lt.skyHorizon); su.uSun!.value.set(Lt.sun); su.uHaze!.value.set(Lt.haze);
     su.uSunDir!.value.copy(sunDir); su.uSunAmt!.value = Lt.sunAmount; su.uHazeAmt!.value = Lt.hazeAmount * 0.9; su.uStorm!.value = c.storm;
     su.uSunSize!.value = Math.atan((c.p < 0.5 ? 0.05 : 0.036) * 2 * TAN); su.uDrift!.value = c.travel * 0.0009 + t * 0.0015;
+    su.uStars!.value = Lt.stars; su.uCloud!.value = 0.45 * Lt.lit;
     const wu = (world.sea.material as ShaderMaterial).uniforms;
     wu.uDeep!.value.set(Lt.waterDeep); wu.uHz!.value.set(Lt.waterHorizon); wu.uSun!.value.set(Lt.sun); wu.uHaze!.value.set(Lt.haze); wu.uSunDir!.value.copy(sunDir);
     wu.uTime!.value = t; wu.uAmp!.value = c.amp; wu.uGlitter!.value = Lt.glitter; wu.uWind!.value = c.wind; wu.uHazeAmt!.value = Lt.hazeAmount; wu.uStorm!.value = c.storm;
     wu.uScroll!.value = [hx * c.travel, hz * c.travel]; wu.uHead!.value = [hx, hz]; wu.uHull!.value = [spec.L / 2, spec.beam / 2];
-    wu.uSpeed!.value = c.speed; wu.uWakeLen!.value = spec.L * (0.5 + 0.9 * c.speed);
-    const ru = (world.rain.material as ShaderMaterial).uniforms; ru.uTime!.value = t; ru.uStorm!.value = c.storm; world.rain.visible = c.storm > 0.02;
+    wu.uSpeed!.value = c.speed; wu.uWakeLen!.value = spec.L * (0.5 + 0.9 * c.speed); wu.uLit!.value = Lt.lit;
+    const ru = (world.rain.material as ShaderMaterial).uniforms; ru.uTime!.value = t; ru.uStorm!.value = c.storm; ru.uLit!.value = Lt.lit; world.rain.visible = c.storm > 0.02;
 
     // islands: tinted by the light and the haze, and sliding astern as the boat makes way
     const frameW = f.frameH * f.aspect * f.k, span = frameW * 2.4, camX = (camera as PerspectiveCamera).position.x;
@@ -302,9 +315,9 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
     });
 
     const calm = 1 - 0.35 * c.storm;
-    world.hemi.color.set(mixHex(Lt.skyMid, '#ffffff', 0.5)); world.hemi.groundColor.set(mixHex(Lt.waterDeep, Lt.waterHorizon, 0.5)); world.hemi.intensity = 1.15 * calm;
-    world.key.color.set(mixHex('#ffffff', Lt.sun, 0.5)); world.key.intensity = 2.1 * calm; world.key.position.set(-26, 58, 44);
-    world.back.color.set(Lt.sun); world.back.intensity = 0.3 + 1.4 * Lt.sunAmount * (c.p > 0.5 ? 1 : 0.4); world.back.position.copy(sunDir).multiplyScalar(40).setY(8 + sunDir.y * 40);
+    world.hemi.color.set(mixHex(Lt.skyMid, '#ffffff', 0.5)); world.hemi.groundColor.set(mixHex(Lt.waterDeep, Lt.waterHorizon, 0.5)); world.hemi.intensity = 1.15 * calm * (0.14 + 0.86 * Lt.lit);
+    world.key.color.set(mixHex('#ffffff', Lt.sun, 0.5)); world.key.intensity = 2.1 * calm * Lt.lit; world.key.position.set(-26, 58, 44);
+    world.back.color.set(Lt.sun); world.back.intensity = (0.3 + 1.4 * Lt.sunAmount * (c.p > 0.5 ? 1 : 0.4)) * (0.2 + 0.8 * Lt.lit); world.back.position.copy(sunDir).multiplyScalar(40).setY(8 + sunDir.y * 40);
 
     // the boat rides the same wave function the water is shaded with
     const ox = hx * c.travel, oz = hz * c.travel;

@@ -52,9 +52,9 @@ export function DaySheet({ date, today, tasks, subjects, assessment, carried, on
       </div>
       <p aria-live="polite" className="sr-only">{count}</p>
       <SegmentedProgress done={p.done} total={p.total} fill className="mt-3" />
-      {assessment && <p className="mt-3 flex items-center gap-2 text-[14.5px] font-semibold text-brass-700"><span aria-hidden="true" className="size-[7px] rotate-45 bg-brass-500" />{assessment.title} {isToday ? 'today' : `on ${weekdayLong(date)}`}</p>}
+      {assessment && <p className="mt-3 flex items-center gap-2 text-[14.5px] font-semibold text-highlight-text"><span aria-hidden="true" className="size-[7px] rotate-45 bg-highlight" />{assessment.title} {isToday ? 'today' : `on ${weekdayLong(date)}`}</p>}
       {isToday && carried.length > 0 && (
-        <p className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-md bg-brass-100 px-3 py-1 text-[13.5px] text-brass-800">
+        <p className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-md bg-note px-3 py-1 text-[13.5px] text-on-note">
           <span>{carried.length === 1 ? `1 task from ${weekdayLong(carried[0]!.date)} is still open.` : sameDay ? `${carried.length} tasks from ${weekdayLong(carried[0]!.date)} are still open.` : `${carried.length} tasks from earlier this week are still open.`}</span>
           <button type="button" onClick={moveCarried} className="min-h-9 cursor-pointer rounded-[9px] font-semibold underline underline-offset-[3px]">{carried.length === 1 ? 'Move it to today' : 'Move them to today'}</button>
         </p>

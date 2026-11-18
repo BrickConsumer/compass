@@ -7,7 +7,7 @@ import { SegmentedProgress } from '../../ui/SegmentedProgress';
 import { toast } from '../../ui/Toast';
 
 const quiet = 'min-h-11 cursor-pointer rounded-[9px] px-1 text-[14.5px] font-semibold text-text-link sm:min-h-9';
-const tool = 'grid size-11 cursor-pointer place-items-center rounded-[9px] text-text-muted hover:bg-surface-well disabled:cursor-default disabled:text-paper-300 disabled:hover:bg-transparent sm:size-9';
+const tool = 'grid size-11 cursor-pointer place-items-center rounded-[9px] text-text-muted hover:bg-surface-well disabled:cursor-default disabled:text-faint disabled:hover:bg-transparent sm:size-9';
 
 /**
  * One line of a page's list. Its box is a task's box made smaller: familiar to tick, and plainly not a task.
@@ -31,7 +31,7 @@ function ItemRow({ pageId, item, first, last, editing, onEdit }: { pageId: strin
       <label className="relative -ml-[11px] grid size-11 shrink-0 cursor-pointer place-items-center">
         <input type="checkbox" checked={item.done} onChange={() => toggle(pageId, item.id)} aria-label={item.text}
           className="peer size-[18px] cursor-pointer appearance-none rounded-[6px] shadow-[inset_0_0_0_1.5px_var(--color-control)] transition-colors duration-[140ms] ease-[var(--ease-out)] checked:bg-positive checked:shadow-none max-sm:size-[22px]" />
-        <Check size={12} strokeWidth={3.2} aria-hidden="true" className="pointer-events-none absolute text-paper-0 opacity-0 transition-opacity duration-[140ms] peer-checked:opacity-100" />
+        <Check size={12} strokeWidth={3.2} aria-hidden="true" className="pointer-events-none absolute text-on-positive opacity-0 transition-opacity duration-[140ms] peer-checked:opacity-100" />
       </label>
       {editing ? (
         <>
@@ -41,13 +41,13 @@ function ItemRow({ pageId, item, first, last, editing, onEdit }: { pageId: strin
           <span className="flex items-center">
             <button type="button" className={tool} disabled={first} onMouseDown={keep} onClick={() => move(pageId, item.id, -1)} aria-label="Move up"><ArrowUp size={16} aria-hidden="true" /></button>
             <button type="button" className={tool} disabled={last} onMouseDown={keep} onClick={() => move(pageId, item.id, 1)} aria-label="Move down"><ArrowDown size={16} aria-hidden="true" /></button>
-            <button type="button" className={`${tool} text-port-600`} onMouseDown={keep} onClick={remove} aria-label="Delete item"><Trash2 size={16} aria-hidden="true" /></button>
+            <button type="button" className={`${tool} text-attention`} onMouseDown={keep} onClick={remove} aria-label="Delete item"><Trash2 size={16} aria-hidden="true" /></button>
           </span>
         </>
       ) : (
         <button type="button" onClick={() => { setDraft(item.text); onEdit(item.id); }} aria-keyshortcuts="Space Delete"
           onKeyDown={(e) => { if (e.key === ' ') { e.preventDefault(); toggle(pageId, item.id); } else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); remove(); } }}
-          className={`col-span-2 flex min-h-11 min-w-0 cursor-pointer items-center rounded-[9px] text-left text-[15.5px] font-medium outline-offset-0 max-sm:text-[16px] ${item.done ? 'text-text-muted line-through decoration-[rgb(14_36_58/0.35)]' : ''}`}>
+          className={`col-span-2 flex min-h-11 min-w-0 cursor-pointer items-center rounded-[9px] text-left text-[15.5px] font-medium outline-offset-0 max-sm:text-[16px] ${item.done ? 'text-text-muted line-through decoration-strike' : ''}`}>
           <span className="py-1.5 leading-[1.3]">{item.text}</span>
         </button>
       )}

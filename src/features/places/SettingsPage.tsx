@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
+import { THEMES } from '../../domain/theme';
 import { daysAtSea, milesLogged } from '../../domain/voyage';
 import { storageAvailable, useCompass } from '../../state/store';
 import { DraftInput } from '../../ui/DraftField';
+import { chip } from '../../ui/EditorFrame';
 import { toast } from '../../ui/Toast';
 import { AreasSettings } from './AreasSettings';
 import { LinksSettings } from './LinksSettings';
@@ -46,13 +48,26 @@ export function SettingsPage() {
         </div>
       </section>
 
+      <section aria-labelledby="set-look">
+        <h2 id="set-look" className="text-[20px]">Appearance</h2>
+        <div className="mt-2">
+          <div className={row}>
+            <span id="theme-label" className="text-[15.5px]">Theme</span>
+            <div role="group" aria-labelledby="theme-label" className="flex flex-wrap gap-2">
+              {THEMES.map((t) => <button key={t.id} type="button" aria-pressed={(s.settings.theme ?? 'auto') === t.id} onClick={() => s.setSettings({ theme: t.id })} className={chip((s.settings.theme ?? 'auto') === t.id)}>{t.label}</button>)}
+            </div>
+          </div>
+          <p className="max-w-[56ch] text-[14.5px] text-text-muted">Automatic follows your device. The sea is at night in the dark theme.</p>
+        </div>
+      </section>
+
       <section aria-labelledby="set-sea">
         <h2 id="set-sea" className="text-[20px]">The sea</h2>
         <div className="mt-2">
           <label className={`${row} cursor-pointer`}><span className="text-[15.5px]">Pause the sea's motion<span className="block text-[13.5px] text-text-muted">Holds a still picture. Your device's reduced-motion setting does the same.</span></span>
-            <input type="checkbox" className="size-5 accent-[var(--color-deep-900)]" checked={s.settings.seaPaused} onChange={(e) => s.setSettings({ seaPaused: e.target.checked })} /></label>
+            <input type="checkbox" className="tick-native size-5 accent-[var(--color-text)]" checked={s.settings.seaPaused} onChange={(e) => s.setSettings({ seaPaused: e.target.checked })} /></label>
           <label className={`${row} cursor-pointer`}><span className="text-[15.5px]">Fold the sea window down<span className="block text-[13.5px] text-text-muted">Leaves a thin strip, to give the planner more room.</span></span>
-            <input type="checkbox" className="size-5 accent-[var(--color-deep-900)]" checked={s.settings.seaFolded} onChange={(e) => s.setSettings({ seaFolded: e.target.checked })} /></label>
+            <input type="checkbox" className="tick-native size-5 accent-[var(--color-text)]" checked={s.settings.seaFolded} onChange={(e) => s.setSettings({ seaFolded: e.target.checked })} /></label>
         </div>
       </section>
 
@@ -74,13 +89,13 @@ export function SettingsPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" className={button} onClick={() => { s.resetSample(); setMiles(412); setDays(23); toast('Sample data restored.'); }}>Reset the sample data</button>
           {confirming
-            ? <><button type="button" className="min-h-11 cursor-pointer rounded-md bg-port-600 px-4 text-[14.5px] font-semibold text-paper-0" onClick={() => { s.clearAll(); setConfirming(false); setMiles(0); setDays(0); toast('Everything cleared.'); }}>Yes, clear everything</button>
+            ? <><button type="button" className="min-h-11 cursor-pointer rounded-md bg-attention px-4 text-[14.5px] font-semibold text-on-attention" onClick={() => { s.clearAll(); setConfirming(false); setMiles(0); setDays(0); toast('Everything cleared.'); }}>Yes, clear everything</button>
                 <button type="button" className={button} onClick={() => setConfirming(false)}>Keep it</button></>
-            : <button type="button" className={`${button} text-port-600`} onClick={() => setConfirming(true)}>Clear everything</button>}
+            : <button type="button" className={`${button} text-attention`} onClick={() => setConfirming(true)}>Clear everything</button>}
         </div>
       </section>
 
-      <section aria-labelledby="set-proto" className="rounded-xl bg-brass-100 p-5 text-brass-800">
+      <section aria-labelledby="set-proto" className="rounded-xl bg-note p-5 text-on-note">
         <h2 id="set-proto" className="text-[20px]">Prototype tool</h2>
         <p className="mt-1 max-w-[56ch] text-[14.5px]">Set the voyage to any distance, to see fittings and boats arrive without logging weeks of tasks. This replaces the voyage log. It will not be in the finished app.</p>
         <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); s.setSampleVoyage(miles, days); toast(`Voyage set to ${miles.toLocaleString('en-GB')} miles and ${days} days at sea.`); }}>

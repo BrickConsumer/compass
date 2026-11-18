@@ -85,6 +85,35 @@ All five destinations in the brief now exist. What is left in this stage is for 
 - New waters earned by distance, and seasonal items that arrive with the calendar.
 - Dusk, night and the dark theme, designed together.
 
+**Oliver approved every recommendation for these three on 17 November.** Josh and Aditya have not weighed in, and nothing is built. The options are on a private page, [Stage 7 options](https://claude.ai/artifact/Ax2cKW9qUbCgBXG6bTEvja), which needs sharing from its Share menu before Josh and Aditya can open it. A few of its pictures are kept in `docs/screenshots/stage-7-options/`. Each picture of the sea was drawn by the app's own scene with its light and islands changed for the picture; no file was changed to make them.
+
+![Night, with everything done](screenshots/stage-7-options/mock-night-all-done.jpg)
+
+What was decided:
+
+| Part | Decided by Oliver | The other ways |
+|---|---|---|
+| Night | It comes with a dark theme. The dark theme's day runs dusk, then stars, then moonrise when everything is done. | By the clock; or only after a finished day |
+| New waters | Coral shallows, northern fjords and ice, earned along the way from about 800 miles, and able to be chosen once earned | From 5,500 miles, as the art direction's table says |
+| Decorations | A mark on the mainsail and the pennant's shape, chosen freely; one keepsake a season, such as a string of lights in winter | The sea changing with the season; or no seasons |
+| Order | Night and the dark theme, then waters, then decorations | |
+
+The eleven decisions in full:
+
+1. **Night comes with the dark theme.** The light theme keeps dawn, clear day and golden hour.
+2. **The dark theme opens on dusk,** then stars, then moonrise when everything is done.
+3. **The dark planner** is ivory ink on deep navy, with the same greens and subject dots and a marine blue for what is selected. The exact colours are to be measured for contrast before they are fixed.
+4. **The theme follows the device,** with light, dark and automatic in Settings.
+5. **Three waters:** coral shallows first, then northern fjords, then ice.
+6. **Waters are earned along the way,** from about 800 miles, then about 2,000 and 3,300, and every 1,000 after the last fitting. This changes the progression table in the art direction, which had the first at 5,500. The exact miles are to be fixed when waters are built.
+7. **An earned water can be chosen** in the voyage view, as an earned boat can.
+8. **Chosen freely:** a mark on the mainsail and the shape of the pennant.
+9. **One keepsake a season:** a string of lights in winter, blossom at the bow in spring, a striped awning in port in summer, a harvest lantern in autumn.
+10. **The season is asked once in Settings** (northern, southern, or no seasons), the first time a season would bring something.
+11. **Order:** night and the dark theme, then waters, then decorations.
+
+Each of the three is about the size of one earlier stage, and each gets a short spec of its own before it is built. The first is written and approved by Oliver: [night-and-dark-theme-spec.md](night-and-dark-theme-spec.md), with a dark palette measured for contrast. It was built on 17 and 18 November on the branch `night-dark-theme`, on top of the Home and Weekly review additions, and committed on 18 November. Oliver saw the pictures that day, kept the blue selection over an ivory block, and approved the look as built. Josh and Aditya have seen nothing. Waters and decorations are not built.
+
 ## Stage 8. Aditya's plan
 
 Aditya wrote a plan for a complete personal planner. The plan itself is kept by the founders and is not in this repository, because the repository is public and the plan is personal. On 17 November Oliver decided how it comes into Compass: Compass keeps its main idea (the boat, the navy and ivory look, a planner any student could use), and Aditya's extras come in around it. Josh and Aditya have not weighed in. The review page is https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot (private; share it from its Share menu).
