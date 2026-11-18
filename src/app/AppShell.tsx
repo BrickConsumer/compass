@@ -1,0 +1,111 @@
+import { BookOpen, CalendarCheck, FileText, House, type LucideIcon, Repeat, Search, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router';
+import { CompassMark } from '../ui/CompassMark';
+import { ToastRegion } from '../ui/Toast';
+
+const PLACES: { to: string; label: string; short: string; icon: LucideIcon }[] = [
+  { to: '/', label: 'Home', short: 'Home', icon: House },
+  { to: '/study', label: 'Study', short: 'Study', icon: BookOpen },
+  { to: '/habits', label: 'Habits', short: 'Habits', icon: Repeat },
+  { to: '/review', label: 'Weekly review', short: 'Review', icon: CalendarCheck },
+  { to: '/pages', label: 'My pages', short: 'Pages', icon: FileText },
+];
+
+const typing = (e: KeyboardEvent) => { const t = e.target as HTMLElement | null; return !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)); };
+
+/** Jump to a place or run a command. Opens with Cmd or Ctrl and K. */
+function CommandMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState('');
+  useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) { setQuery(''); d.showModal(); } else if (!open && d.open) d.close(); }, [open]);
+  const commands: { label: string; hint?: string; run: () => void }[] = [
+    ...PLACES.map((p) => ({ label: `Go to ${p.label}`, run: () => navigate(p.to) })),
+    { label: 'Go to today', hint: 'T', run: () => navigate('/') },
+    { label: 'Add a task', hint: 'N', run: () => { navigate('/'); window.setTimeout(() => document.getElementById('composer-day')?.focus(), 60); } },
+    { label: 'Open the voyage', hint: 'V', run: () => navigate('/voyage') },
+    { label: 'Go to Settings', run: () => navigate('/settings') },
+  ];
+  const shown = commands.filter((c) => c.label.toLowerCase().includes(query.trim().toLowerCase()));
+  const choose = (c: (typeof commands)[number]) => { onClose(); c.run(); };
+  return (
+    <dialog ref={ref} onClose={onClose} onClick={(e) => { if (e.target === ref.current) onClose(); }} aria-label="Search and commands"
+      className="m-auto mt-[12vh] w-[min(92vw,520px)] rounded-xl bg-surface-sheet p-0 text-text shadow-float backdrop:bg-deep-900/40">
+      <form method="dialog" onSubmit={(e) => { e.preventDefault(); if (shown[0]) choose(shown[0]); }}>
+        <label className="flex items-center gap-3 border-b border-line px-4">
+          <Search size={18} className="text-text-muted" aria-hidden="true" />
+          <span className="sr-only">Search or jump to</span>
+          <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search or jump to" className="h-13 w-full bg-transparent text-[16px] outline-none placeholder:text-text-subtle" />
+        </label>
+        <ul className="max-h-[50vh] overflow-auto p-2">
+          {shown.map((c) => (
+            <li key={c.label}>
+              <button type="button" onClick={() => choose(c)} className="flex min-h-11 w-full cursor-pointer items-center justify-between rounded-md px-3 text-left text-[15px] hover:bg-surface-well">
+                {c.label}{c.hint && <kbd className="rounded-xs border border-line-strong bg-surface-sheet px-1.5 text-[12.5px] font-semibold text-text-muted">{c.hint}</kbd>}
+              </button>
+            </li>
+          ))}
+          {shown.length === 0 && <li className="px-3 py-3 text-[14.5px] text-text-muted">Nothing matches "{query}".</li>}
+        </ul>
+      </form>
+    </dialog>
+  );
+}
+
+/** The frame around every page: a rail on wider screens, a five-item bar on phones, toasts, and the command menu. */
+export function AppShell() {
+  const [menu, setMenu] = useState(false), navigate = useNavigate();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setMenu((m) => !m); return; }
+      if (typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key.toLowerCase() === 'v') navigate('/voyage');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navigate]);
+  const link = ({ isActive }: { isActive: boolean }) =>
+    `flex h-11 items-center gap-3 rounded-md px-2.5 text-[14.5px] font-medium outline-offset-0 max-lg:justify-center ${isActive ? 'bg-surface-sheet font-semibold text-text shadow-sheet ring-1 ring-line' : 'text-text-muted hover:bg-surface-well'}`;
+
+  return (
+    <div className="min-h-dvh sm:pl-[72px] lg:pl-[200px] min-[1440px]:pl-[216px]">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-surface-sheet focus:px-3 focus:py-2">Skip to content</a>
+      <nav aria-label="Main" className="fixed inset-y-0 left-0 z-20 hidden w-[72px] flex-col gap-7 px-3 pb-5 pt-6 sm:flex lg:w-[200px] lg:pl-4 min-[1440px]:w-[216px]">
+        <NavLink to="/" className="flex items-center gap-2.5 rounded-md px-2 font-display text-[22px] font-medium max-lg:justify-center" aria-label="Compass, home">
+          <CompassMark size={30} /><span className="max-lg:hidden">Compass</span>
+        </NavLink>
+        <ul className="flex flex-col gap-1">
+          {PLACES.map((p) => (
+            <li key={p.to}><NavLink to={p.to} end={p.to === '/'} className={link} title={p.label}><p.icon size={18} strokeWidth={1.75} aria-hidden="true" /><span className="max-lg:sr-only">{p.label}</span></NavLink></li>
+          ))}
+        </ul>
+        <div className="flex-1" />
+        <div className="flex flex-col gap-1">
+          <button type="button" onClick={() => setMenu(true)} title="Search (Cmd or Ctrl and K)"
+            className="flex h-11 cursor-pointer items-center gap-2.5 rounded-md bg-surface-well px-2.5 text-[13.5px] text-text-muted max-lg:justify-center">
+            <Search size={16} aria-hidden="true" /><span className="max-lg:sr-only">Search</span>
+            <kbd className="ml-auto rounded-xs border border-line-strong bg-surface-sheet px-1.5 text-[12.5px] font-semibold max-lg:hidden">⌘K</kbd>
+          </button>
+          <NavLink to="/settings" className={link} title="Settings"><SlidersHorizontal size={18} strokeWidth={1.75} aria-hidden="true" /><span className="max-lg:sr-only">Settings</span></NavLink>
+        </div>
+      </nav>
+
+      <div id="main" tabIndex={-1} className="outline-none"><Outlet context={{ openMenu: () => setMenu(true) }} /></div>
+
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface-sheet pb-[env(safe-area-inset-bottom,0px)] sm:hidden">
+        <ul className="grid grid-cols-5">
+          {PLACES.map((p) => (
+            <li key={p.to}>
+              <NavLink to={p.to} end={p.to === '/'} className={({ isActive }) => `flex h-[58px] flex-col items-center justify-center gap-0.5 text-[12.5px] font-semibold outline-offset-[-3px] ${isActive ? 'text-text' : 'text-text-subtle'}`}>
+                <p.icon size={22} strokeWidth={1.8} aria-hidden="true" />{p.short}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <ToastRegion />
+      <CommandMenu open={menu} onClose={() => setMenu(false)} />
+    </div>
+  );
+}
+
+export interface ShellContext { openMenu: () => void }
