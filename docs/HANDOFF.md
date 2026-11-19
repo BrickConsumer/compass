@@ -6,22 +6,11 @@ Written 16 November 2026 and brought up to date on 17 and 18 November, to carry 
 
 - **Compass**: a calm student planner whose distinctive feature is a sailboat that develops as you make progress.
 - **Founders:** Josh, Oliver and Aditya. Oliver is driving these sessions.
-- **Repository:** `~/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass`. Thirteen branches besides `main`, each cut from the one before; one of them also has a working folder of its own. On 18 November pull requests 1 to 13 were merged into `main`, so what the list below says about open pull requests is from before that.
-  - `phase-1-home`: Phase 1. Pushed, with pull request 1 open to `main`.
-  - `sea-performance`: the performance work. Pushed, with pull request 2 open against `phase-1-home`.
-  - `reward-loop`: the reward loop. Pushed, with pull request 3 open against `sea-performance`.
-  - `home-motion`: motion, the popover editor and the shortcut list. Pushed, with pull request 4 open against `reward-loop`.
-  - `habits`: Stage 4, Habits. Pushed (`cb0b0ab`), with pull request 5 open against `home-motion`.
-  - `study`: Stage 5, Study, with recurring study sessions. Pushed (`b83d73f`), with pull request 6 open against `habits`.
-  - `weekly-review`: Stage 6, the Weekly review. Pushed (`ba9a373`), with pull request 7 open against `study`. 
-  - `my-pages`: Stage 6, My pages, with two fixes to the shared editors. Pushed (`f30ff1e`, `34e3b0b`), with pull request 8 open against `weekly-review`.
-  - `ci`: a GitHub Actions workflow that builds and tests every pull request. Pushed (`c349987`), with pull request 9 open against `my-pages` and Auto-fix on. Its first run on GitHub passed, both jobs.
-  - `boat-fittings`: the first part of Stage 7, the six fittings that were not drawn. Pushed (`1c4dfb4`, `641255f`), with pull request 10 open against `ci` and Auto-fix on.
-  - `home-review-additions`: the first piece of Aditya's plan, the Home and Weekly review additions. Cut from `boat-fittings`, and built in a separate working folder at `.claude/worktrees/home-review-additions` because another chat was working in the main folder. Committed on 17 November with Oliver's approval, after a fresh reviewer's findings were fixed, and pushed with a pull request against `boat-fittings`.
-  - `night-dark-theme`: night and the dark theme, the second part of Stage 7. Cut from `boat-fittings` and moved forward onto `home-review-additions`, so it is built on top of the additions. The work is built, approved by Oliver and committed. Check whether it is pushed and has a pull request. On 18 November, with Oliver's say, the branch was moved to start from `4ff1357`, the pushed commit of the additions. It had started from an earlier, unpushed copy of that commit which held a founder's personal plan; that copy was never pushed and must never be.
-  - `study-detail`: the second piece of Aditya's plan, the Study detail. Cut from `home-review-additions` and built in the same separate working folder on 18 November. Committed with Oliver's approval, after a fresh reviewer's findings were fixed. `main` was then merged into it, and it was pushed with a pull request against `main`.
+- **Repository:** `~/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass` (public). **On 18 November all thirteen pull requests were merged into `main`, in order, as merge commits,** and the merged branches were deleted. `main` passed the type-check, 285 unit tests and the build at each checkpoint, and the browser tests passed in CI on the last pull request. The thirteen were: 1 Phase 1 (art direction, Home spec, Home prototype); 2 performance tiers and sleeping when unseen; 3 the reward loop; 4 motion, the popover editor and the shortcut list; 5 Habits; 6 Study with recurring sessions; 7 the Weekly review; 8 My pages; 9 CI; 10 the six boat fittings that were not drawn; 11 the Home and Weekly review additions (the first piece of Aditya's plan); 12 night and the dark theme; 13 the motion system and the new type. Work in progress that is not on `main`: the branch `new-waters`, with uncommitted changes in its own folder, and the branch `study-detail` (piece 2 of Aditya's plan). `study-detail` was built in a separate working folder at `.claude/worktrees/home-review-additions`, committed on 18 November with Oliver's approval after a fresh reviewer's findings were fixed, brought up to date with `main`, and pushed as pull request 15 against `main`.
+- **A founder's personal planner is kept outside the repository** and must never be committed, because the repository is public.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
+- **Who decides:** since 18 November, Josh and Aditya go with Oliver's decisions unless he says otherwise, so what Oliver approves counts as the founders' approval. This is Oliver's account of the arrangement; the brief itself has not been changed. Merging and anything destructive still wait for Oliver's say.
 
 ## 2. Where things stand
 
@@ -32,11 +21,16 @@ Written 16 November 2026 and brought up to date on 17 and 18 November, to carry 
 | C. Home screen spec | Done and **approved** |
 | D. Build the Home prototype | **Built and working.** All 13 required interactions verified in a browser. |
 | The boat's look review | Two rounds done. **Parked by Oliver** ("we will look at the boat later"). |
-| E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it yet. Findings and fixes are in `docs/testing-report.md`, section 2. |
+| E. Visual refinement | **Done on 16 November. Oliver approved committing it;** Josh and Aditya have not reviewed it themselves, and Oliver decides for them (see section 1). Findings and fixes are in `docs/testing-report.md`, section 2. |
 
 **What is committed.** Phases A to D are commit `7b00bc8` on `phase-1-home`, pushed. Phase E is commit `12574b6` on the same branch, also pushed. The performance work is on `sea-performance`, with pull request 2 open against `phase-1-home`. Both its commits are pushed: `7e72a5e` (tiers and sleeping) and `98a179d` (draw calls). The reward loop is commit `6e9730f` on `reward-loop`, pushed. The motion work is commit `e4a3846` on `home-motion`, pushed, with pull request 4 open against `reward-loop`. Stages 2 and 3 are complete. Habits is one commit on `habits`, accepted by Oliver as a first version, pushed, with pull request 5 open. Study, with recurring study sessions, is one commit on `study`, pushed, with pull request 6 open; no founder has reviewed the Study page. The Weekly review is one commit on `weekly-review`, built on 17 November, pushed, with pull request 7 open; no founder has reviewed the page. My pages is two commits on `my-pages`, built on 17 November, pushed, with pull request 8 open.
 
 ## 3. Decisions
+
+### Decided by Oliver on 18 November
+- **Type:** Libre Caslon Text for display and Source Sans 3 for the interface replace Brygada 1918 and Hanken Grotesk, which read as generic. Chosen from three pairings rendered on the real Home screen (Almanac, Harbour, Logbook). The fonts are self-hosted, and the boat's name on the hull is lettered in the new italic.
+- **Motion:** a motion system that extends the existing tokens: exits 20% shorter than entrances, a 0.97 press, rows staggered 30ms apart, a confirming ring on a tick, a moving selected-day knob, popovers that grow from their trigger, and icon cross-fades. Not built: stagger on Home itself, arcs for anything but the knob, a colour reveal on the tick box.
+- **Who decides:** Oliver, for all three founders (see section 1).
 
 ### Approved by Oliver
 - **Direction B, "Fair weather":** a living sea in a wide window above a quiet ivory planner. The art direction document compared it with A ("Chart room") and C ("Regatta").
@@ -332,10 +326,10 @@ All eleven now exist. The last three (the Phase E pass, the testing report and t
 
 The full list is in `docs/next-stages.md`.
 
-1. **Get the eight pull requests reviewed and merged, in order.** None has been reviewed. CI only checks the top of the stack. The stack is already deeper than is comfortable.
+1. **Done on 18 November: the stack is merged.** All thirteen pull requests are in `main`, in order. None was reviewed by anyone but Oliver.
 2. **A founder opens Home on a real phone,** and in Safari.
-3. **Merge pull request 1,** then pull request 2.
-4. **Aditya's plan.** The first two of its five pieces are built. Piece 1 was merged into `main` on 18 November. Piece 2, the Study detail, is on `study-detail`, with a pull request against `main`. Josh and Aditya have seen neither; the review pages are https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot and https://claude.ai/artifact/K3yezjZJ4BZDaCC9FQk4Bs. Pieces 3 to 5 (Fitness, interests in My pages, search and backup) each need their own design and review before they are built: see `docs/next-stages.md`, Stage 8.
-5. **New waters, then decorations,** the two parts of Stage 7 still to build, each with a short spec of its own first. Night and the dark theme are built on `night-dark-theme`; Oliver kept the blue selection and approved the look on 18 November, and Josh and Aditya have seen nothing. From here on a component names a colour role, never a step: `src/design/roles.test.ts` holds that.
+3. **Merge pull request 15, and commit the other work in progress.** `study-detail` is committed and up to date with `main`. `new-waters` has uncommitted changes and was cut from an older commit, so it will need updating from `main`.
+4. **Aditya's plan.** The first two of its five pieces are built. Piece 1 is merged into `main`. Piece 2, the Study detail, is on `study-detail`, as pull request 15 against `main`. Oliver approved both for the founders; the review pages are https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot and https://claude.ai/artifact/K3yezjZJ4BZDaCC9FQk4Bs. Pieces 3 to 5 (Fitness, interests in My pages, search and backup) each need their own design and review before they are built: see `docs/next-stages.md`, Stage 8.
+5. **New waters, then decorations,** the two parts of Stage 7 still to build, each with a short spec of its own first. Night and the dark theme are merged into `main`; Oliver kept the blue selection and approved the look on 18 November. From here on a component names a colour role, never a step: `src/design/roles.test.ts` holds that.
 6. **Three rules for study sessions are still open,** each built to the recommendation in the mock at https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4 (private; share it from its Share menu): whether sessions count toward the port and the storm, when a week's tasks are made, and what changing a session does to tasks already made. The rules are in `docs/habits-spec.md`, and the mock that settled its place on Home is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b (private; share it from its Share menu). Oliver has accepted the Habits page as a first version; Josh and Aditya have not seen it.
 7. **Boat look review round three**, when Oliver is ready.

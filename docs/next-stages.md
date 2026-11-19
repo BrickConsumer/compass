@@ -2,9 +2,11 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026 |
-| Status | A recommendation. Nothing here is agreed by the founders yet. |
+| Date | 16 November 2026, updated 18 November |
+| Status | A recommendation. Since 18 November the founders go with Oliver's decisions unless he says otherwise, so what Oliver approves counts as agreed. |
 | Based on | The brief, the approved [art direction](compass-art-direction.md) and [Home spec](home-screen-spec.md), and the [testing report](testing-report.md) |
+
+**Update, 18 November.** All thirteen pull requests were merged into `main`, in order. The last one added a motion system and a new type, Libre Caslon Text with Source Sans 3. The sections below keep the wording from when each stage was written; where a line still speaks of the founders reviewing something, read it as Oliver's review.
 
 The order below puts first what protects the work already done, then what the brief still expects of Phase 1, then new product.
 
@@ -14,10 +16,10 @@ Small, and mostly decisions and checks that need a founder.
 
 | Step | Why | Size |
 |---|---|---|
-| Founders review Home and approve the Phase E changes | The brief's approval gate. Nothing is committed without it. | A meeting |
+| ~~Founders review Home and approve the Phase E changes~~ | **Oliver approved them for the founders, and everything is merged.** | Done |
 | A founder opens Home on a real phone | The only way to settle speed, heat and battery. The spec's pass bar ends with this. | Ten minutes |
 | Open Home in Safari and Firefox | Only Chrome has been tested | An hour |
-| ~~Look at the first CI run~~ | **Passed on 17 November, both jobs.** A workflow now builds and tests every pull request. It covers only the top of the stack until the stack is merged. | Done |
+| ~~Look at the first CI run~~ | **Passed on 17 November, both jobs.** A workflow now builds and tests every pull request. The stack was merged on 18 November, so CI now covers `main` too. | Done |
 | One pass with VoiceOver | Names and structure were checked by script, never by ear | An hour |
 | Boat look review, round three | Parked by Oliver. The storm crests and the folded strip are the known weak points. | Depends on the review |
 
@@ -75,7 +77,7 @@ Not built: reordering habits, pausing one without deleting it, and a view of con
 - ~~**Weekly review:** a saved reflection, a summary of tasks and habits, and next week's priorities, which Home already shows. Saving one earns ten miles under the existing rule.~~ **Built on 17 November** as a first version, to [review-spec.md](review-spec.md). No founder has reviewed it, and it was not mocked first. Its open calls are in section 7 of that document; the largest is that an old review's figures are live and not a snapshot.
 - ~~**My pages:** notes, checklists, goals, reading and project pages.~~ **Built on 17 November** as a first version, to [my-pages-spec.md](my-pages-spec.md). Oliver chose its approach the same day: one page shape with five ways to start. It also recommends that pages stand apart from tasks and miles at first. Its layout and three options for a list's tick are drawn in a [mock](https://claude.ai/artifact/NPCbrcPSUbkeHzv3q9UXu7) (private; share it from its Share menu). Oliver chose the layout and the smaller square tick from that mock. Six smaller decisions were built to their recommendations and are still open, the largest being that pages earn no miles and that an item cannot yet become a task. Josh and Aditya have not weighed in.
 
-All five destinations in the brief now exist. What is left in this stage is for the founders: reviewing the pages that were built without them.
+All five destinations in the brief now exist. What is left in this stage is Oliver's review of the pages that were built before any founder had seen them.
 
 ## Stage 7. The boat grows up
 
@@ -147,7 +149,9 @@ The mock shows where training (piece 3) and headlines (piece 4) will sit on Home
 
 Accounts and sync, notifications, school licensing and any payment. The brief rules these out of the prototype, and each one changes the privacy promise, so each deserves its own decision.
 
-## Decisions the founders owe
+## Decisions still open
+
+Oliver decides these for the founders.
 
 | Decision | Needed before |
 |---|---|

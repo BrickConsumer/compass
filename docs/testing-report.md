@@ -7,6 +7,8 @@
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
+**Update, 18 November.** The stack this report was written against was merged into `main`, together with a motion system and a new type (Libre Caslon Text and Source Sans 3). At the merge the type-check passed, 285 unit tests passed, and all 127 browser tests passed. Where this report says no founder has reviewed a page, that was true when it was written; since 18 November Oliver decides for the founders. The motion has not been watched playing by a person, only checked at its end states.
+
 ## 1. Summary
 
 Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 313 unit tests pass and 159 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14 and the Study detail in section 15; before the three it was 225 and 72, and all of those still pass unchanged.
@@ -97,7 +99,7 @@ Also checked: delete with Undo, priority changes, the command menu, and miles be
 | Criterion | Result | How it was checked |
 |---|---|---|
 | The 3D boat renders | Pass | Browser test waits for the live scene; screenshots |
-| Recognisable sailboat geometry | Pass, by eye | Screenshots. The founders' look review is still open (parked by Oliver). |
+| Recognisable sailboat geometry | Pass, by eye | Screenshots. Oliver's look review of the boat is still open (parked). |
 | Water animation works | Pass | Two captures of the canvas one second apart differ |
 | Lighting and materials are coherent | Pass, by eye | Dawn, day, golden hour, port and storm captured |
 | The scene does not obstruct the planner | Pass | It sits in its own window, folds to a strip, and the planner draws before the 3D code loads |
