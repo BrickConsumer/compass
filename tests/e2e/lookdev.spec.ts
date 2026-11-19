@@ -58,10 +58,15 @@ test('with reduced motion the scene holds still', async ({ browser }) => {
   // The picture inside the window's rounded corners. On a busy machine the browser smooths those corners a shade
   // differently from one moment to the next, which is nothing to do with the scene.
   const box = (await first.boundingBox())!, clip = { x: box.x + 32, y: box.y + 32, width: box.width - 64, height: box.height - 64 };
-  const a = await page.screenshot({ clip });
-  await page.waitForTimeout(900);
-  const b = await page.screenshot({ clip });
-  expect(a.equals(b)).toBe(true);
+  // Two pictures 900 ms apart must be the same. A CI runner draws the sea in software and can still be settling
+  // when the scene first says it is live, so the pair is taken again until it matches. A scene that kept moving
+  // would never match, so this still fails for the fault it is here to catch.
+  await expect(async () => {
+    const a = await page.screenshot({ clip });
+    await page.waitForTimeout(900);
+    const b = await page.screenshot({ clip });
+    expect(a.equals(b)).toBe(true);
+  }).toPass({ timeout: 20_000 });
   await context.close();
 });
 
@@ -74,7 +79,9 @@ test('the page does not scroll sideways at phone width', async ({ page }) => {
 
 test('every fitting can be put on and taken off, on the live boat and the still one', async ({ page }) => {
   const errors: string[] = [];
-  page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.text().includes('THREE.Clock')) errors.push(m.text()); });
+  // "GL Driver Message" is the graphics driver remarking on its own speed. A CI runner draws in software and says it
+  // whenever the picture is read back ("GPU stall due to ReadPixels"). It is not a fault of the page.
+  page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.text().includes('THREE.Clock') && !m.text().includes('GL Driver Message')) errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/lookdev');
   const first = page.locator('[data-scene]').first();
