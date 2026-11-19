@@ -13,6 +13,7 @@ import { useToday } from '../../state/useToday';
 import { SegmentedProgress } from '../../ui/SegmentedProgress';
 import { HabitsToday } from '../habits/HabitsToday';
 import { HomeLinks } from '../links/Links';
+import { HomeHeadlines } from './HomeHeadlines';
 import { DaySheet } from './DaySheet';
 import { Focus } from './Focus';
 import { HomeWindow } from './HomeWindow';
@@ -99,7 +100,11 @@ export function HomePage() {
         <DaySheet date={selected} today={today} tasks={dayTasks} subjects={subjects} assessment={assessments.find((a) => a.date === selected)}
           carried={carryOver(tasks, today, startsOn)} onEdit={(id) => setEditing({ id })} rank={rank} />
         <div className="grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-1 lg:pt-[18px] xl:contents">
-          <div className="xl:pt-[18px]"><WeekList weekStart={week} current={week === thisWeek} tasks={tasksForWeek(tasks, week, rank)} subjects={subjects} onEdit={(id) => setEditing({ id })} rank={rank} /></div>
+          <div className="xl:pt-[18px]">
+            <WeekList weekStart={week} current={week === thisWeek} tasks={tasksForWeek(tasks, week, rank)} subjects={subjects} onEdit={(id) => setEditing({ id })} rank={rank} />
+            {/* saved headlines, when there are any, sit under the week's tasks */}
+            <HomeHeadlines className="mt-9" />
+          </div>
           <div className="flex flex-col gap-9 xl:pt-[18px]">
             <ComingUp assessments={upcomingAssessments(assessments, today)} tasks={tasks} subjects={subjects} today={today} onSelect={select} />
             <NextWeek tasks={nextWeekPriorities(tasks, today, startsOn)} subjects={subjects} today={today} weekStartsOn={startsOn} onEdit={(id) => setEditing({ id })} />

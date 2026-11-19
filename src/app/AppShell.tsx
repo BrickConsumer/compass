@@ -38,6 +38,7 @@ function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: (
     { label: 'Open the voyage', hint: 'V', run: () => navigate('/voyage') },
     { label: 'Go to Settings', run: () => navigate('/settings') },
     { label: 'Add a link', run: () => navigate('/settings#links') },
+    { label: 'Save a headline', run: () => navigate('/pages/headlines', { state: { add: true } }) },
     { label: 'Keyboard shortcuts', hint: '?', run: onShortcuts },
     { label: 'Use the dark theme', run: () => setSettings({ theme: 'dark' }) },
     { label: 'Use the light theme', run: () => setSettings({ theme: 'light' }) },

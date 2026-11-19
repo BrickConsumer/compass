@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 13 added on 17 November and sections 14 and 15 on 18 November |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, and sections 16 and 17 on 19 November |
 | Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it. Section 14, the Study detail, is on the branch `study-detail`, cut from that |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 350 unit tests pass and 206 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15 and Fitness in section 16; before the four it was 225 and 72, and all of those still pass unchanged.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 382 unit tests pass and 237 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16 and interests and headlines in section 17; before the five it was 225 and 72, and all of those still pass unchanged.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -483,7 +483,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 18). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 19). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -544,7 +544,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 18).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 19).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -627,7 +627,7 @@ On 18 November, after the piece was committed, `main` was merged into the branch
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 18).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 19).
 
 ### Calls made in the build that the founders can overrule
 
@@ -682,7 +682,7 @@ It also noted things that are older than this piece: Home is wider than a 320 px
 
 ### Found on the way
 
-- **Home is 21 px wider than a 320 px screen,** with or without Fitness. Its date and its two round buttons do not fit below about 341 px. Left alone, and listed in section 18. Fitness's own pages fit at 320 px, and a test holds that Home is no wider with Fitness than without.
+- **Home is 21 px wider than a 320 px screen,** with or without Fitness. Its date and its two round buttons do not fit below about 341 px. Left alone, and listed in section 19. Fitness's own pages fit at 320 px, and a test holds that Home is no wider with Fitness than without.
 - **The ring on Home had no room for a thumb.** A habit's ring is pressed through its name, but a session's name is a button of its own. The test that measures every control found it. Fixed.
 - **One run lost its dev server near the end,** and the last twelve tests could not connect. None was a Fitness test, and the next run passed. This is the fault described in section 14.
 - **Two older tests of the look review page failed on CI,** on this piece's pull request and, earlier the same day, on `main` after a merge that changed only documents. A CI runner draws the sea in software. One test counted the graphics driver's remark on its own speed ("GPU stall due to ReadPixels") as a warning from the page. The other compared two pictures of the still scene before it had settled. The remark is now left out where warnings are counted, in that test and in one like it for the dark theme, and the pictures are taken again until a pair matches, which a scene that kept moving never would. Neither could be reproduced on a laptop, with or without software drawing. On the next run on CI the driver's remark failed nothing and the still scene matched, but the runner was slower still and two tests ran out of time. The fittings test rebuilds the boat for each fitting and had been taking 20 to 31 seconds on CI against a limit of 30, so it is given three times as long. An older Study test pressed "Edit subject" straight after choosing another subject, without waiting for it to show; on a slow machine that opens the editor of the subject about to leave, and the editor then goes with it. This one was reproduced, on a processor slowed six times, and the test now waits for the subject. The same press on a slow phone would do the same to a person, for the half second the page takes to change.
@@ -690,14 +690,76 @@ It also noted things that are older than this piece: Home is wider than a 320 px
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 18).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 19).
 - Whether Escape inside a line being changed keeps the editor open in browsers other than Chrome.
 
 ### Calls made in the build that the founders can overrule
 
 They are in the specification: section 16 for the calls made in the design, and section 19 for those made in the build. The largest are that a session whose day has passed can still be logged, that its miles are dated the day it is finished, and that a save's lists are never cut to their limits.
 
-## 17. Built differently from the approved spec
+## 17. Interests and headlines
+
+Built on 19 November on the branch `interests`, to [interests-spec.md](interests-spec.md). It is the fourth of five pieces of Aditya's plan. **It was designed and built without a review first:** Oliver asked for the rest of the app to be built without questions, to be gone through once it is finished. The specification's section 9 lists the calls most worth a look. The sample gains nothing, so Home is as it was and My pages gains only the new part of its list.
+
+![An interest and a Company page at 1440 px](screenshots/interests/2-company-1440.png)
+
+### What was built
+
+- **Interests:** folders in My pages. A student adds their own and says where it starts from: Investing, Law, or something else. The first two offer ready-made pages.
+- **Forms:** a page started as a Company, a Journal entry, a Case or Current affairs opens with headed parts, each a box of ordinary writing. Nothing is a number, a rating or a choice.
+- **A page's source link,** on any page, checked as every link is.
+- **Headlines,** saved by hand: a title, an address, where it is from, the day it was published and an optional tag. They are listed at `/pages/headlines`, and the newest three are on Home under "Any time this week".
+- **Nothing is fetched.** Compass still talks to no other service.
+- **The saved data:** two new lists, and four optional fields on a page. A save from before this piece opens with nothing lost.
+
+### Checked
+
+- **Unit tests, 32 new:** what each starting point offers; a titled page offered once; an interest's pages in order; names and limits; what is kept from a save edited by hand, for interests, a form's parts, a page's list and headlines; a headline cleaned, refused, and its source taken from its site; the newest three; every store action, with Undo; an older save; and "Clear everything".
+- **Browser tests, 31 new:** the new part of My pages; an interest added from each starting point; a Company page's eight parts kept through a reload; a titled starter going once used; a page put in an interest and taken out; an interest renamed and deleted with Undo; a source link, and what is refused as one; headlines saved, changed, deleted with Undo, and refused without a web address; the newest three on Home; the search command; no request to any other site; every control tall enough for a thumb, in the lists and in the editors; the whole of it by keyboard; and no sideways scroll at 320, 375, 390, 768, 1024 and 1440 px with every part at its longest.
+- **Everything from before:** the 350 unit tests and 206 browser tests pass. Their files were not edited for this piece.
+- **In the dark theme:** all 237 browser tests pass with the device set to dark.
+- **As CI runs it:** 231 pass and the six sea tests are skipped, as designed.
+- **Pictures** of the built pages are in `screenshots/interests/`, numbered. There are no mocks to compare them with, since nothing was mocked.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 19 November, ran the unit tests, and tried the running app with 24 browser probes of its own, including saves edited by hand. It found nothing critical. It confirmed that no address but an http or https one can reach a link, by typing, from a save or by Undo; that nothing is fetched; that a valid page from an older save cannot be dropped; and that Home is unchanged with nothing saved. These were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| Opening an interest, leaving it or adding one dropped keyboard focus to the page, and nothing said the list had changed | Focus goes to the interest's name on the way in and to its row on the way out |
+| With sixty headlines saved, "Save a headline" in search opened an editor whose button did nothing | It says that sixty is the most, and opens nothing |
+| A double press on a page that comes with a title made a second, unasked page, because the next button moved under the pointer | The second press of a double press does nothing, and the store makes a titled page once |
+| "Add interest" pressed twice quickly added two | An editor on its way out takes no more presses, in the frame every editor shares |
+| A double press on a form opened another page, whose row had moved under the pointer | The same fix: the second press does nothing wherever it lands. Found while fixing the one above. |
+| A source taken from the site stayed after the address changed | It follows the address. A typed source stays. |
+| Enter in a new headline's Address checked it and saved nothing | Enter saves the headline once the address is one |
+| A 30-letter unbroken name pushed an empty interest's page 50 px sideways at 320 px, and widened a page's editor | Both wrap. So does the way back above a page. |
+| A save with something that is not an item in a page's list took My pages down to the error screen. Older than this piece. | A page's list keeps only what is an item, and a kind that is not one is a note |
+| The Headlines row was never marked as the current one; the interest's "Edit" was named only "Edit"; a page naming an interest that is gone showed no choice as pressed | Each put right |
+| With a page open that an interest does not hold, choosing the interest left it open beside a list without it | One of the interest's own pages opens. On a phone the way back names the interest. |
+
+Left as they are, to be decided:
+
+- An Undo can take a list one past its limit, and a save's lists are not cut to their limits. This is the rule Fitness set (section 16).
+- A starter's hint shows only as a tooltip.
+- Without `field-sizing`, which Chrome has, a form's parts do not grow with what is written. They start taller there. Not seen in a browser that lacks it.
+
+### Found on the way
+
+- **A form's part widened the page by about 1,900 px below 1024 px,** when one very long word was typed in it. A box that grows with its words also grows sideways unless its column is told it may be narrower than what is in it. Fixed, and held by the width tests.
+- **A thumb test read a box as 43.9999 px tall** once in four runs, straight after its sheet slid up. It measures to the nearest pixel now.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 19).
+- A double tap by finger. A mouse says which press of a run it is; a finger may not, so a touch in the same place straight after is treated as one. Tried with a mouse only.
+
+### Calls made in the build that the founders can overrule
+
+They are in the specification: section 9 for the calls made in the design, and section 11 for those made in the build. The largest are that headlines are saved by hand and nothing is fetched, that a student adds their own interests with Investing and Law as two starting points, and that a form's parts are words.
+
+## 18. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -711,7 +773,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 18. Known limitations
+## 19. Known limitations
 
 - Home is 21 px wider than a 320 px screen: its date and its two round buttons do not fit below about 341 px.
 

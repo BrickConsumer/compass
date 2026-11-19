@@ -170,6 +170,32 @@ export interface Best {
 /** Something a person chooses to measure, with its own unit. It has no target and is never judged, compared or drawn. */
 export interface Measure extends Best { /** Up to 12 characters, and may be empty. */ unit: string }
 
+/** Where an interest started from: one of the two that come with forms, or the student's own, with nothing ready-made. */
+export type FormSet = 'investing' | 'law' | 'none';
+
+/** A folder in My pages for the pages that belong together: investing, law, or anything a student names. */
+export interface Interest { id: string; /** 1 to 30 characters. */ name: string; forms: FormSet }
+
+/** One headed part of a page that was started from a form. Its text is ordinary writing, kept as typed. */
+export interface PageField { id: string; label: string; /** Up to 2,000 characters. */ text: string }
+
+/**
+ * A headline saved by hand: its title, where the article is, where it is from and the day it was published.
+ * Compass fetches nothing: a headline is only what was typed, and its address opens in a new tab.
+ */
+export interface Headline {
+  id: string;
+  /** 1 to 140 characters. */
+  title: string;
+  /** An http or https address. */
+  url: string;
+  /** Up to 40 characters. With none typed it is the name of the site. */
+  source: string;
+  date: ISODate;
+  /** A short word for what it is about, such as a ticker. Up to 8 characters, and may be empty. */
+  tag: string;
+}
+
 export type PageKind = 'note' | 'checklist' | 'goal' | 'reading' | 'project';
 
 /** One line of a page's list. It is not a task: it has no day, earns nothing and is shown nowhere else. */
@@ -191,6 +217,14 @@ export interface Page {
   /** A date to aim for. Shown on goals and projects. Nothing happens when it passes. */
   aimFor?: ISODate;
   subjectId?: string;
+  /** The interest it is kept in. A page is in one at most, and only while that interest exists. */
+  interestId?: string;
+  /** The form it was started from, which gives it its label. */
+  form?: string;
+  /** A form's headed parts, in order. */
+  fields?: PageField[];
+  /** One web address: its source. */
+  link?: string;
   /** Goals only: the day the goal was marked as reached. */
   reachedOn?: ISODate;
   createdAt: string;
