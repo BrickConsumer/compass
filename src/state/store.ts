@@ -6,6 +6,7 @@ import { cleanDays, isDue, tickKey } from '../domain/habits';
 import { addItem, cleanPageTitle, editItem, insertItem, moveItem, newPage, PAGE_LIMITS, removeItem, toggleItem, untickAll } from '../domain/pages';
 import { rekeyed, withLevel } from '../domain/levels';
 import { cleanFeedback, feedbackTask, storedFeedback } from '../domain/feedback';
+import { canStart, cleanWords, FITNESS_LIMITS, newWorkout, storedBests, storedMeasures, storedRoutines, storedWorkouts } from '../domain/fitness';
 import { cleanUrl, LINK_LIMITS, linkName, storedLink, storedLinks } from '../domain/links';
 import { AREA_LIMITS, cleanRating, storedAreas } from '../domain/ratings';
 import { canReview, isBlank, reviewAward } from '../domain/review';
@@ -13,14 +14,17 @@ import { madeKey, sessionTasksDue } from '../domain/sessions';
 import { cleanTopic, nextColour } from '../domain/study';
 import { cleanTitle } from '../domain/tasks';
 import { storedTheme } from '../domain/theme';
-import { type Assessment, type Boat, type Feedback, type Habit, type ISODate, type Level, type Page, type PageItem, type PageKind, type Priority, type QuickLink, type RatingArea, type Review, type Session, type Settings, type Subject, SUBJECT_COLOURS, type SubjectColour, type Task } from '../domain/types';
-import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged } from '../domain/voyage';
+import { type Assessment, type Best, type Boat, type Feedback, type Habit, type ISODate, type Level, type Measure, type Page, type PageItem, type PageKind, type Priority, type QuickLink, type RatingArea, type Review, type Routine, type Session, type Settings, type Subject, SUBJECT_COLOURS, type SubjectColour, type Task, type Workout, type WorkoutLine } from '../domain/types';
+import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged, workoutAward } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
 
 export interface NewTask { title: string; date: ISODate; scope: 'day' | 'week'; priority?: Priority; subjectId?: string; notes?: string; /** One web address. Anything else is left off. */ link?: string; /** The assessment it is preparation for. Kept only if that assessment exists. */ assessmentId?: string }
 
 /** A deleted subject, with its assessments, its study sessions and the tasks that carried it. */
 export interface RemovedSubject { subject: Subject; assessments: Assessment[]; sessions: Session[]; feedback: Feedback[]; taskIds: string[]; pageIds: string[] }
+
+/** The two lists kept by hand in Fitness. */
+export type KeptList = 'bests' | 'measures';
 
 export interface CompassStore extends CompassData {
   /** Add a task. Returns its id, or null when the title is empty. */
@@ -119,6 +123,47 @@ export interface CompassStore extends CompassData {
   /** Untick every item on a page. Returns the ids that were ticked, for Undo. */
   untickPageItems: (pageId: string) => string[];
   tickPageItems: (pageId: string, itemIds: string[]) => void;
+  /** Add a training routine, with no days and no lines yet. Returns its id, or null when the name is empty or there are twenty already. */
+  addRoutine: (name: string) => string | null;
+  /** Change a routine. An empty name keeps the last good one. It may have no days at all, which is a routine with no fixed day. */
+  updateRoutine: (id: string, patch: { name?: string; days?: number[] }) => void;
+  /** Remove a routine, and return it with its place so the caller can offer Undo. Sessions started from it are kept. */
+  deleteRoutine: (id: string) => { routine: Routine; index: number } | null;
+  restoreRoutine: (routine: Routine, index: number) => void;
+  /** Add a line to a routine. Returns false when it is empty or the routine has forty. Sessions already started keep the lines they had. */
+  addRoutineLine: (routineId: string, text: string) => boolean;
+  editRoutineLine: (routineId: string, lineId: string, text: string) => void;
+  moveRoutineLine: (routineId: string, lineId: string, direction: -1 | 1) => void;
+  deleteRoutineLine: (routineId: string, lineId: string) => void;
+  /** Start a routine's session for a day, or find the one already started. Returns its id, or null when the routine is unknown or cannot be started for that day: see `canStart`. */
+  startWorkout: (routineId: string, date: ISODate) => string | null;
+  /** Finish an open session. Returns the miles it logged, 2 or 0, or null when there is no such open session. It earns the first time or not at all. */
+  finishWorkout: (id: string) => number | null;
+  /** Make a finished session a started one again. Nothing is taken from the log. */
+  reopenWorkout: (id: string) => void;
+  /** Remove a session and return it, so the caller can offer Undo. The miles it logged stay. */
+  deleteWorkout: (id: string) => Workout | null;
+  /** Put a removed session back, unless its routine has another session for that day by now. */
+  restoreWorkout: (workout: Workout) => void;
+  /** A session's note, kept as it is typed. */
+  setWorkoutNote: (id: string, note: string) => void;
+  /** Tick or untick a line. It earns nothing. */
+  toggleWorkoutLine: (id: string, lineId: string) => void;
+  /** Add a line to this session only. Returns false when it is empty or the session has forty. */
+  addWorkoutLine: (id: string, text: string) => boolean;
+  editWorkoutLine: (id: string, lineId: string, text: string) => void;
+  moveWorkoutLine: (id: string, lineId: string, direction: -1 | 1) => void;
+  deleteWorkoutLine: (id: string, lineId: string) => { line: WorkoutLine; index: number } | null;
+  restoreWorkoutLine: (id: string, line: WorkoutLine, index: number) => void;
+  /** Add a best or a measure. Returns its id, or null without a name, a value and a real date, or when the list is full. */
+  addKept: (list: KeptList, input: { name: string; value: string; date: ISODate; unit?: string }) => string | null;
+  /** Correct a best or a measure. An empty name or value, or a date that is not one, keeps the last good one. The value before is never touched. */
+  updateKept: (list: KeptList, id: string, patch: { name?: string; value?: string; date?: ISODate; unit?: string }) => void;
+  /** Keep a new value, dated today. The one it replaces becomes the value before. Returns the record as it was, for Undo, or null when the value is empty. */
+  newKept: (list: KeptList, id: string, value: string) => Best | Measure | null;
+  deleteKept: (list: KeptList, id: string) => { item: Best | Measure; index: number } | null;
+  /** Put a best or a measure back at its place, in place of any record with its id. */
+  restoreKept: (list: KeptList, item: Best | Measure, index: number) => void;
   /** Add a habit, for every day unless days are given. Returns its id, or null when the name is empty. */
   addHabit: (name: string, days?: number[]) => string | null;
   updateHabit: (id: string, patch: { name?: string; days?: number[] }) => void;
@@ -156,6 +201,17 @@ function moved<T extends { id: string }>(list: T[], id: string, direction: -1 | 
 /** A list with a removed item back at the place it had. */
 const putBack = <T extends { id: string }>(list: T[], item: T, index: number): T[] => { const rest = list.filter((x) => x.id !== item.id); return [...rest.slice(0, index), item, ...rest.slice(index)]; };
 
+/** A list with one of its records changed, and the rest as they were. */
+const changed = <T extends { id: string }>(list: T[], id: string, change: (item: T) => T): T[] => list.map((x) => (x.id === id ? change(x) : x));
+/** A routine's or a session's lines with one reworded. Empty words keep the last good ones. */
+const reworded = <T extends { id: string; text: string }>(lines: T[], id: string, text: string): T[] => changed(lines, id, (l) => ({ ...l, text: cleanWords(text, FITNESS_LIMITS.line) || l.text }));
+
+/** Bests and measures are kept the same way, in two lists with their own limits. */
+const KEPT = { bests: { max: FITNESS_LIMITS.bests, value: FITNESS_LIMITS.bestValue }, measures: { max: FITNESS_LIMITS.measures, value: FITNESS_LIMITS.measureValue } } as const;
+const keptOf = (data: CompassData, list: KeptList): (Best | Measure)[] => data[list];
+const withKept = (data: CompassData, list: KeptList, change: (items: (Best | Measure)[]) => (Best | Measure)[]): Partial<CompassData> =>
+  (list === 'bests' ? { bests: change(data.bests) } : { measures: change(data.measures) as Measure[] });
+
 /** A subject's links after a change. A subject with none carries no list at all. */
 function withLinks(subjects: Subject[], subjectId: string, change: (links: QuickLink[]) => QuickLink[]): Subject[] {
   return subjects.map((x) => {
@@ -185,6 +241,9 @@ function storedSubject(subject: Subject): Subject {
   const colour = Object.keys(SUBJECT_COLOURS).includes(rest.colour) ? rest.colour : 'marine';
   return { ...rest, colour, ...(kept.length ? { links: kept } : {}), ...(words ? { topic: words } : {}) };
 }
+
+/** The settings that outlast the data: the theme, which belongs to the device, and whether Fitness is shown. */
+const kept = (settings: Settings): Partial<Settings> => ({ theme: settings.theme, ...(settings.fitness === true ? { fitness: true } : {}) });
 
 /** Keep the boat being sailed within what has been earned. */
 function clampStage(boat: Boat, miles: number, days: number): Boat {
@@ -519,6 +578,104 @@ export const useCompass = create<CompassStore>()(
         return ticked;
       },
       tickPageItems: (pageId, itemIds) => set((s) => ({ pages: changePage(s.pages, pageId, (p) => ({ ...p, items: p.items.map((i) => (itemIds.includes(i.id) ? { ...i, done: true } : i)) })) })),
+      addRoutine: (name) => {
+        const clean = cleanWords(name, FITNESS_LIMITS.routineName);
+        if (!clean || get().routines.length >= FITNESS_LIMITS.routines) return null;
+        const id = newId().replace('t-', 'rt-');
+        set((s) => ({ routines: [...s.routines, { id, name: clean, days: [], lines: [], createdOn: todayISO() }] }));
+        return id;
+      },
+      updateRoutine: (id, patch) => set((s) => ({
+        routines: changed(s.routines, id, (r) => ({ ...r, name: patch.name !== undefined ? cleanWords(patch.name, FITNESS_LIMITS.routineName) || r.name : r.name, days: patch.days ? cleanDays(patch.days) : r.days })),
+      })),
+      deleteRoutine: (id) => {
+        const index = get().routines.findIndex((r) => r.id === id), routine = get().routines[index];
+        if (!routine) return null;
+        set((s) => ({ routines: s.routines.filter((r) => r.id !== id) }));
+        return { routine, index };
+      },
+      restoreRoutine: (routine, index) => set((s) => ({ routines: putBack(s.routines, routine, index) })),
+      addRoutineLine: (routineId, text) => {
+        const routine = get().routines.find((r) => r.id === routineId), clean = cleanWords(text, FITNESS_LIMITS.line);
+        if (!routine || !clean || routine.lines.length >= FITNESS_LIMITS.lines) return false;
+        const id = newId().replace('t-', 'ln-');
+        set((s) => ({ routines: changed(s.routines, routineId, (r) => ({ ...r, lines: [...r.lines, { id, text: clean }] })) }));
+        return true;
+      },
+      editRoutineLine: (routineId, lineId, text) => set((s) => ({ routines: changed(s.routines, routineId, (r) => ({ ...r, lines: reworded(r.lines, lineId, text) })) })),
+      moveRoutineLine: (routineId, lineId, direction) => set((s) => ({ routines: changed(s.routines, routineId, (r) => ({ ...r, lines: moved(r.lines, lineId, direction) })) })),
+      deleteRoutineLine: (routineId, lineId) => set((s) => ({ routines: changed(s.routines, routineId, (r) => ({ ...r, lines: r.lines.filter((l) => l.id !== lineId) })) })),
+      startWorkout: (routineId, date) => {
+        const existing = get().workouts.find((w) => w.routineId === routineId && w.date === date);
+        if (existing) return existing.id;
+        const routine = get().routines.find((r) => r.id === routineId);
+        if (!routine || !isISODate(date) || !canStart(routine, date, todayISO())) return null;
+        const id = newId().replace('t-', 'wk-');
+        set((s) => ({ workouts: [...s.workouts, newWorkout(routine, date, id)] }));
+        return id;
+      },
+      finishWorkout: (id) => {
+        const workout = get().workouts.find((w) => w.id === id);
+        if (!workout || workout.finishedAt) return null;
+        const award = workoutAward(workout, get().log, todayISO());
+        // marked as having had its miles whatever it earned, so a second session of the day cannot earn on a later one
+        set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, finishedAt: new Date().toISOString(), milesAwarded: true as const })), log: award ? [...s.log, award] : s.log }));
+        return award?.miles ?? 0;
+      },
+      reopenWorkout: (id) => set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, finishedAt: undefined })) })),
+      deleteWorkout: (id) => {
+        const gone = get().workouts.find((w) => w.id === id) ?? null;
+        if (gone) set((s) => ({ workouts: s.workouts.filter((w) => w.id !== id) }));
+        return gone;
+      },
+      restoreWorkout: (workout) => set((s) => (s.workouts.some((w) => w.id === workout.id || (!!workout.routineId && w.routineId === workout.routineId && w.date === workout.date)) ? s : { workouts: [...s.workouts, workout] })),
+      setWorkoutNote: (id, note) => set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, note: note.slice(0, FITNESS_LIMITS.note) })) })),
+      toggleWorkoutLine: (id, lineId) => set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, lines: changed(w.lines, lineId, (l) => ({ ...l, done: !l.done })) })) })),
+      addWorkoutLine: (id, text) => {
+        const workout = get().workouts.find((w) => w.id === id), clean = cleanWords(text, FITNESS_LIMITS.line);
+        if (!workout || !clean || workout.lines.length >= FITNESS_LIMITS.lines) return false;
+        const lineId = newId().replace('t-', 'ln-');
+        set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, lines: [...w.lines, { id: lineId, text: clean, done: false }] })) }));
+        return true;
+      },
+      editWorkoutLine: (id, lineId, text) => set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, lines: reworded(w.lines, lineId, text) })) })),
+      moveWorkoutLine: (id, lineId, direction) => set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, lines: moved(w.lines, lineId, direction) })) })),
+      deleteWorkoutLine: (id, lineId) => {
+        const lines = get().workouts.find((w) => w.id === id)?.lines ?? [], index = lines.findIndex((l) => l.id === lineId), line = lines[index];
+        if (!line) return null;
+        set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, lines: w.lines.filter((l) => l.id !== lineId) })) }));
+        return { line, index };
+      },
+      restoreWorkoutLine: (id, line, index) => set((s) => ({ workouts: changed(s.workouts, id, (w) => ({ ...w, lines: putBack(w.lines, line, index) })) })),
+      addKept: (list, input) => {
+        const name = cleanWords(input.name, FITNESS_LIMITS.keptName), value = cleanWords(input.value, KEPT[list].value);
+        if (!name || !value || !isISODate(input.date) || keptOf(get(), list).length >= KEPT[list].max) return null;
+        const id = newId().replace('t-', list === 'bests' ? 'bs-' : 'ms-');
+        // a best has no unit at all: its value says what it is
+        const item = { id, name, value, date: input.date, ...(list === 'measures' ? { unit: cleanWords(input.unit ?? '', FITNESS_LIMITS.unit) } : {}) };
+        set((s) => withKept(s, list, (items) => [...items, item]));
+        return id;
+      },
+      updateKept: (list, id, patch) => set((s) => withKept(s, list, (items) => changed(items, id, (x) => ({
+        ...x,
+        name: patch.name !== undefined ? cleanWords(patch.name, FITNESS_LIMITS.keptName) || x.name : x.name,
+        value: patch.value !== undefined ? cleanWords(patch.value, KEPT[list].value) || x.value : x.value,
+        date: patch.date !== undefined && isISODate(patch.date) ? patch.date : x.date,
+        ...(list === 'measures' && patch.unit !== undefined ? { unit: cleanWords(patch.unit, FITNESS_LIMITS.unit) } : {}),
+      })))),
+      newKept: (list, id, value) => {
+        const before = keptOf(get(), list).find((x) => x.id === id), clean = cleanWords(value, KEPT[list].value);
+        if (!before || !clean) return null;
+        set((s) => withKept(s, list, (items) => changed(items, id, (x) => ({ ...x, value: clean, date: todayISO(), was: { value: x.value, date: x.date } }))));
+        return before;
+      },
+      deleteKept: (list, id) => {
+        const items = keptOf(get(), list), index = items.findIndex((x) => x.id === id), item = items[index];
+        if (!item) return null;
+        set((s) => withKept(s, list, (all) => all.filter((x) => x.id !== id)));
+        return { item, index };
+      },
+      restoreKept: (list, item, index) => set((s) => withKept(s, list, (items) => putBack(items, item, index))),
       addHabit: (name, days) => {
         const clean = cleanTitle(name).slice(0, 60), on = cleanDays(days ?? [0, 1, 2, 3, 4, 5, 6]);
         if (!clean || on.length === 0) return null;
@@ -564,8 +721,9 @@ export const useCompass = create<CompassStore>()(
         ...(patch.weekStartsOn !== undefined && patch.weekStartsOn !== s.settings.weekStartsOn ? { levels: rekeyed(s.levels, patch.weekStartsOn) } : {}),
       })),
       // the theme belongs to the device and not to the data, so starting again keeps it
-      resetSample: () => set((s) => { const next = seed(todayISO()); return { ...next, settings: { ...next.settings, theme: s.settings.theme } }; }),
-      clearAll: () => set((s) => { const next = empty(); return { ...next, settings: { ...next.settings, theme: s.settings.theme } }; }),
+      // and so does the Fitness switch: it says which places are wanted, not what is in them
+      resetSample: () => set((s) => { const next = seed(todayISO()); return { ...next, settings: { ...next.settings, ...kept(s.settings) } }; }),
+      clearAll: () => set((s) => { const next = empty(); return { ...next, settings: { ...next.settings, ...kept(s.settings) } }; }),
       setSampleVoyage: (miles, days) => set((s) => {
         const log = sampleLog(miles, days, todayISO());
         return { log, boat: clampStage(s.boat, milesLogged(log), daysAtSea(log)) };
@@ -575,7 +733,7 @@ export const useCompass = create<CompassStore>()(
       name: 'compass:v1',
       version: 1,
       storage: createJSONStorage(safeStorage),
-      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, boat, settings, sample }),
+      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, routines, workouts, bests, measures, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, routines, workouts, bests, measures, boat, settings, sample }),
       // anything unreadable falls back to the sample, so a bad save can never stop the app opening
       merge: (saved, current) => {
         const s = saved as Partial<CompassData> | undefined;
@@ -587,6 +745,12 @@ export const useCompass = create<CompassStore>()(
           // and nothing in those lists is taken on trust: a save can be edited by hand, and a link is only a link if it is a web address
           links: storedLinks(s.links), areas: storedAreas(s.areas), levels: s.levels && typeof s.levels === 'object' && !Array.isArray(s.levels) ? s.levels : {},
           feedback: storedFeedback(s.feedback),
+          // a save from before Fitness gets the sample's training week if it is still the sample, and none if it is the user's own;
+          // what a save does hold is kept only where it is a record
+          routines: s.routines === undefined ? (fresh ? current.routines : []) : storedRoutines(s.routines),
+          workouts: s.workouts === undefined ? (fresh ? current.workouts : []) : storedWorkouts(s.workouts),
+          bests: s.bests === undefined ? (fresh ? current.bests : []) : storedBests(s.bests),
+          measures: s.measures === undefined ? (fresh ? current.measures : []) : storedMeasures(s.measures),
           // a link is only kept if it is a web address, wherever it is kept, and a topic only if it is words
           tasks: records<Task>(s.tasks, 'id', 'title', 'date').map(storedWithLink),
           subjects: Array.isArray(s.subjects) && s.subjects.length ? records<Subject>(s.subjects, 'id', 'name').map(storedSubject) : current.subjects,

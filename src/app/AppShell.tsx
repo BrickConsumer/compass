@@ -1,4 +1,4 @@
-import { BookOpen, CalendarCheck, FileText, House, type LucideIcon, Repeat, Search, SlidersHorizontal, X } from 'lucide-react';
+import { BookOpen, CalendarCheck, Dumbbell, FileText, House, type LucideIcon, Repeat, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { searchLinks } from '../domain/links';
@@ -16,18 +16,23 @@ const PLACES: { to: string; label: string; short: string; icon: LucideIcon }[] =
   { to: '/review', label: 'Weekly review', short: 'Review', icon: CalendarCheck },
   { to: '/pages', label: 'My pages', short: 'Pages', icon: FileText },
 ];
+/** The sixth place, listed only while Fitness is switched on. */
+const FITNESS: (typeof PLACES)[number] = { to: '/fitness', label: 'Fitness', short: 'Fitness', icon: Dumbbell };
+const usePlaces = () => { const fitness = useCompass((s) => s.settings.fitness === true); return fitness ? [...PLACES, FITNESS] : PLACES; };
 
 const typing = (e: KeyboardEvent) => { const t = e.target as HTMLElement | null; return !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)); };
 
 /** Jump to a place or run a command. Opens with Cmd or Ctrl and K. */
 function CommandMenu({ open, onClose, onShortcuts }: { open: boolean; onClose: () => void; onShortcuts: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState(''), pages = useCompass((s) => s.pages), links = useCompass((s) => s.links), setSettings = useCompass((s) => s.setSettings);
+  const ref = useRef<HTMLDialogElement>(null), navigate = useNavigate(), [query, setQuery] = useState(''), pages = useCompass((s) => s.pages), links = useCompass((s) => s.links), setSettings = useCompass((s) => s.setSettings), places = usePlaces();
   // The search is emptied when the menu closes, not when it opens. Emptied on opening, the box showed the last search for
   // an instant, and a key pressed in that instant was added to it.
   useEffect(() => { const d = ref.current; if (!d) return; if (open && !d.open) d.showModal(); else if (!open) { if (d.open) d.close(); setQuery(''); } }, [open]);
   type Command = { label: string; hint?: string; note?: string; run: () => void };
   const commands: Command[] = [
-    ...PLACES.map((p) => ({ label: `Go to ${p.label}`, run: () => navigate(p.to) })),
+    ...places.map((p) => ({ label: `Go to ${p.label}`, run: () => navigate(p.to) })),
+    // while Fitness is off this is the one thing search knows of it, so someone looking for it finds the switch
+    ...(places.includes(FITNESS) ? [] : [{ label: 'Switch on Fitness', run: () => { setSettings({ fitness: true }); navigate('/fitness'); } }]),
     { label: 'Go to today', hint: 'T', run: () => navigate('/') },
     { label: 'Add a task', hint: 'N', run: () => { navigate('/'); window.setTimeout(() => document.getElementById('composer-day')?.focus(), 60); } },
     { label: 'Open the voyage', hint: 'V', run: () => navigate('/voyage') },
@@ -105,9 +110,9 @@ function Shortcuts({ open, onClose }: { open: boolean; onClose: () => void }) {
   );
 }
 
-/** The frame around every page: a rail on wider screens, a five-item bar on phones, toasts, and the command menu. */
+/** The frame around every page: a rail on wider screens, a bar of five or six places on phones, toasts, and the command menu. */
 export function AppShell() {
-  const [menu, setMenu] = useState(false), [shortcuts, setShortcuts] = useState(false), navigate = useNavigate();
+  const [menu, setMenu] = useState(false), [shortcuts, setShortcuts] = useState(false), navigate = useNavigate(), places = usePlaces();
   // study sessions become tasks when their week arrives: on opening the app, and when the day or the first day of the week changes
   const today = useToday(), makeSessionTasks = useCompass((s) => s.makeSessionTasks), startsOn = useCompass((s) => s.settings.weekStartsOn);
   useEffect(() => { makeSessionTasks(today); }, [today, startsOn, makeSessionTasks]);
@@ -136,7 +141,7 @@ export function AppShell() {
             so Search and Settings stay in sight. The small margins leave room for the rings and outlines of what is inside. */}
         <div className="-mx-1.5 -my-1 flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto px-1.5 py-1">
           <ul className="flex flex-col gap-1">
-            {PLACES.map((p) => (
+            {places.map((p) => (
               <li key={p.to}><NavLink to={p.to} end={p.to === '/'} className={link} title={p.label}><p.icon size={18} strokeWidth={1.75} aria-hidden="true" /><span className="max-lg:sr-only">{p.label}</span></NavLink></li>
             ))}
           </ul>
@@ -155,8 +160,8 @@ export function AppShell() {
       <div id="main" tabIndex={-1} className="outline-none"><Outlet context={{ openMenu: () => setMenu(true) }} /></div>
 
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface-sheet pb-[env(safe-area-inset-bottom,0px)] sm:hidden">
-        <ul className="grid grid-cols-5">
-          {PLACES.map((p) => (
+        <ul className={places.length === 6 ? 'grid grid-cols-6' : 'grid grid-cols-5'}>
+          {places.map((p) => (
             <li key={p.to}>
               <NavLink to={p.to} end={p.to === '/'} className={({ isActive }) => `flex h-[58px] flex-col items-center justify-center gap-0.5 text-[12.5px] font-semibold outline-offset-[-3px] ${isActive ? 'text-text' : 'text-text-subtle'}`}>
                 <p.icon size={22} strokeWidth={1.8} aria-hidden="true" />{p.short}

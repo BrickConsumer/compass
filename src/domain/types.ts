@@ -62,7 +62,7 @@ export interface Feedback {
 }
 
 /** One entry in the voyage log. The log only grows. */
-export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'habit' | 'review' | 'sample'; sourceId: string; miles: number }
+export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'habit' | 'review' | 'workout' | 'sample'; sourceId: string; miles: number }
 
 /** A week's reflection. The week's numbers are not kept here: they are worked out from the tasks, habits and log. */
 export interface Review {
@@ -117,6 +117,59 @@ export interface Habit {
   createdOn: ISODate;
 }
 
+/** One line of a routine, such as "Squat, 3 × 5 at 60 kg". It is words, kept as typed: nothing is read out of it. */
+export interface RoutineLine { id: string; /** 1 to 140 characters. */ text: string }
+
+/** A training routine: a checklist written once and used again. On each of its days it is a set session in Fitness. */
+export interface Routine {
+  id: string;
+  /** 1 to 40 characters. */
+  name: string;
+  /** The weekdays it is set for: 0 is Sunday, 6 is Saturday. None means it has no fixed day. */
+  days: number[];
+  /** In the order shown. Forty at most. */
+  lines: RoutineLine[];
+  /** The first day it is set for. Earlier days are not days for it. */
+  createdOn: ISODate;
+}
+
+export interface WorkoutLine { id: string; text: string; done: boolean }
+
+/**
+ * One training session: a routine's name and lines, copied on the day it is started, to tick off. On screen it is
+ * a "session"; here it is a workout, because `Session` is a study session that repeats. It is not a task: it is in
+ * no day's count and changes nothing on the sea.
+ */
+export interface Workout {
+  id: string;
+  /** The routine it was started from, which may since have been changed or deleted. One session for each routine on each day. */
+  routineId: string;
+  name: string;
+  /** The day it is for, which is not always the day it was finished. */
+  date: ISODate;
+  lines: WorkoutLine[];
+  /** Up to 2,000 characters, kept as typed. */
+  note: string;
+  /** Present means finished. */
+  finishedAt?: string;
+  /** Set the first time the session is finished and never cleared, so it cannot earn twice. */
+  milesAwarded?: true;
+}
+
+/** Something kept by hand with the value before it: a best time, distance or weight. The value is words, not a number. */
+export interface Best {
+  id: string;
+  /** 1 to 40 characters. */
+  name: string;
+  value: string;
+  date: ISODate;
+  /** The value this one replaced. Only the one before is kept. */
+  was?: { value: string; date: ISODate };
+}
+
+/** Something a person chooses to measure, with its own unit. It has no target and is never judged, compared or drawn. */
+export interface Measure extends Best { /** Up to 12 characters, and may be empty. */ unit: string }
+
 export type PageKind = 'note' | 'checklist' | 'goal' | 'reading' | 'project';
 
 /** One line of a page's list. It is not a task: it has no day, earns nothing and is shown nowhere else. */
@@ -165,6 +218,8 @@ export interface Settings {
   name?: string;
   /** Absent in a save from before themes existed, which is the same as automatic. It belongs to the device, so clearing the data leaves it. */
   theme?: Theme;
+  /** True while the Fitness place is shown. Absent means off, which hides the place and keeps what is in it. */
+  fitness?: boolean;
 }
 
 type SubjectPaint = Record<SubjectColour, { dot: string; tint: string; text: string }>;

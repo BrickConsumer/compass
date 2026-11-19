@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router';
+import { FitnessPage } from '../features/fitness/FitnessPage';
 import { HabitsPage } from '../features/habits/HabitsPage';
 import { HomePage } from '../features/home/HomePage';
 import { LookdevPage } from '../features/lookdev/LookdevPage';
@@ -21,6 +22,8 @@ export const router = createBrowserRouter([
       { path: '/review', element: <ReviewPage /> },
       { path: '/pages', element: <PagesPage /> },
       { path: '/pages/:pageId', element: <PagesPage /> },
+      { path: '/fitness', element: <FitnessPage /> },
+      { path: '/fitness/:workoutId', element: <FitnessPage /> },
       { path: '/settings', element: <SettingsPage /> },
     ],
   },

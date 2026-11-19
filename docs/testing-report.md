@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 313 unit tests pass and 159 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14 and the Study detail in section 15; before the three it was 225 and 72, and all of those still pass unchanged.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 350 unit tests pass and 206 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15 and Fitness in section 16; before the four it was 225 and 72, and all of those still pass unchanged.
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -483,7 +483,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 17). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 18). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -544,7 +544,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 17).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 18).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -627,13 +627,76 @@ On 18 November, after the piece was committed, `main` was merged into the branch
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 17).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 18).
 
 ### Calls made in the build that the founders can overrule
 
 They are in the specification: section 13 for the calls made in the design, and section 16 for those made in the build. The largest is that a subject's links are changed in place on its page, not in a pop-up editor.
 
-## 16. Built differently from the approved spec
+## 16. Fitness
+
+Built on 19 November on the branch `fitness`, to [fitness-spec.md](fitness-spec.md). It is the third of five pieces of Aditya's plan. Fitness is off until it is switched on, and the sample gains an invented training week that shows only then. No sample task, habit or log entry was changed, so every count on Home, in Study, in Habits and in the Weekly review is as it was.
+
+![The Fitness place at 1440 px](screenshots/fitness/1-fitness-1440.png)
+
+### What was built
+
+- **A switch** in Settings, "Show Fitness". With it on, Fitness is a sixth place in the rail and in the phone's bar. With it off, all that shows is the switch and one search command, and everything in it is kept.
+- **Routines:** a name, the days it is set for, and lines kept as typed. A routine may have no fixed day.
+- **Sessions:** a dated copy of a routine to tick off, with a note. In the saved data a session is a `workout`, because `sessions` holds study sessions.
+- **The week,** worked out from the routines and the sessions and never stored: what is set, started, finished or still to come, a rest day, and the routines that can be started today, the one not done for longest first.
+- **Miles:** a session logs 2 nautical miles the first time it is finished, dated the day it is finished, and one session's miles at most on any one day.
+- **Bests and measures,** kept by hand, each with the value before. A measure has its own unit and is never judged.
+- **On Home,** the day's training: a ring that finishes a session as it stands and a name that opens it. **In the Weekly review,** one more figure.
+- **The saved data:** four new lists and one setting. A save from before this piece opens with nothing lost.
+
+### Checked
+
+- **Unit tests, 37 new:** words kept as typed within their limits; what is kept from a save edited by hand; which days a routine is set for; a week's sessions in order, each in its state; a session whose routine is gone; "last done" by the day a session is for; the order of the routines offered; a rest day; routines and their lines added, changed, moved, removed and held to their limits; a session started as a copy, once for a day, and what cannot be started; miles the first time and never again, for one session a day, for a late session, and never from the sample; a session reaching nothing a task counts; bests and measures added, corrected, beaten and put back; an older save, and "Clear everything" keeping the switch.
+- **Browser tests, 47 new:** nothing showing while off; the switch, the sixth place and the search command; routines added, changed and deleted with Undo; each state of a session in the week; a session started, ticked, added to, kept through a reload, finished, reopened, deleted and put away; a late session; a rest day; Recent; bests and measures; training on Home by ring and by name, on days to come and days gone; the review's figure; the whole of it by keyboard; every control tall enough for a thumb; and no sideways scroll at 320, 375, 390, 768, 1024 and 1440 px with every part at its longest.
+- **Everything from before:** the 313 unit tests and 159 browser tests pass unchanged. Their files were not edited.
+- **In the dark theme:** all 206 browser tests pass with the device set to dark.
+- **As CI runs it:** 200 pass and the six sea tests are skipped, as designed.
+- **Against the mock:** the built pages were pictured and compared with the mocks, in both themes. The pictures are in `screenshots/fitness/`, numbered, beside the mocks. Where the build differs is in the specification, section 19.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 19 November, ran the unit tests and the Fitness and My pages browser tests, and probed the running app with saved data edited by hand. It found nothing critical. It confirmed that miles cannot be taken twice, that a session never reaches a task's figures, that nothing shows while Fitness is off, that a save edited by hand opens with only the bad records dropped, and that My pages behaves as it did. Six findings were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| Ticking an unstarted session's ring on Home by keyboard dropped focus to the page, because the row was rebuilt when the session was made | The row keeps its identity, so the ring keeps focus |
+| A started or finished row in the week did not tell a screen reader where it stood | Its spoken name carries what it opens and where it stands |
+| A list that an Undo had taken one past its limit was cut when the save was next opened, losing what was typed last | A save's lists are not cut. A limit is held where things are added. |
+| Backspace or Delete on a line in a routine's editor removed it, with no Undo there | The keys do nothing where a line cannot be put back |
+| Focus fell to the page when a session closed, and Back reopened it | Focus returns to the session's row or the week's heading, and closing steps back or replaces the address |
+| The routines that can be started were spoken as their names alone | Each is spoken as "Start" and its name |
+
+Three smaller findings were left as they are, to be decided:
+
+- On a phone, a second "Add a best" in a row puts the cursor on Close and not on Name.
+- "Recent", "Routines", "Bests" and "Measures" are headings of the third level with none of the second above them, so a screen reader hears them as parts of "This week".
+- A session's row in the code allows a routine or a session to be missing where its state says it cannot be.
+
+It also noted things that are older than this piece: Home is wider than a 320 px screen, two tabs open at once overwrite each other's saves, focus falls to the page after an item in a list is changed, and the toast's "Undo" is 36 px tall on a phone.
+
+### Found on the way
+
+- **Home is 21 px wider than a 320 px screen,** with or without Fitness. Its date and its two round buttons do not fit below about 341 px. Left alone, and listed in section 18. Fitness's own pages fit at 320 px, and a test holds that Home is no wider with Fitness than without.
+- **The ring on Home had no room for a thumb.** A habit's ring is pressed through its name, but a session's name is a button of its own. The test that measures every control found it. Fixed.
+- **One run lost its dev server near the end,** and the last twelve tests could not connect. None was a Fitness test, and the next run passed. This is the fault described in section 14.
+- **Pull request 15 came into conflict with `main`** part-way through, when another pull request was merged. It was settled on its own branch, and this branch was moved forward to it.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 18).
+- Whether Escape inside a line being changed keeps the editor open in browsers other than Chrome.
+
+### Calls made in the build that the founders can overrule
+
+They are in the specification: section 16 for the calls made in the design, and section 19 for those made in the build. The largest are that a session whose day has passed can still be logged, that its miles are dated the day it is finished, and that a save's lists are never cut to their limits.
+
+## 17. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -647,7 +710,9 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 17. Known limitations
+## 18. Known limitations
+
+- Home is 21 px wider than a 320 px screen: its date and its two round buttons do not fit below about 341 px.
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.

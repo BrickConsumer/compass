@@ -61,6 +61,14 @@ export function SettingsPage() {
         </div>
       </section>
 
+      <section aria-labelledby="set-fitness">
+        <h2 id="set-fitness" className="text-[20px]">Fitness</h2>
+        <div className="mt-2">
+          <label className={`${row} cursor-pointer`}><span className="text-[15.5px]">Show Fitness<span className="block max-w-[46ch] text-[13.5px] text-text-muted">A place for your training week, what you did and anything you choose to measure. Switching it off hides it and keeps what is in it.</span></span>
+            <input type="checkbox" className="tick-native size-5 accent-[var(--color-text)]" checked={s.settings.fitness === true} onChange={(e) => s.setSettings({ fitness: e.target.checked })} /></label>
+        </div>
+      </section>
+
       <section aria-labelledby="set-sea">
         <h2 id="set-sea" className="text-[20px]">The sea</h2>
         <div className="mt-2">
