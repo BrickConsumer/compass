@@ -12,9 +12,11 @@ import { cleanUrl, LINK_LIMITS, linkName, storedLink, storedLinks } from '../dom
 import { AREA_LIMITS, cleanRating, storedAreas } from '../domain/ratings';
 import { canReview, isBlank, reviewAward } from '../domain/review';
 import { madeKey, sessionTasksDue } from '../domain/sessions';
+import { storedAssessments, storedBoat, storedHabits, storedLevels, storedLog, storedReviews, storedSessions, storedSettings, storedStrings, storedTasks } from '../domain/stored';
 import { cleanTopic, nextColour } from '../domain/study';
 import { cleanTitle } from '../domain/tasks';
 import { storedTheme } from '../domain/theme';
+import { once, time } from '../domain/words';
 import { type Assessment, type Best, type Boat, type Feedback, type FormSet, type Habit, type Headline, type Interest, type ISODate, type Level, type Measure, type Page, type PageItem, type PageKind, type Priority, type QuickLink, type RatingArea, type Review, type Routine, type Session, type Settings, type Subject, SUBJECT_COLOURS, type SubjectColour, type Task, type Workout, type WorkoutLine } from '../domain/types';
 import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged, workoutAward } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
@@ -198,6 +200,13 @@ export interface CompassStore extends CompassData {
   setSettings: (patch: Partial<Settings>) => void;
   resetSample: () => void;
   clearAll: () => void;
+  /**
+   * Replace everything with what a backup holds, checked as a save is: see `backupData`. The theme stays as this
+   * device has it. Returns what was here before, so the caller can offer Undo.
+   */
+  restoreBackup: (data: Record<string, unknown>) => CompassData;
+  /** Put back what a restore replaced. */
+  undoRestore: (before: CompassData) => void;
   /** Prototype tool: replace the voyage log with a sample of this size. */
   setSampleVoyage: (miles: number, days: number) => void;
 }
@@ -249,17 +258,15 @@ function records<T>(list: unknown[], ...needs: string[]): T[] {
   return list.filter((x) => !!x && typeof x === 'object' && !Array.isArray(x) && needs.every((key) => { const v = (x as Record<string, unknown>)[key]; return typeof v === 'string' && v !== ''; })) as T[];
 }
 
-/** A task or an assessment from a save, with its link kept only if it is a web address. */
-function storedWithLink<T extends { link?: string }>(item: T): T {
-  const { link, ...rest } = item, clean = storedLink(link);
-  return (clean ? { ...rest, link: clean } : rest) as T;
-}
-/** A subject from a save: its links checked as any saved links are, and its topic kept only if it is words. */
+/**
+ * A subject from a save, built again from what a subject has: its name, a colour that is one of the eight, its
+ * notes and topic only if they are words, and its links checked as any saved links are.
+ */
 function storedSubject(subject: Subject): Subject {
-  const { links, topic, ...rest } = subject, kept = storedLinks(links), words = typeof topic === 'string' ? cleanTopic(topic) : '';
+  const kept = storedLinks(subject.links), topic = typeof subject.topic === 'string' ? cleanTopic(subject.topic) : '';
   // a colour that is not one of the eight would leave the subject with nothing to draw its dot in
-  const colour = Object.keys(SUBJECT_COLOURS).includes(rest.colour) ? rest.colour : 'marine';
-  return { ...rest, colour, ...(kept.length ? { links: kept } : {}), ...(words ? { topic: words } : {}) };
+  const colour = Object.keys(SUBJECT_COLOURS).includes(subject.colour) ? subject.colour : 'marine';
+  return { id: subject.id, name: subject.name, colour, ...(typeof subject.notes === 'string' ? { notes: subject.notes } : {}), ...(topic ? { topic } : {}), ...(kept.length ? { links: kept } : {}) };
 }
 
 /** The settings that outlast the data: the theme, which belongs to the device, and whether Fitness is shown. */
@@ -269,14 +276,18 @@ const kept = (settings: Settings): Partial<Settings> => ({ theme: settings.theme
  * A page from a save. Its link is kept only if it is a web address, its parts only where they have an id and a label,
  * its form only if it is one, and its interest only if it is named by an id. Its list keeps only what is an item,
  * a kind that is not one of the five is a note, and a page with no list, no writing or no dates gets empty ones,
- * so a save cut short or edited by hand cannot stop a page opening.
+ * so a save cut short or edited by hand cannot stop a page opening. A date to aim for, or the day a goal was
+ * reached, is kept only if it is a day. The page is built again from what a page has, so nothing else rides in on it.
  */
 function storedPage(page: Page): Page {
-  const { link, fields, form, interestId, ...rest } = page, keptLink = storedLink(link), keptFields = storedFields(fields);
-  const made = typeof rest.createdAt === 'string' && rest.createdAt ? rest.createdAt : new Date(0).toISOString();
+  const { link, fields, form, interestId, subjectId, aimFor, reachedOn } = page, keptLink = storedLink(link), keptFields = storedFields(fields);
+  // the times are read as times, to say which page was changed last
+  const made = time(page.createdAt) || new Date(0).toISOString();
   return {
-    ...rest, kind: PAGE_KINDS.some((k) => k.id === rest.kind) ? rest.kind : 'note', items: storedItems(rest.items), text: typeof rest.text === 'string' ? rest.text : '',
-    createdAt: made, updatedAt: typeof rest.updatedAt === 'string' && rest.updatedAt ? rest.updatedAt : made,
+    id: page.id, title: page.title, kind: PAGE_KINDS.some((k) => k.id === page.kind) ? page.kind : 'note', items: storedItems(page.items), text: typeof page.text === 'string' ? page.text : '',
+    createdAt: made, updatedAt: time(page.updatedAt) || made,
+    ...(isISODate(aimFor) ? { aimFor } : {}), ...(isISODate(reachedOn) ? { reachedOn } : {}),
+    ...(typeof subjectId === 'string' && subjectId ? { subjectId } : {}),
     ...(keptLink ? { link: keptLink } : {}), ...(keptFields ? { fields: keptFields } : {}),
     ...(typeof form === 'string' && formOf(form) ? { form } : {}), ...(typeof interestId === 'string' && interestId ? { interestId } : {}),
   };
@@ -295,6 +306,65 @@ function safeStorage() {
   try { const k = 'compass:probe'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return localStorage; }
   catch { storageAvailable = false; return memory; }
 }
+
+/** Everything Compass keeps, by name. Only these are saved, and only these are read from a save or a backup. */
+export const DATA_KEYS = ['subjects', 'tasks', 'assessments', 'log', 'habits', 'ticks', 'sessions', 'sessionsMade', 'reviews', 'pages', 'links', 'areas', 'levels', 'feedback', 'routines', 'workouts', 'bests', 'measures', 'interests', 'headlines', 'boat', 'settings', 'sample'] as const satisfies readonly (keyof CompassData)[];
+// A part of the data added later and left out of the list above would never be saved, and nothing would say so.
+// This line stops the build instead: it only holds while the list names every part.
+true satisfies (Exclude<keyof CompassData, (typeof DATA_KEYS)[number]> extends never ? true : never);
+
+/** What Compass keeps, without what it does: the part of the store that is saved, and that a backup holds. */
+export function dataOf(state: CompassData): CompassData {
+  const out: Partial<Record<keyof CompassData, unknown>> = {};
+  for (const key of DATA_KEYS) out[key] = state[key];
+  return out as CompassData;
+}
+
+/**
+ * A save, opened: when Compass starts, and when a backup is restored. Only what Compass keeps is read from it, and
+ * nothing in it is taken on trust, since a save can be edited by hand and a backup is a file that can come from
+ * anywhere. A record without what it needs is dropped, and a link is only a link if it is a web address. A save that
+ * cannot be read at all leaves `current` as it is, so a bad one can never stop the app opening.
+ * `current` is what to fall back on: a save from before a part of Compass existed gets that part's sample if it is
+ * still the sample, and none of it if it is the user's own.
+ */
+export function openSave<T extends CompassData>(saved: unknown, current: T): T {
+  const s = saved && typeof saved === 'object' && !Array.isArray(saved) ? (saved as Partial<Record<keyof CompassData, unknown>>) : undefined;
+  if (!s || !Array.isArray(s.tasks) || !Array.isArray(s.log) || !s.boat || !s.settings) return current;
+  const fresh = s.sample !== false;
+  const data: CompassData = {
+    tasks: storedTasks(s.tasks),
+    subjects: Array.isArray(s.subjects) && s.subjects.length ? once(records<Subject>(s.subjects, 'id', 'name').map(storedSubject)) : current.subjects,
+    // a save with no list of assessments gets the sample's if it is still the sample, and none if it is the user's own
+    assessments: Array.isArray(s.assessments) ? storedAssessments(s.assessments) : fresh ? current.assessments : [],
+    log: storedLog(s.log),
+    // a save from before habits existed gets the sample habits if it is still the sample, and none if it is the user's own
+    habits: Array.isArray(s.habits) ? storedHabits(s.habits) : fresh ? current.habits : [],
+    ticks: Array.isArray(s.ticks) ? storedStrings(s.ticks) : fresh ? current.ticks : [],
+    sessions: storedSessions(s.sessions), sessionsMade: storedStrings(s.sessionsMade),
+    reviews: Array.isArray(s.reviews) ? storedReviews(s.reviews) : fresh ? current.reviews : [],
+    pages: Array.isArray(s.pages) ? once(records<Page>(s.pages, 'id', 'title').map(storedPage)) : fresh ? current.pages : [],
+    // a save from before links, areas and levels existed starts with none set, and the four starting areas
+    links: storedLinks(s.links), areas: storedAreas(s.areas), levels: storedLevels(s.levels),
+    feedback: storedFeedback(s.feedback),
+    // a save from before interests and headlines has none of either
+    interests: storedInterests(s.interests), headlines: storedHeadlines(s.headlines),
+    // a save from before Fitness gets the sample's training week if it is still the sample, and none if it is the user's own
+    routines: s.routines === undefined ? (fresh ? current.routines : []) : storedRoutines(s.routines),
+    workouts: s.workouts === undefined ? (fresh ? current.workouts : []) : storedWorkouts(s.workouts),
+    bests: s.bests === undefined ? (fresh ? current.bests : []) : storedBests(s.bests),
+    measures: s.measures === undefined ? (fresh ? current.measures : []) : storedMeasures(s.measures),
+    boat: storedBoat(s.boat, current.boat), settings: storedSettings(s.settings), sample: fresh,
+  };
+  return { ...current, ...data };
+}
+
+/**
+ * What restoring a backup would leave Compass holding, with nothing changed: the backup's data, checked exactly as a
+ * save is when Compass opens. It is opened against a fresh sample, as it would be on a device that has never run
+ * Compass, so a backup from before a part of Compass existed gets what an older save gets.
+ */
+export const backupData = (data: Record<string, unknown>): CompassData => dataOf(openSave(data, seed(todayISO())));
 
 export const useCompass = create<CompassStore>()(
   persist(
@@ -828,6 +898,13 @@ export const useCompass = create<CompassStore>()(
       // and so does the Fitness switch: it says which places are wanted, not what is in them
       resetSample: () => set((s) => { const next = seed(todayISO()); return { ...next, settings: { ...next.settings, ...kept(s.settings) } }; }),
       clearAll: () => set((s) => { const next = empty(); return { ...next, settings: { ...next.settings, ...kept(s.settings) } }; }),
+      restoreBackup: (data) => {
+        const before = dataOf(get()), next = backupData(data), { theme: _theirs, ...settings } = next.settings, theme = before.settings.theme;
+        // the theme belongs to the device, so it is this device's whatever the backup had
+        set({ ...next, settings: { ...settings, ...(theme !== undefined ? { theme } : {}) } });
+        return before;
+      },
+      undoRestore: (before) => set(dataOf(before)),
       setSampleVoyage: (miles, days) => set((s) => {
         const log = sampleLog(miles, days, todayISO());
         return { log, boat: clampStage(s.boat, milesLogged(log), daysAtSea(log)) };
@@ -837,31 +914,9 @@ export const useCompass = create<CompassStore>()(
       name: 'compass:v1',
       version: 1,
       storage: createJSONStorage(safeStorage),
-      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, routines, workouts, bests, measures, interests, headlines, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, routines, workouts, bests, measures, interests, headlines, boat, settings, sample }),
+      partialize: (state) => dataOf(state),
       // anything unreadable falls back to the sample, so a bad save can never stop the app opening
-      merge: (saved, current) => {
-        const s = saved as Partial<CompassData> | undefined;
-        if (!s || !Array.isArray(s.tasks) || !Array.isArray(s.log) || !s.boat || !s.settings) return current;
-        // a save from before habits existed gets the sample habits if it is still the sample, and none if it is the user's own
-        const fresh = s.sample !== false, habits = Array.isArray(s.habits) ? s.habits : fresh ? current.habits : [], ticks = Array.isArray(s.ticks) ? s.ticks : fresh ? current.ticks : [];
-        return { ...current, ...s, habits, ticks, sessions: Array.isArray(s.sessions) ? s.sessions : [], sessionsMade: Array.isArray(s.sessionsMade) ? s.sessionsMade : [], reviews: Array.isArray(s.reviews) ? s.reviews : fresh ? current.reviews : [], pages: Array.isArray(s.pages) ? records<Page>(s.pages, 'id', 'title').map(storedPage) : fresh ? current.pages : [],
-          // a save from before links, areas and levels existed starts with none set, and the four starting areas
-          // and nothing in those lists is taken on trust: a save can be edited by hand, and a link is only a link if it is a web address
-          links: storedLinks(s.links), areas: storedAreas(s.areas), levels: s.levels && typeof s.levels === 'object' && !Array.isArray(s.levels) ? s.levels : {},
-          feedback: storedFeedback(s.feedback),
-          // a save from before interests and headlines has none of either
-          interests: storedInterests(s.interests), headlines: storedHeadlines(s.headlines),
-          // a save from before Fitness gets the sample's training week if it is still the sample, and none if it is the user's own;
-          // what a save does hold is kept only where it is a record
-          routines: s.routines === undefined ? (fresh ? current.routines : []) : storedRoutines(s.routines),
-          workouts: s.workouts === undefined ? (fresh ? current.workouts : []) : storedWorkouts(s.workouts),
-          bests: s.bests === undefined ? (fresh ? current.bests : []) : storedBests(s.bests),
-          measures: s.measures === undefined ? (fresh ? current.measures : []) : storedMeasures(s.measures),
-          // a link is only kept if it is a web address, wherever it is kept, and a topic only if it is words
-          tasks: records<Task>(s.tasks, 'id', 'title', 'date').map(storedWithLink),
-          subjects: Array.isArray(s.subjects) && s.subjects.length ? records<Subject>(s.subjects, 'id', 'name').map(storedSubject) : current.subjects,
-          assessments: Array.isArray(s.assessments) ? records<Assessment>(s.assessments, 'id', 'title', 'date').map(storedWithLink) : current.assessments };
-      },
+      merge: (saved, current) => openSave(saved, current),
     },
   ),
 );

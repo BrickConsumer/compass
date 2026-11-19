@@ -11,6 +11,8 @@ export type Loose = Record<string, unknown>;
 export const objects = (value: unknown): Loose[] => (Array.isArray(value) ? value.filter((x): x is Loose => !!x && typeof x === 'object' && !Array.isArray(x)) : []);
 /** A saved value if it is words, and nothing if it is anything else. */
 export const words = (value: unknown): string => (typeof value === 'string' ? value : '');
+/** A saved value if it is a time that can be read, such as when a task was done, and nothing if it is anything else. */
+export const time = (value: unknown): string => (typeof value === 'string' && !Number.isNaN(Date.parse(value)) ? value : '');
 /** The first of each id, so nothing can be found twice. */
 export function once<T extends { id: string }>(list: T[]): T[] {
   const seen = new Set<string>();

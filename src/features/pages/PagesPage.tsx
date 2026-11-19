@@ -117,6 +117,9 @@ export function PagesPage({ headlines = false }: { headlines?: boolean }) {
     if (inside && inside !== before) document.querySelector<HTMLElement>('[data-interest-name]')?.focus();
     else if (!inside && before) (document.querySelector<HTMLElement>(`li[data-interest="${CSS.escape(before)}"] button`) ?? document.querySelector<HTMLElement>('[data-interests-title]'))?.focus();
   }, [inside]);
+  // an interest found by search comes here asking to be chosen. The asking is used once.
+  const askedInterest = (location.state as { interest?: string } | null)?.interest;
+  useEffect(() => { if (!askedInterest) return; setInside(askedInterest); navigate(location.pathname, { replace: true, state: null }); }, [askedInterest, navigate, location.pathname]);
   // choosing an interest shows its pages, and beside them one of its own: not the headlines, or a page it does not hold
   const choose = (id: string) => { setInside(id); if (headlines || (chosen && chosen.interestId !== id)) navigate('/pages'); };
 

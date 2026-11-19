@@ -65,7 +65,8 @@ export function sampleLog(miles: number, days: number, today: ISODate): LogEntry
 
 /** Sample pages, one of each kind, last changed in the order they are listed. Every change is before today, so a page changed now comes first. */
 export function samplePages(today: ISODate): Page[] {
-  const stamp = (daysAgo: number, hour: number) => `${addDaysISO(today, -daysAgo)}T${String(hour).padStart(2, '0')}:00:00.000Z`;
+  // an hour of that day by this device's clock, so that it is before now wherever in the world "today" has just begun
+  const stamp = (daysAgo: number, hour: number) => { const [y, m, d] = addDaysISO(today, -daysAgo).split('-').map(Number); return new Date(y!, m! - 1, d!, hour).toISOString(); };
   const list = (id: string, items: [string, boolean][]) => items.map(([text, done], i) => ({ id: `${id}-${i + 1}`, text, done }));
   return [
     { id: 'pg-goal', title: 'A B in Mathematics', kind: 'goal', subjectId: 'mat', aimFor: addDaysISO(today, 24), createdAt: stamp(9, 17), updatedAt: stamp(1, 20),
