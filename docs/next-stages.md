@@ -125,8 +125,8 @@ It is five pieces, each designed and reviewed on its own before it is built:
 | Piece | What it holds | State |
 |---|---|---|
 | 1. Home and the Weekly review | A greeting, a long-term goal and links on Home; ratings and subject levels in the review, which then decide what Home puts first | **Built on 17 November** on `home-review-additions`, to [home-and-review-additions-spec.md](home-and-review-additions-spec.md). Committed, with a pull request against `boat-fittings`. Josh and Aditya have not reviewed it. |
-| 2. Study detail | Current topic, teacher feedback, a revision checklist, past papers, links on tasks and assessments, preparation tasks | Not designed |
-| 3. Fitness | The training week, a workout log and measurements, in a place that is switched on | Not designed |
+| 2. Study detail | A subject's current topic, preparation tasks and a link on an assessment, a link on a task, teacher feedback, the subject's own pages and its links | **Built on 18 November** on `study-detail`, to [study-detail-spec.md](study-detail-spec.md). Oliver chose the approach and seven decisions from the mock at https://claude.ai/artifact/K3yezjZJ4BZDaCC9FQk4Bs (private; share it from its Share menu). Josh and Aditya have not reviewed it. |
+| 3. Fitness | The training week, a record of what was done, and bests and measures kept by hand, in a place that is switched on | **Built on 19 November** on `fitness`, to [fitness-spec.md](fitness-spec.md), which Oliver approved the same day. Oliver chose the approach and seven decisions from the mock at https://claude.ai/artifact/4Fe74TZBYbNVKJg9YXfXcy (private; share it from its Share menu). Josh and Aditya have not reviewed it. |
 | 4. Interests | Investing and Law Journey as folders in My pages with ready-made forms, and saved headlines on Home | Not designed |
 | 5. Search and backup | Search across everything, and a full export and import | Not designed |
 
@@ -135,10 +135,22 @@ It is five pieces, each designed and reviewed on its own before it is built:
 - Fitness is a place of its own, off until it is switched on. Investing and Law Journey are interests in My pages, not places.
 - The green and cream palette and the emoji icons do not come in.
 - In piece 1: the goal sits on the boat's plate as "Bound for"; a greeting shows once a name is set; links sit in the rail on wide screens and at the foot of Home on narrow ones; a High subject is named on Home and comes first in each list and in Study; each person names their own rating areas; and the review keeps its three questions.
+- In piece 2: a subject lists the My pages that carry it and keeps no material of its own, so a revision checklist or a list of past papers is a page; a preparation task is an ordinary task that belongs to an assessment; what feedback says to work on can become a task; and a subject's page runs assessments, tasks, feedback, pages, links, sessions, notes.
+
+**Decided by Oliver on 18 and 19 November, for piece 3:**
+
+- A routine is a checklist written once, and a session is a dated copy of it to tick off, with a note. Nothing is kept as numbers, charted or worked out.
+- A finished session logs 2 nautical miles, for one session a day. A missed session stays unticked and nothing else happens.
+- Fitness is a sixth place in the phone's bar while it is switched on. On Home, a session's name opens it and its ring finishes it as it stands.
+- A rest day says so and offers every routine, the one not done for longest first.
+- The student adds each measure, and none is suggested. A measure has no target, colour or chart, and there is no food diary.
+- With Fitness on, the Weekly review gains one figure: sessions done out of sessions set.
 
 **Still open:**
 
 - The nine smaller calls in the specification's section 12. The largest: the sample shows nothing new on Home, Study can change this week's level, and levels are kept week by week.
+- The ten smaller calls in the Study detail specification's section 13, and the build's own in its section 16. The largest: a preparation task is listed under its assessment and not again under "Tasks", and a subject's links are changed in place on its page.
+- The smaller calls in the Fitness specification's section 16, and the build's own in its section 19. The largest: a session whose day has passed can still be logged, a session's miles are dated the day it is finished, and a best or a measure keeps only the value before.
 - Headlines that refresh by themselves. That would be the first time Compass talks to an outside service, so it gets its own decision, with piece 4 or after it.
 
 The mock shows where training (piece 3) and headlines (piece 4) will sit on Home, so Home's layout does not have to be reopened for them.

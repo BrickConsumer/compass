@@ -43,6 +43,9 @@ export function storedLinks(value: unknown): QuickLink[] {
   return links;
 }
 
+/** One link in a save, such as a task's, as Compass would have saved it: a web address, or nothing at all. */
+export const storedLink = (value: unknown): string | undefined => (typeof value === 'string' ? cleanUrl(value) ?? undefined : undefined);
+
 /** Links whose name holds what was typed, in any case. Nothing typed finds nothing. */
 export function searchLinks(links: QuickLink[], query: string): QuickLink[] {
   const q = query.trim().toLowerCase();

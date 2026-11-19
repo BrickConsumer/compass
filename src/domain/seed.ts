@@ -1,7 +1,7 @@
 import { addDaysISO, weekdayOf, weekStartOf } from './dates';
 import { isDue, tickKey } from './habits';
 import { DEFAULT_AREAS } from './ratings';
-import type { Assessment, Boat, Habit, ISODate, Levels, LogEntry, Page, QuickLink, RatingArea, Review, Session, Settings, Subject, Task } from './types';
+import type { Assessment, Best, Boat, Feedback, Habit, ISODate, Levels, LogEntry, Measure, Page, QuickLink, RatingArea, Review, Routine, Session, Settings, Subject, Task, Workout } from './types';
 
 export interface CompassData {
   subjects: Subject[];
@@ -25,6 +25,15 @@ export interface CompassData {
   areas: RatingArea[];
   /** Subject levels, week by week: see `levelsFor`. */
   levels: Levels;
+  /** What teachers have said, subject by subject. */
+  feedback: Feedback[];
+  /** Training routines, in the order they were made. Shown only while Fitness is switched on, and kept either way. */
+  routines: Routine[];
+  /** Training sessions started or finished. A week's set sessions are not kept: they are worked out from the routines. */
+  workouts: Workout[];
+  /** Bests and measures, kept by hand, in the order they were added. */
+  bests: Best[];
+  measures: Measure[];
   boat: Boat;
   settings: Settings;
   /** True while the data is the generated sample. */
@@ -95,6 +104,37 @@ export function sampleHabits(today: ISODate): { habits: Habit[]; ticks: string[]
 }
 
 /**
+ * A sample training week, placed around today as the tasks are: Intervals is always today, Strength two days either
+ * side of it, and a long run three days on. Every session is finished and has had its miles, so none can earn and
+ * the sample's log stays the 412 miles it has always been. The one measure is a resting heart rate: nothing about
+ * weight or food.
+ */
+export function sampleFitness(today: ISODate): Pick<CompassData, 'routines' | 'workouts' | 'bests' | 'measures'> {
+  const d = (offset: number) => addDaysISO(today, offset), wd = (offset: number) => weekdayOf(d(offset)), createdOn = d(-28);
+  const routine = (id: string, name: string, days: number[], lines: string[]): Routine => ({ id, name, days: [...days].sort((a, b) => a - b), lines: lines.map((text, i) => ({ id: `${id}-${i + 1}`, text })), createdOn });
+  const strength = routine('rt-strength', 'Strength', [wd(-2), wd(2)], ['Squat, 3 × 5 at 60 kg', 'Bench press, 3 × 8 at 40 kg', 'Row, 3 × 8 at 35 kg', 'Overhead press, 3 × 6 at 25 kg', 'Plank, 3 × 40 seconds']);
+  const intervals = routine('rt-intervals', 'Intervals', [wd(0)], ['Warm up, 10 minutes easy', 'Drills: high knees and strides', '6 × 400 m, 90 seconds rest', 'Cool down, 10 minutes', 'Stretch calves and hips', 'Plank, 3 × 40 seconds']);
+  const long = routine('rt-long', 'Long run', [wd(3)], ['Easy pace, 8 to 10 km', 'Walk for 5 minutes', 'Stretch']);
+  const stretch = routine('rt-stretch', 'Stretch', [], ['Hips', 'Hamstrings', 'Calves', 'Shoulders']);
+  const done = (id: string, from: Routine, offset: number, note: string, left = 0): Workout => ({ id, routineId: from.id, name: from.name, date: d(offset), lines: from.lines.map((l, i) => ({ ...l, done: i < from.lines.length - left })), note, finishedAt: `${d(offset)}T18:00:00.000Z`, milesAwarded: true });
+  return {
+    routines: [strength, intervals, long, stretch],
+    workouts: [
+      done('wk-1', strength, -2, 'Squat felt easier than last week.'),
+      done('wk-2', long, -4, '9 km by the river. Legs heavy at the start.'),
+      done('wk-3', intervals, -7, 'Cut the last rep short.', 1),
+      done('wk-4', stretch, -9, ''),
+    ],
+    bests: [
+      { id: 'bs-1', name: '5 km', value: '24:10', date: d(-11), was: { value: '24:52', date: d(-39) } },
+      { id: 'bs-2', name: 'Squat', value: '60 kg × 5', date: d(-2), was: { value: '57.5 kg × 5', date: d(-16) } },
+      { id: 'bs-3', name: 'Plank', value: '1:30', date: d(-16) },
+    ],
+    measures: [{ id: 'ms-1', name: 'Resting heart rate', unit: 'bpm', value: '58', date: d(-3), was: { value: '61', date: d(-17) } }],
+  };
+}
+
+/**
  * Sample records, placed around today so the first run shows a week in progress.
  * Subjects, tasks and assessments are the examples named in the brief.
  */
@@ -133,10 +173,13 @@ export function seed(today: ISODate): CompassData {
   ];
   // last week's review, already saved, so the list of earlier reviews has something in it
   const reviews: Review[] = [{ weekStart: addDaysISO(week, -7), wentWell: 'Kept up with Biology revision most days.', gotInWay: 'Left the Economics case study too late.', change: 'Start the Economics essay on Monday.', savedAt: at(addDaysISO(week, -1), 18), ratings: { 'area-study': 7, 'area-health': 6, 'area-sleep': 5, 'area-discipline': 7 } }];
-  return { subjects: SUBJECTS, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), sessions: [], sessionsMade: [], reviews, pages: samplePages(today), links: [], areas: DEFAULT_AREAS, levels: {}, boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
+  // the sample shows what a subject's page can hold: Biology has a topic and one piece of feedback. No task is touched by either
+  const subjects = SUBJECTS.map((s) => (s.id === 'bio' ? { ...s, topic: 'Cell structure and transport' } : s));
+  const feedback: Feedback[] = [{ id: 'fb-1', subjectId: 'bio', date: d(-5), about: 'Practical report', words: 'A clear method. Explain what the results mean, not only what they were.', work: 'Say what each result means' }];
+  return { subjects, feedback, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), ...sampleFitness(today), sessions: [], sessionsMade: [], reviews, pages: samplePages(today), links: [], areas: DEFAULT_AREAS, levels: {}, boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
 }
 
 /** A clean start: the same subjects, nothing else, and the first boat. */
 export function empty(): CompassData {
-  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], pages: [], links: [], areas: DEFAULT_AREAS, levels: {}, boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
+  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], pages: [], feedback: [], routines: [], workouts: [], bests: [], measures: [], links: [], areas: DEFAULT_AREAS, levels: {}, boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
 }

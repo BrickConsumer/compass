@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { addDaysISO, dayOfMonth, isoWeek, longDate, shortDay, toISO, weekDays, weekdayShort, weekLabel, weekStartOf } from '../../domain/dates';
+import { sessionCount, sessionsForWeek } from '../../domain/fitness';
 import { isBlank, reviewAward, reviewExcerpt, weekSummary } from '../../domain/review';
 import { KINDS } from '../../domain/study';
 import { tasksForWeek } from '../../domain/tasks';
@@ -27,9 +28,9 @@ const QUESTIONS: { key: 'wentWell' | 'gotInWay' | 'change'; label: string }[] = 
 ];
 
 /** One figure of the week: a large number, what it is out of, and a line beneath. */
-function Figure({ label, value, of, children }: { label: string; value: string; of?: string; children?: React.ReactNode }) {
+function Figure({ label, value, of, mark, children }: { label: string; value: string; of?: string; mark?: string; children?: React.ReactNode }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-0" data-figure={mark}>
       <dt className="text-[13px] font-semibold text-text-muted">{label}</dt>
       <dd className="mt-0.5">
         <span className="font-display text-[32px] font-medium leading-[1.1]">{value}</span>{of && <span className="ml-1.5 text-[14.5px] text-text-muted">{of}</span>}
@@ -47,6 +48,9 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
   const [editing, setEditing] = useState<Editing | null>(null);
   const sum = weekSummary({ tasks, habits, ticks, log, assessments }, week, today), days = weekDays(week), after = addDaysISO(week, 7), priorities = tasksForWeek(tasks, after);
   const areas = useCompass((s) => s.areas);
+  // with Fitness on, the week's sessions are counted from the same rows the place lists. With it off there is no such figure
+  const fitness = useCompass((s) => s.settings.fitness === true), routines = useCompass((s) => s.routines), workouts = useCompass((s) => s.workouts);
+  const training = fitness ? sessionCount(sessionsForWeek(routines, workouts, week, today)) : null;
   const blank = !review || isBlank(review, areas), saved = !blank && !!review.savedAt, earns = !review?.savedAt && !!reviewAward(week, log, today, startsOn);
   const title = week === thisWeek ? 'This week' : week === addDaysISO(thisWeek, -7) ? 'Last week' : `Week ${isoWeek(week)}`;
 
@@ -58,13 +62,19 @@ function ReviewSheet({ week, thisWeek }: { week: ISODate; thisWeek: ISODate }) {
           <p className={aside} data-review-state>{saved ? `Saved ${shortDay(toISO(new Date(review.savedAt!)))}` : 'Not saved yet'}</p>
         </div>
 
-        <dl className="mt-4 grid grid-cols-3 gap-x-5 max-sm:gap-x-3" data-figures>
+        {/* four figures are two rows of two on a phone, where four across would crowd the numbers */}
+        <dl className={`mt-4 grid gap-x-5 max-sm:gap-x-3 ${training ? 'grid-cols-2 gap-y-5 sm:grid-cols-4' : 'grid-cols-3'}`} data-figures>
           <Figure label="Tasks done" value={String(sum.tasks.done)} of={sum.tasks.total ? `of ${sum.tasks.total}` : undefined}>
             {sum.tasks.total ? <SegmentedProgress done={sum.tasks.done} total={sum.tasks.total} fill className="mt-1 max-w-[220px]" /> : 'None planned'}
           </Figure>
           <Figure label="Habits ticked" value={String(sum.habitTotal.done)} of={sum.habitTotal.total ? `of ${sum.habitTotal.total}` : undefined}>
             {sum.habitTotal.total ? <SegmentedProgress done={sum.habitTotal.done} total={sum.habitTotal.total} fill className="mt-1 max-w-[220px]" /> : 'None due'}
           </Figure>
+          {training && (
+            <Figure mark="training" label="Training sessions" value={String(training.done)} of={training.total ? `of ${training.total}` : undefined}>
+              {training.total ? <SegmentedProgress done={training.done} total={training.total} fill className="mt-1 max-w-[220px]" /> : 'None set'}
+            </Figure>
+          )}
           <Figure label="Miles logged" value={sum.miles.toLocaleString('en-GB')}>{sum.daysAtSea === 1 ? '1 day at sea' : `${sum.daysAtSea} days at sea`}</Figure>
         </dl>
       </div>

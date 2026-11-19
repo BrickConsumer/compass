@@ -3,6 +3,7 @@ import { longDate } from '../../domain/dates';
 import { habitsForDay, isTicked } from '../../domain/habits';
 import type { ISODate } from '../../domain/types';
 import { useCompass } from '../../state/store';
+import { TrainingToday, useTraining } from '../fitness/TrainingToday';
 import { HabitTick } from './HabitTick';
 
 /** Small counts are spelled out, as the voice asks. */
@@ -20,12 +21,13 @@ interface Props {
 /**
  * The selected day's habits on Home. Where they sit depends on the room: a line of its own on wide screens,
  * the foot of the day's sheet on narrower ones. A day still to come shows its habits but they cannot be ticked.
- * A day with no habits shows nothing at all.
+ * With Fitness switched on, the day's training follows them: at the end of the line, or as a part of its own under
+ * the habits. A day with no habits and no training shows nothing at all.
  */
 export function HabitsToday({ date, today, layout, className = '' }: Props) {
   const habits = useCompass((s) => s.habits), ticks = useCompass((s) => s.ticks), toggle = useCompass((s) => s.toggleHabit);
-  const due = habitsForDay(habits, date);
-  if (due.length === 0) return null;
+  const due = habitsForDay(habits, date), training = useTraining(date, today);
+  if (due.length === 0 && training.length === 0) return null;
   const done = due.filter((h) => isTicked(ticks, h.id, date)).length, ahead = date > today, more = due.length - SHOWN;
   const count = done === due.length ? (due.length === 1 ? 'Habits, done' : `Habits, all ${WORDS[due.length] ?? due.length} done`) : `Habits, ${done} of ${due.length}`;
   const items = due.slice(0, SHOWN).map((h) => {
@@ -42,16 +44,22 @@ export function HabitsToday({ date, today, layout, className = '' }: Props) {
 
   if (layout === 'line') {
     return (
-      <section aria-label="Habits" data-habits="line" className={`flex flex-wrap items-center gap-x-7 border-y border-line px-5 py-1.5 ${className}`}>
-        <p className={`${head} mr-1`} aria-live="polite">{count}</p>
-        {items}{rest}
+      // the line keeps its mark whatever it holds, and is named for what is on it
+      <section aria-label={due.length === 0 ? 'Training' : training.length ? 'Habits and training' : 'Habits'} data-habits="line" className={`flex flex-wrap items-center gap-x-7 border-y border-line px-5 py-1.5 ${className}`}>
+        {due.length > 0 && <><p className={`${head} mr-1`} aria-live="polite">{count}</p>{items}{rest}</>}
+        <TrainingToday layout="line" date={date} today={today} alone={due.length === 0} />
       </section>
     );
   }
   return (
-    <section aria-label="Habits" data-habits="foot" className={`mt-3.5 border-t border-line pt-3.5 ${className}`}>
-      <p className={head} aria-live="polite">{count}</p>
-      <div className="mt-1 grid grid-cols-2 gap-x-4">{items}{rest}</div>
-    </section>
+    <>
+      {due.length > 0 && (
+        <section aria-label="Habits" data-habits="foot" className={`mt-3.5 border-t border-line pt-3.5 ${className}`}>
+          <p className={head} aria-live="polite">{count}</p>
+          <div className="mt-1 grid grid-cols-2 gap-x-4">{items}{rest}</div>
+        </section>
+      )}
+      <TrainingToday layout="foot" date={date} today={today} className={className} />
+    </>
   );
 }

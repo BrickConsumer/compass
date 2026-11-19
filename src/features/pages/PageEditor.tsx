@@ -11,9 +11,9 @@ import { toast } from '../../ui/Toast';
 const ICONS: Record<PageKind, LucideIcon> = { note: PenLine, checklist: ListChecks, goal: Target, reading: BookMarked, project: Shapes };
 
 /** The mark for a kind of page. Decorative: the kind is always named or plain from the page beside it. */
-export function KindIcon({ kind, size = 18 }: { kind: PageKind; size?: number }) {
+export function KindIcon({ kind, size = 18, tone = 'text-text-muted' }: { kind: PageKind; size?: number; tone?: string }) {
   const Icon = ICONS[kind];
-  return <Icon size={size} strokeWidth={size > 20 ? 1.9 : 2} aria-hidden="true" className="shrink-0 text-text-muted" />;
+  return <Icon size={size} strokeWidth={size > 20 ? 1.9 : 2} aria-hidden="true" className={`shrink-0 ${tone}`} />;
 }
 
 const label = 'flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted';
