@@ -56,7 +56,7 @@ export function DaySheet({ date, today, tasks, subjects, assessment, carried, on
       {isToday && carried.length > 0 && (
         <p className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-md bg-note px-3 py-1 text-[13.5px] text-on-note">
           <span>{carried.length === 1 ? `1 task from ${weekdayLong(carried[0]!.date)} is still open.` : sameDay ? `${carried.length} tasks from ${weekdayLong(carried[0]!.date)} are still open.` : `${carried.length} tasks from earlier this week are still open.`}</span>
-          <button type="button" onClick={moveCarried} className="min-h-9 cursor-pointer rounded-[9px] font-semibold underline underline-offset-[3px]">{carried.length === 1 ? 'Move it to today' : 'Move them to today'}</button>
+          <button type="button" onClick={moveCarried} className="min-h-11 cursor-pointer rounded-[9px] font-semibold underline underline-offset-[3px] sm:min-h-9">{carried.length === 1 ? 'Move it to today' : 'Move them to today'}</button>
         </p>
       )}
       {p.total === 0 && <p className="mt-4 text-pretty text-[15px] text-text-muted">Nothing planned for {isToday ? 'today' : weekdayLong(date)}. Add a task, or spend the day in port.</p>}

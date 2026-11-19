@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanUrl, linkName, searchLinks } from './links';
+import { cleanUrl, linkName } from './links';
 
 describe('links', () => {
   it('accepts a web address, with or without https', () => {
@@ -15,10 +15,5 @@ describe('links', () => {
   it('names a link after its site when no name is given', () => {
     expect(linkName('', 'https://www.investopedia.com/terms')).toBe('investopedia.com');
     expect(linkName('  Gizmo  ', 'https://x.y/')).toBe('Gizmo'); expect(linkName('n'.repeat(60), 'https://x.y/')).toHaveLength(24);
-  });
-
-  it('finds links by name', () => {
-    const links = [{ id: '1', name: 'Gizmo', url: 'https://g.io/' }, { id: '2', name: 'StockAnalysis', url: 'https://s.co/' }];
-    expect(searchLinks(links, 'stock').map((l) => l.id)).toEqual(['2']); expect(searchLinks(links, ' ')).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
 import { THEMES } from '../../domain/theme';
 import { daysAtSea, milesLogged } from '../../domain/voyage';
@@ -16,6 +16,10 @@ const button = 'min-h-11 cursor-pointer rounded-md px-4 text-[14.5px] font-semib
 /** A small, real settings page: the week, the sea, and the sample data. */
 export function SettingsPage() {
   const s = useCompass(), [confirming, setConfirming] = useState(false);
+  // The question takes the place of the button that asked it. The keyboard goes to the safe answer, and comes back
+  // to the button after either one, so it never falls to the page.
+  const clear = useRef<HTMLButtonElement>(null), asked = useRef(false);
+  useEffect(() => { if (confirming) asked.current = true; else if (asked.current) { asked.current = false; clear.current?.focus(); } }, [confirming]);
   const [miles, setMiles] = useState(() => milesLogged(s.log)), [days, setDays] = useState(() => daysAtSea(s.log));
   // "Add a link" elsewhere comes here as /settings#links: show that part, ready to type a new link's name
   const { hash } = useLocation();
@@ -104,8 +108,8 @@ export function SettingsPage() {
           <button type="button" className={button} onClick={() => { s.resetSample(); setMiles(412); setDays(23); toast('Sample data restored.'); }}>Reset the sample data</button>
           {confirming
             ? <><button type="button" className="min-h-11 cursor-pointer rounded-md bg-attention px-4 text-[14.5px] font-semibold text-on-attention" onClick={() => { s.clearAll(); setConfirming(false); setMiles(0); setDays(0); toast('Everything cleared.'); }}>Yes, clear everything</button>
-                <button type="button" className={button} onClick={() => setConfirming(false)}>Keep it</button></>
-            : <button type="button" className={`${button} text-attention`} onClick={() => setConfirming(true)}>Clear everything</button>}
+                <button type="button" autoFocus className={button} onClick={() => setConfirming(false)}>Keep it</button></>
+            : <button type="button" ref={clear} className={`${button} text-attention`} onClick={() => setConfirming(true)}>Clear everything</button>}
         </div>
       </section>
 

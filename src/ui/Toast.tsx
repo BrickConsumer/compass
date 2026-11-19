@@ -22,7 +22,7 @@ function ToastItem({ toast: t }: { toast: Toast }) {
       <span>{t.message}</span>
       {t.action && (
         <button type="button" onClick={() => { t.action!.run(); dismiss(t.id); }}
-          className="press min-h-9 cursor-pointer rounded-[9px] px-3 font-semibold text-inverse-highlight outline-focus-inverse hover:bg-surface-inverse-well">
+          className="press min-h-11 cursor-pointer rounded-[9px] px-3 font-semibold text-inverse-highlight outline-focus-inverse hover:bg-surface-inverse-well sm:min-h-9">
           {t.action.label}
         </button>
       )}

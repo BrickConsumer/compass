@@ -79,7 +79,7 @@ export function AssessmentEditor({ editing, today, onClose }: { editing: Editing
     if (gone) toast('Assessment deleted.', { label: 'Undo', run: () => useCompass.getState().restoreAssessment(gone) });
   };
   return (
-    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-assessment="${CSS.escape(existing.id)}"]` : '[data-add-assessment]'} title={isNew ? 'New assessment' : 'Edit assessment'} labelId="assessment-editor-title" onClose={onClose}>
+    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-assessment="${CSS.escape(existing.id)}"]` : '[data-add-assessment]'} title={isNew ? 'New assessment' : 'Edit assessment'} labelId="assessment-editor-title" onClose={onClose} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew || store.addAssessment(draft)) close(); }}>
           <label className={label}>Title
@@ -130,7 +130,7 @@ export function SessionEditor({ editing, onClose }: { editing: EditingSession | 
     if (gone) toast('Session ended. Its tasks are kept.', { label: 'Undo', run: () => useCompass.getState().restoreSession(gone) });
   };
   return (
-    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-session="${CSS.escape(existing.id)}"]` : '[data-add-session]'} title={isNew ? 'New session' : 'Edit session'} labelId="session-editor-title" onClose={onClose}>
+    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-session="${CSS.escape(existing.id)}"]` : '[data-add-session]'} title={isNew ? 'New session' : 'Edit session'} labelId="session-editor-title" onClose={onClose} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew) close(); else if (store.addSession({ subjectId, ...draft })) close(); else setTried(true); }}>
           <label className={label}>Name

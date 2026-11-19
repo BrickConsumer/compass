@@ -119,14 +119,16 @@ function HeadlineEditor({ editing, today, onClose }: { editing: EditingHeadline 
     if (gone) toast('Headline deleted.', { label: 'Undo', run: () => useCompass.getState().restoreHeadline(gone.headline, gone.index) });
   };
   return (
-    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-headline="${CSS.escape(existing.id)}"]` : '[data-add-headline]'} title={isNew ? 'Save a headline' : 'Edit headline'} labelId="headline-editor-title" onClose={onClose}>
+    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-headline="${CSS.escape(existing.id)}"]` : '[data-add-headline]'} title={isNew ? 'Save a headline' : 'Edit headline'} labelId="headline-editor-title" onClose={onClose} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); save(draft, close); }}>
           <label className={label}>Headline
             <DraftInput required maxLength={INTEREST_LIMITS.headline} value={value.title} onSave={(title) => { change({ title }); }} className={field} />
           </label>
           {/* Enter saves a new headline from any of its boxes, this one included, once the address is one */}
-          <LinkField label="Address" value={value.url} onCommit={address} onEnter={isNew ? (url) => save({ ...draft, url }, close) : undefined} className={field} />
+          <LinkField label="Address" value={value.url} onCommit={address} onEnter={isNew ? (url) => save({ ...draft, url }, close) : undefined}
+            // a new headline's button is ready as soon as the address is one, without the box having to be left first
+            onType={isNew ? (url) => setDraft((d) => ({ ...d, url })) : undefined} className={field} />
           <label className={label}>Source
             <DraftInput maxLength={INTEREST_LIMITS.source} value={existing ? existing.source : draft.source} onSave={(source) => { change({ source }); }} className={field} />
             <span className="font-normal">Where it is from. Left empty, it is the name of the site.</span>

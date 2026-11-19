@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Check, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const tool = 'grid size-11 cursor-pointer place-items-center rounded-[9px] text-text-muted hover:bg-surface-well disabled:cursor-default disabled:text-faint disabled:hover:bg-transparent sm:size-9';
 
@@ -27,13 +27,23 @@ interface RowProps {
  * Selecting the words edits them in place, with buttons to move the line or delete it.
  */
 export function ListRow({ item, first, last, editing, onEditing, onToggle, onChange, onMove, onDelete, maxLength = 140, noun = 'item', quickDelete = true }: RowProps) {
-  const [draft, setDraft] = useState(item.text);
+  const [draft, setDraft] = useState(item.text), row = useRef<HTMLLIElement>(null), back = useRef(false);
   const commit = () => { onChange(item.id, draft); onEditing(null); };
-  const remove = () => { onDelete(item.id); onEditing(null); };
+  // When the words are put away with a key, the box goes and the line's button is drawn in its place. The keyboard
+  // goes to that button, and does not fall to the page. Put away by pressing somewhere else, it follows the press.
+  useEffect(() => { if (!editing && back.current) { back.current = false; row.current?.querySelector<HTMLElement>(':scope > button')?.focus(); } }, [editing]);
+  /** Delete the line. `byKey` says the keyboard did it, and the keyboard then needs somewhere to be. */
+  const remove = (byKey: boolean) => {
+    // the line that takes this one's place, or the one before it, or the box that adds one
+    const li = row.current, next = (li?.nextElementSibling ?? li?.previousElementSibling)?.querySelector<HTMLElement>(':scope > button') ?? li?.closest('ul')?.parentElement?.querySelector<HTMLElement>('[data-add-item]');
+    onDelete(item.id); onEditing(null);
+    // a press with the mouse leaves the keyboard where it was: moved, the next line would be ringed as if a key had been pressed there
+    if (byKey) next?.focus();
+  };
   // the buttons beside the words must not take focus from them, or leaving the box would save and close before the press landed
   const keep = (e: React.MouseEvent) => e.preventDefault();
   return (
-    <li data-item={item.id} data-done={onToggle ? !!item.done : undefined} data-editing={editing || undefined}
+    <li ref={row} data-item={item.id} data-done={onToggle ? !!item.done : undefined} data-editing={editing || undefined}
       onBlur={editing ? (e) => { if (!e.currentTarget.contains(e.relatedTarget)) commit(); } : undefined}
       className={`grid min-h-[46px] items-center gap-x-1 border-t border-line first:border-t-0 data-[editing=true]:bg-surface-well max-sm:min-h-[54px] ${onToggle ? 'grid-cols-[auto_minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)_auto]'}`}>
       {onToggle && (
@@ -47,17 +57,23 @@ export function ListRow({ item, first, last, editing, onEditing, onToggle, onCha
         <>
           <input autoFocus value={draft} maxLength={maxLength} aria-label={`Change ${item.text}`} enterKeyHint="done" onChange={(e) => setDraft(e.target.value)}
             // Escape leaves the words as they were. Inside an editor it must not also close the editor around it.
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } else if (e.key === 'Escape') { e.preventDefault(); onEditing(null); } }}
+            // a key held down repeats itself: Enter held would put the words away and open them again, over and over
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (e.repeat) return; back.current = true; commit(); } else if (e.key === 'Escape') { e.preventDefault(); back.current = true; onEditing(null); } }}
             className="-ml-2 h-11 min-w-0 rounded-[9px] bg-surface-sheet pl-2 text-[15.5px] font-medium outline-offset-0 max-sm:text-[16px]" />
           <span className="flex items-center">
             <button type="button" className={tool} disabled={first} onMouseDown={keep} onClick={() => onMove(item.id, -1)} aria-label="Move up"><ArrowUp size={16} aria-hidden="true" /></button>
             <button type="button" className={tool} disabled={last} onMouseDown={keep} onClick={() => onMove(item.id, 1)} aria-label="Move down"><ArrowDown size={16} aria-hidden="true" /></button>
-            <button type="button" className={`${tool} text-attention`} onMouseDown={keep} onClick={remove} aria-label={`Delete ${noun}`}><Trash2 size={16} aria-hidden="true" /></button>
+            <button type="button" className={`${tool} text-attention`} onMouseDown={keep} onClick={(e) => remove(e.detail === 0)} aria-label={`Delete ${noun}`}><Trash2 size={16} aria-hidden="true" /></button>
           </span>
         </>
       ) : (
         <button type="button" onClick={() => { setDraft(item.text); onEditing(item.id); }} aria-keyshortcuts={[onToggle ? 'Space' : '', quickDelete ? 'Delete' : ''].filter(Boolean).join(' ') || undefined}
-          onKeyDown={(e) => { if (e.key === ' ' && onToggle) { e.preventDefault(); onToggle(item.id); } else if (quickDelete && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); remove(); } }}
+          // A key held down repeats itself, and each line that moves up takes the keyboard. So a repeat does nothing:
+          // Delete held would otherwise take line after line, and Enter held would open and shut the words.
+          onKeyDown={(e) => {
+            if (e.repeat && (e.key === 'Enter' || e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); return; }
+            if (e.key === ' ' && onToggle) { e.preventDefault(); onToggle(item.id); } else if (quickDelete && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); remove(true); }
+          }}
           className={`col-span-2 flex min-h-11 min-w-0 cursor-pointer items-center rounded-[9px] text-left text-[15.5px] font-medium outline-offset-0 max-sm:text-[16px] ${item.done ? 'text-text-muted line-through decoration-strike' : ''}`}>
           <span className="py-1.5 leading-[1.3] [overflow-wrap:anywhere]">{item.text}</span>
         </button>

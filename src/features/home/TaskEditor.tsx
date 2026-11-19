@@ -49,7 +49,7 @@ export function TaskEditor({ editing, today, viewWeek, onClose }: Props) {
 
 
   return (
-    <EditorFrame open={!!editing} anchor={existing ? `li[data-task="${CSS.escape(existing.id)}"]` : null} title={isNew ? 'New task' : 'Edit task'} labelId="editor-title" onClose={onClose}>
+    <EditorFrame open={!!editing} anchor={existing ? `li[data-task="${CSS.escape(existing.id)}"]` : null} title={isNew ? 'New task' : 'Edit task'} labelId="editor-title" onClose={onClose} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew || store.addTask(draft)) close(); }}>
           <label className="flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted">Title
