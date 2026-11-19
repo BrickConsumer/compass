@@ -78,6 +78,9 @@ test('the page does not scroll sideways at phone width', async ({ page }) => {
 });
 
 test('every fitting can be put on and taken off, on the live boat and the still one', async ({ page }) => {
+  // Each fitting rebuilds the boat. A CI runner draws it in software, where this test has taken 20 to 31 seconds
+  // against a limit of 30, so it is given three times as long.
+  test.slow();
   const errors: string[] = [];
   // "GL Driver Message" is the graphics driver remarking on its own speed. A CI runner draws in software and says it
   // whenever the picture is read back ("GPU stall due to ReadPixels"). It is not a fault of the page.
