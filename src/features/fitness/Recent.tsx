@@ -15,7 +15,7 @@ export function RecentPart() {
   return (
     <div data-recent>
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className={heading}>Recent</h3>
+        <h2 className={heading}>Recent</h2>
         {finished.length > SHOWN && <button type="button" onClick={() => setAll(!all)} aria-expanded={all} className={quiet}>{all ? 'Show fewer' : 'All sessions'}</button>}
       </div>
       {finished.length === 0 && <p className="mt-1 max-w-[52ch] text-pretty text-[14.5px] text-text-muted">None yet. A finished session is kept here, with its note.</p>}

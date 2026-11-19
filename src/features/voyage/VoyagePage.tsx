@@ -35,8 +35,14 @@ export function VoyagePage() {
   const [viewing, setViewing] = useState<StageId>(fresh.stage ?? boat.stage), isEarned = STAGE_ORDER.indexOf(viewing) <= STAGE_ORDER.indexOf(earned);
   const fittings = useMemo(() => earnedFittings(miles).map((f) => f.id), [miles]);
   const newTag = <span className="ml-2 rounded-xs bg-note px-1.5 py-0.5 text-[12.5px] font-semibold text-on-note">New</span>;
-  // everything earned so far has now been seen
-  useEffect(() => { setBoat({ seen: earnedIds(miles, days) }); }, [miles, days, setBoat]);
+  // Everything earned so far has now been seen. Only by someone looking, though: this page open in a tab behind
+  // another would otherwise mark a new fitting as seen the moment it was earned in the tab in front. And only when
+  // there is something to mark, so that looking at the voyage is not a change to be saved.
+  const seen = boat.seen;
+  useEffect(() => {
+    const earned = earnedIds(miles, days);
+    if (!document.hidden && (earned.length !== seen.length || earned.some((id) => !seen.includes(id)))) setBoat({ seen: earned });
+  }, [miles, days, seen, setBoat]);
   useEffect(() => { const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('dialog[open]')) navigate('/'); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [navigate]);
 
   return (

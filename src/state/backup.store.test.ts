@@ -290,3 +290,18 @@ describe('what the review found', () => {
     expect(openSave(save, s()).assessments).toEqual([]);
   });
 });
+
+describe('what the review of the small faults found', () => {
+  it("keeps a list of no subjects when the data is the user's own, and gives the sample its five", () => {
+    s().clearAll();
+    for (const subject of [...s().subjects]) s().deleteSubject(subject.id);
+    const own = asSaved();
+    expect([own.subjects, own.sample]).toEqual([[], false]);
+    // opened where there are subjects to fall back on, as another tab's save is
+    s().resetSample();
+    expect(openSave(own, s()).subjects).toEqual([]);
+    // a save that is still the sample, with its subjects lost, gets them back
+    expect(openSave({ ...own, sample: true }, s()).subjects).toHaveLength(5);
+  });
+});
+

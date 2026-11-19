@@ -30,7 +30,7 @@ export function KeptPart({ list }: { list: KeptList }) {
   const [editing, setEditing] = useState<EditingKept | null>(null);
   return (
     <div data-kept={list}>
-      <h3 className={heading}>{words.title}</h3>
+      <h2 className={heading}>{words.title}</h2>
       {items.length === 0 && words.empty && <p className="mt-1 max-w-[46ch] text-pretty text-[14.5px] text-text-muted">{words.empty}</p>}
       <ul className="mt-1">
         {items.map((item) => (
@@ -89,7 +89,7 @@ function KeptEditor({ list, editing, onClose }: { list: KeptList; editing: Editi
     if (gone) toast(words.gone, { label: 'Undo', run: () => useCompass.getState().restoreKept(list, gone.item, gone.index) });
   };
   return (
-    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-kept-row="${CSS.escape(existing.id)}"]` : `[data-add-kept="${list}"]`} title={isNew ? words.adding : words.editing} labelId={`kept-editor-${list}`} onClose={onClose}>
+    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-kept-row="${CSS.escape(existing.id)}"]` : `[data-add-kept="${list}"]`} title={isNew ? words.adding : words.editing} labelId={`kept-editor-${list}`} onClose={onClose} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew || store.addKept(list, draft)) close(); }}>
           {/* no examples in these boxes, and no unit to start with: what is kept here is the person's own */}

@@ -138,12 +138,6 @@ export function startersFor(pages: Page[], subjectId: string): Starter[] {
   return STARTERS.filter((s) => !s.title || !titles.has(s.title.toLowerCase()));
 }
 
-/** Pages whose title holds the words typed. Nothing typed finds nothing. */
-export function searchPages(pages: Page[], query: string): Page[] {
-  const q = query.trim().toLowerCase();
-  return q ? pages.filter((p) => p.title.toLowerCase().includes(q)) : [];
-}
-
 /** Every page as plain text, to keep a copy outside the browser. */
 export function pagesAsText(pages: Page[], subjects: Subject[], today: ISODate): string {
   const { open, reached } = sortPages(pages);

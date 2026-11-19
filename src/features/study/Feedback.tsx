@@ -82,7 +82,7 @@ function FeedbackEditor({ editing, subject, today, onClose }: { editing: Editing
     if (gone) toast('Feedback deleted.', { label: 'Undo', run: () => useCompass.getState().restoreFeedback(gone) });
   };
   return (
-    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-feedback="${CSS.escape(existing.id)}"]` : '[data-add-feedback]'} title={isNew ? 'New feedback' : 'Edit feedback'} labelId="feedback-editor-title" onClose={onClose}>
+    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-feedback="${CSS.escape(existing.id)}"]` : '[data-add-feedback]'} title={isNew ? 'New feedback' : 'Edit feedback'} labelId="feedback-editor-title" onClose={onClose} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew || store.addFeedback({ subjectId: subject.id, ...draft })) close(); }}>
           <label className={label}>Date

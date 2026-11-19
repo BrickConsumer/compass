@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, and sections 16 to 18 on 19 November |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, sections 16 to 18 on 19 November, and section 19 on 20 November |
 | Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it. Section 14, the Study detail, is on the branch `study-detail`, cut from that |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 430 unit tests pass and 267 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17 and search and backup in section 18; before the six it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 429 unit tests pass and 280 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18 and the small faults put right in section 19; before the seven it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -483,7 +483,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 20). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 21). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -544,7 +544,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 20).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 21).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -627,7 +627,7 @@ On 18 November, after the piece was committed, `main` was merged into the branch
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 20).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 21).
 
 ### Calls made in the build that the founders can overrule
 
@@ -678,11 +678,13 @@ Three smaller findings were left as they are, to be decided:
 - "Recent", "Routines", "Bests" and "Measures" are headings of the third level with none of the second above them, so a screen reader hears them as parts of "This week".
 - A session's row in the code allows a routine or a session to be missing where its state says it cannot be.
 
+The first two were put right on 20 November (section 19). The third is as it was.
+
 It also noted things that are older than this piece: Home is wider than a 320 px screen, two tabs open at once overwrite each other's saves, focus falls to the page after an item in a list is changed, and the toast's "Undo" is 36 px tall on a phone.
 
 ### Found on the way
 
-- **Home is 21 px wider than a 320 px screen,** with or without Fitness. Its date and its two round buttons do not fit below about 341 px. Left alone, and listed in section 20. Fitness's own pages fit at 320 px, and a test holds that Home is no wider with Fitness than without.
+- **Home is 21 px wider than a 320 px screen,** with or without Fitness. Its date and its two round buttons do not fit below about 341 px. Left alone then, and put right on 20 November (section 19). Fitness's own pages fit at 320 px, and a test holds that Home is no wider with Fitness than without.
 - **The ring on Home had no room for a thumb.** A habit's ring is pressed through its name, but a session's name is a button of its own. The test that measures every control found it. Fixed.
 - **One run lost its dev server near the end,** and the last twelve tests could not connect. None was a Fitness test, and the next run passed. This is the fault described in section 14.
 - **Two older tests of the look review page failed on CI,** on this piece's pull request and, earlier the same day, on `main` after a merge that changed only documents. A CI runner draws the sea in software. One test counted the graphics driver's remark on its own speed ("GPU stall due to ReadPixels") as a warning from the page. The other compared two pictures of the still scene before it had settled. The remark is now left out where warnings are counted, in that test and in one like it for the dark theme, and the pictures are taken again until a pair matches, which a scene that kept moving never would. Neither could be reproduced on a laptop, with or without software drawing. On the next run on CI the driver's remark failed nothing and the still scene matched, but the runner was slower still and two tests ran out of time. The fittings test rebuilds the boat for each fitting and had been taking 20 to 31 seconds on CI against a limit of 30, so it is given three times as long. An older Study test pressed "Edit subject" straight after choosing another subject, without waiting for it to show; on a slow machine that opens the editor of the subject about to leave, and the editor then goes with it. This one was reproduced, on a processor slowed six times, and the test now waits for the subject. The same press on a slow phone would do the same to a person, for the half second the page takes to change.
@@ -690,7 +692,7 @@ It also noted things that are older than this piece: Home is wider than a 320 px
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 20).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 21).
 - Whether Escape inside a line being changed keeps the editor open in browsers other than Chrome.
 
 ### Calls made in the build that the founders can overrule
@@ -752,7 +754,7 @@ Left as they are, to be decided:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 20).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 21).
 - A double tap by finger. A mouse says which press of a run it is; a finger may not, so a touch in the same place straight after is treated as one. Tried with a mouse only.
 
 ### Calls made in the build that the founders can overrule
@@ -810,14 +812,66 @@ A fresh reviewer read the whole change against the specification on 19 November,
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 20). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 21). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
 - Whether a screen reader announces what a backup holds. The place it is said in is built the way that is announced; nobody has listened.
 
 ### Calls made in the build that the founders can overrule
 
 They are in the specification: section 8 for the calls made in the design, and section 10 for those made in the build. The largest are that search lives in the menu and not on a page of its own, that restoring replaces everything and does not merge, and that a save is now checked far more strictly when it is opened.
 
-## 19. Built differently from the approved spec
+## 19. Small faults put right
+
+Done on 20 November on the branch `polish`, once all five pieces of Aditya's plan were merged. These are the faults that the reviews and the test runs had noted along the way and left. Nothing here is new to look at: each is a thing that now behaves as it was meant to.
+
+### What was put right
+
+| Fault | Now |
+|---|---|
+| Home was wider than a 320 px screen, by up to 21 px | Below 360 px the date in its heading is at its shortest ("Wed 30 Sep"). Home fits at 320 px with a greeting, Fitness, links and headlines all showing. |
+| "Move it to today" and a toast's "Undo" were 36 px tall on a phone | Both are 44 px there, and as they were with a pointer |
+| On a phone, the second new thing made in a row opened with the keyboard down | An editor that makes something new takes the cursor every time. Opening something that exists to look at it still leaves the keyboard down. |
+| Changing a line of a list with Enter or Escape, or deleting one by key, dropped the keyboard to the page | It stays on the line, or moves to the line that takes its place |
+| "Clear everything" replaced itself with its question and dropped the keyboard | The keyboard goes to "Keep it", and back to the button after either answer |
+| Two tabs open at once wrote over each other's saves | Each tab takes up what the other saves, and reads again when it is looked at again |
+| "Recent", "Routines", "Bests" and "Measures" in Fitness were headings under "This week" | They are headings beside it |
+| Two older searches were left in the code, unused | Taken out, with their two tests |
+
+### Found on the way
+
+- **An editor opened a second time did not take the cursor.** This was a fault from section 17's work, and it was on `main`. Making an editor take no presses on its way out left it that way for an instant on its next opening, which is the instant its first box is given the keyboard. It showed here because the test for the second new thing in a row could not pass. It is fixed in the frame every editor shares, and a test opens an editor three times.
+- **A new headline could not be saved on a phone without leaving the Address box first.** "Save headline" was ready only once the address had been checked, which happened on leaving the box. A press on a button that is not ready does not leave a box on a phone. It is ready now as soon as what is typed is a web address.
+- **Saving nothing at start-up broke every test.** Asked to stop Compass saving on opening when no study session tasks were due, the change was made and then taken out: that save is the one that puts Compass's data on the device on a first visit, and the tests wait for it.
+
+### The review of the change
+
+A fresh reviewer read the change on 20 November and drove the three shared pieces in a browser: the editor frame through every way out it could find, two tabs through deletes, half-typed boxes and unreadable saves, and the list rows in each of the three lists that use them. It found the frame's fix correct on every path, the tabs sound, and no loop. These were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| Delete held down on a line now took line after line, because each line that moved up took the keyboard | A key that is repeating does nothing on a line |
+| At exactly 359 px wide, Home's heading showed two lengths of the date at once | One length at a time, on both sides of 360 px. The test reads what is shown, not what is in the page. |
+| Deleting a line with the mouse ringed the next line as if a key had been pressed there | The keyboard moves only when a key did the deleting |
+| The voyage open in a tab behind marked a new fitting as seen the moment it was earned in the tab in front | It is marked only by a tab that is being looked at, and only when there is something to mark |
+| The last subject deleted in one tab came back from the other tab's copy | The user's own data may have no subjects. The sample with none still gets its five. |
+| A tab that was asleep could miss another tab's save | It reads again when it is looked at again |
+
+### Checked
+
+- **Unit tests:** 429 pass. Two were removed with the two unused searches, and one was added.
+- **Browser tests, 13 new,** in `tests/e2e/polish.spec.ts`: one for each row of the two tables above, and one that deletes every subject and opens every place.
+- **Everything from before:** the other 267 browser tests pass, with no file of theirs changed.
+- **In the dark theme:** all 280 browser tests pass. **As CI runs it:** 274 pass and the six sea tests are skipped.
+- **On every day of the week:** the new tests were run with the clock moved on by one to six days.
+- **A walk through every place** at 1440, 390 and 320 px, by script, with Fitness on and interests, headlines and links in place: no page scrolls sideways, no errors, and every control on a phone is at least 44 px tall but one, a link inside a sentence in the Weekly review.
+
+### Left as they are
+
+- Enter puts a line's words away and leaves the keyboard on the line, where Backspace then deletes it, with Undo. Before, the keyboard was nowhere and Backspace did nothing.
+- A session's row in the code still allows a routine or a session to be missing where its state says it cannot be.
+- On a 390 by 844 px phone the "New task" sheet is 14 px taller than the screen. "Add task" can still be reached.
+- Two tabs changing the same thing within a tenth of a second can still lose one of the changes.
+
+## 20. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -831,14 +885,12 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 20. Known limitations
-
-- Home is 21 px wider than a 320 px screen: its date and its two round buttons do not fit below about 341 px.
+## 21. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
 - The storm's breaking crests look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
-- Drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
+- Drag to reorder, recurring tasks, accounts and sync are not built, by plan.
 - Night and the dark theme are built and approved by Oliver. Josh and Aditya have not seen them (section 14).
 - Tested in Chrome only. Safari and Firefox have not been opened.

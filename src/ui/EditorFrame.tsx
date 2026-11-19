@@ -27,6 +27,12 @@ interface Props {
   /** The id given to the title, which names the dialog. */
   labelId: string;
   onClose: () => void;
+  /**
+   * True when the editor makes something new. Its first box then takes the cursor on a phone too. An editor empties
+   * its boxes a moment after it opens, so the second new thing in a row would otherwise find the first one's words
+   * still there, be taken for something being looked at, and leave the keyboard down.
+   */
+  fresh?: boolean;
   /** The editor's own fields. `close` leaves with the animation; use it instead of `onClose`. */
   children: (close: () => void) => ReactNode;
 }
@@ -36,7 +42,7 @@ interface Props {
  * On wider screens it is a popover beside the row it edits. On phones it is a bottom sheet that follows the finger
  * and can be dragged down by its header to close. Escape or a click outside closes it, and focus returns to the row.
  */
-export function EditorFrame({ open, anchor, title, labelId, onClose, children }: Props) {
+export function EditorFrame({ open, anchor, title, labelId, onClose, fresh = false, children }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const wide = useWide(), [closing, setClosing] = useState(false), [spot, setSpot] = useState<{ left: number; top: number } | null>(null);
   // where on the panel the row that opened it is, so it grows from there and goes back to it
@@ -53,9 +59,12 @@ export function EditorFrame({ open, anchor, title, labelId, onClose, children }:
       // the first box takes the cursor, unless the editor was opened for another one, which says so with data-focus-first
       // and that one takes it on a phone as well, empty or not, because it is what the editor was opened to change
       const asked = d.querySelector<HTMLInputElement | HTMLTextAreaElement>('[data-focus-first]'), first = asked ?? d.querySelector<HTMLInputElement | HTMLTextAreaElement>('input:not([type="checkbox"]):not([type="date"]), textarea');
-      if (first && (asked || matchMedia(WIDE).matches || !first.value)) first.focus();
+      if (first && (asked || fresh || matchMedia(WIDE).matches || !first.value)) first.focus();
     }
-    else if (!open && d.open) d.close();
+    // Leaving is over once it has closed. If that were only put right as it next opened, the panel would be drawn
+    // once more as still leaving, which takes no presses and no cursor, and its first box could not be given the keyboard.
+    else if (!open) { if (d.open) d.close(); setClosing(false); }
+    // `fresh` is read as the editor opens and not watched: it says how it opened
   }, [open]);
   useLayoutEffect(() => {
     const d = ref.current, row = open && anchor && wide ? document.querySelector<HTMLElement>(anchor) : null;

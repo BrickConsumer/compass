@@ -170,5 +170,5 @@ Left as they are:
 - A file edited by hand can name any boat and any distance. Nothing checks a restored voyage against anything, since the log is the voyage.
 - A search longer than 100 characters is cut there.
 - An Undo after a restore lasts as long as its toast. A second restore replaces the first one's Undo.
-- `searchPages` and `searchLinks`, the two older searches, are no longer used by the menu. They are still in the code, with their tests.
+- `searchPages` and `searchLinks`, the two older searches, were no longer used by the menu. They were taken out on 20 November, with their tests.
 

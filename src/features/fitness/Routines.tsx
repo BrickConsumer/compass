@@ -20,7 +20,7 @@ export function RoutinesPart() {
   const [editing, setEditing] = useState<{ id: string; fresh: boolean } | null>(null);
   return (
     <div data-routines>
-      <h3 className={heading}>Routines</h3>
+      <h2 className={heading}>Routines</h2>
       <ul className="mt-1">
         {routines.map((r) => {
           const last = lastDone(workouts, r.id);

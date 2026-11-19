@@ -334,7 +334,9 @@ export function openSave<T extends CompassData>(saved: unknown, current: T): T {
   const fresh = s.sample !== false;
   const data: CompassData = {
     tasks: storedTasks(s.tasks),
-    subjects: Array.isArray(s.subjects) && s.subjects.length ? once(records<Subject>(s.subjects, 'id', 'name').map(storedSubject)) : current.subjects,
+    // The sample with its subjects lost gets them back. The user's own data with none has none: they were deleted, and
+    // falling back here would bring the last one back, from this tab's copy, when another tab deleted it.
+    subjects: Array.isArray(s.subjects) && (s.subjects.length || !fresh) ? once(records<Subject>(s.subjects, 'id', 'name').map(storedSubject)) : current.subjects,
     // a save with no list of assessments gets the sample's if it is still the sample, and none if it is the user's own
     assessments: Array.isArray(s.assessments) ? storedAssessments(s.assessments) : fresh ? current.assessments : [],
     log: storedLog(s.log),
@@ -500,6 +502,8 @@ export const useCompass = create<CompassStore>()(
         return gone;
       },
       restoreSession: (session) => set((s) => ({ sessions: [...s.sessions.filter((x) => x.id !== session.id), session] })),
+      // Asked every time Compass opens. With nothing due it sets what is already there, which still saves: on a first
+      // visit that is the save that puts Compass's data on the device at all.
       makeSessionTasks: (today = todayISO()) => set((s) => {
         const due = sessionTasksDue(s.sessions, s.sessionsMade, today, s.settings.weekStartsOn);
         if (due.length === 0) return s;
@@ -920,3 +924,14 @@ export const useCompass = create<CompassStore>()(
     },
   ),
 );
+
+// Another tab of Compass saving is heard here, and what it saved is taken up. Without this each tab went on with
+// what it had when it opened, and the next thing changed in one wrote over everything the other had done since.
+// What is taken up is opened as any save is, and taking it up writes nothing back, so two tabs cannot set each other off.
+// A tab that was asleep or put away whole can miss the word, so it also reads again when it is looked at again.
+if (typeof window !== 'undefined') {
+  const takeUp = () => { void useCompass.persist.rehydrate(); };
+  window.addEventListener('storage', (e) => { if (e.key === 'compass:v1' && e.newValue) takeUp(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) takeUp(); });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) takeUp(); });
+}

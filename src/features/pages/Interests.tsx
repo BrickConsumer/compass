@@ -134,7 +134,7 @@ export function InterestEditor({ editing, onClose, onAdded, onDeleted }: { editi
     if (removed) toast(`${existing.name} deleted. Its pages are kept.`, { label: 'Undo', run: () => useCompass.getState().restoreInterest(removed) });
   };
   return (
-    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? '[data-edit-interest]' : '[data-add-interest]'} title={isNew ? 'Add an interest' : 'Edit interest'} labelId="interest-editor-title" onClose={closed}>
+    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? '[data-edit-interest]' : '[data-add-interest]'} title={isNew ? 'Add an interest' : 'Edit interest'} labelId="interest-editor-title" onClose={closed} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (isNew) add(close); else close(); }}>
           <label className={label}>Name
