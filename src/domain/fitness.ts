@@ -2,25 +2,12 @@ import { isISODate, weekDays, weekdayOf } from './dates';
 import { cleanDays } from './habits';
 import type { Progress } from './tasks';
 import type { Best, ISODate, Measure, Routine, RoutineLine, Workout, WorkoutLine } from './types';
+import { cleanWords, type Loose, objects, once, words } from './words';
+
+export { cleanWords };
 
 export const FITNESS_LIMITS = { routines: 20, routineName: 40, lines: 40, line: 140, note: 2000, bests: 20, measures: 12, keptName: 40, bestValue: 24, measureValue: 12, unit: 12 } as const;
 const L = FITNESS_LIMITS;
-
-/**
- * Words as Fitness keeps them: the spaces at either end go, a run of spaces or a line break becomes one space, and
- * they are cut at their limit. Nothing else changes, so "Squat, 3 × 5 at 60 kg" stays what was typed.
- */
-export const cleanWords = (text: string, limit: number): string => text.trim().replace(/\s+/g, ' ').slice(0, limit).trim();
-
-type Loose = Record<string, unknown>;
-/** What in a saved list is at least an object. A save can be edited by hand, and one entry that is not a record must not stop the app opening. */
-const objects = (value: unknown): Loose[] => (Array.isArray(value) ? value.filter((x): x is Loose => !!x && typeof x === 'object' && !Array.isArray(x)) : []);
-const words = (value: unknown): string => (typeof value === 'string' ? value : '');
-/** The first of each id, so nothing can be found twice. */
-function once<T extends { id: string }>(list: T[]): T[] {
-  const seen = new Set<string>();
-  return list.filter((x) => (seen.has(x.id) ? false : !!seen.add(x.id)));
-}
 
 /**
  * Routines from a save: only those with an id and a name, with real weekdays and lines that have words.

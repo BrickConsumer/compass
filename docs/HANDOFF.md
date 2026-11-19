@@ -6,11 +6,12 @@ Written 16 November 2026 and brought up to date on 17 and 18 November, to carry 
 
 - **Compass**: a calm student planner whose distinctive feature is a sailboat that develops as you make progress.
 - **Founders:** Josh, Oliver and Aditya. Oliver is driving these sessions.
-- **Repository:** `~/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass` (public). **On 18 November all thirteen pull requests were merged into `main`, in order, as merge commits,** and the merged branches were deleted. `main` passed the type-check, 285 unit tests and the build at each checkpoint, and the browser tests passed in CI on the last pull request. The thirteen were: 1 Phase 1 (art direction, Home spec, Home prototype); 2 performance tiers and sleeping when unseen; 3 the reward loop; 4 motion, the popover editor and the shortcut list; 5 Habits; 6 Study with recurring sessions; 7 the Weekly review; 8 My pages; 9 CI; 10 the six boat fittings that were not drawn; 11 the Home and Weekly review additions (the first piece of Aditya's plan); 12 night and the dark theme; 13 the motion system and the new type. Work in progress that is not on `main`: the branch `new-waters`, with uncommitted changes in its own folder, and the branch `study-detail` (piece 2 of Aditya's plan). `study-detail` was built in a separate working folder at `.claude/worktrees/home-review-additions`, committed on 18 November with Oliver's approval after a fresh reviewer's findings were fixed, brought up to date with `main`, and pushed as pull request 15 against `main`. The branch `fitness` (piece 3) was cut from `study-detail`, built in the same folder on 19 November, and committed with Oliver's approval after a fresh reviewer's findings were fixed. It is not pushed.
+- **Repository:** `~/Documents/Compass Inc`, remote `github.com/BrickConsumer/compass` (public). **On 18 November all thirteen pull requests were merged into `main`, in order, as merge commits,** and the merged branches were deleted. `main` passed the type-check, 285 unit tests and the build at each checkpoint, and the browser tests passed in CI on the last pull request. The thirteen were: 1 Phase 1 (art direction, Home spec, Home prototype); 2 performance tiers and sleeping when unseen; 3 the reward loop; 4 motion, the popover editor and the shortcut list; 5 Habits; 6 Study with recurring sessions; 7 the Weekly review; 8 My pages; 9 CI; 10 the six boat fittings that were not drawn; 11 the Home and Weekly review additions (the first piece of Aditya's plan); 12 night and the dark theme; 13 the motion system and the new type. Work in progress that is not on `main`: the branch `new-waters`, with uncommitted changes in its own folder, and the branch `study-detail` (piece 2 of Aditya's plan). `study-detail` was built in a separate working folder at `.claude/worktrees/home-review-additions`, committed on 18 November with Oliver's approval after a fresh reviewer's findings were fixed, brought up to date with `main`, and pushed as pull request 15 against `main`. The branch `fitness` (piece 3) was cut from `study-detail`, built in the same folder on 19 November, and committed with Oliver's approval after a fresh reviewer's findings were fixed. **Pull requests 15 (Study detail) and 16 (Fitness) were merged into `main` on 19 November.** The branch `interests` (piece 4) was cut from `main` after that and built in the same folder the same day.
 - **A founder's personal planner is kept outside the repository** and must never be committed, because the repository is public.
 - **The founders' brief** is saved word for word in `docs/compass-master-brief.md`. It is the source of requirements.
 - **Rules from the brief:** design-led, ask before big creative decisions, no destructive git, **do not commit or push without approval**.
 - **Who decides:** since 18 November, Josh and Aditya go with Oliver's decisions unless he says otherwise, so what Oliver approves counts as the founders' approval. This is Oliver's account of the arrangement; the brief itself has not been changed. Merging and anything destructive still wait for Oliver's say.
+- **Since 19 November, by Oliver's instruction:** the rest of the app is built without stopping to ask, design choices included, and he goes through it once it is finished. Each piece still gets a short specification, a plan, tests written first, a fresh reviewer and pictures, and its specification lists every call made without him. Work is committed, pushed and opened as a pull request without asking, and a pull request merges itself once its checks pass (the repository allows auto-merge, and `main` requires both CI jobs). Anything destructive or hard to undo is still asked first.
 
 ## 2. Where things stand
 
@@ -109,6 +110,9 @@ Written 16 November 2026 and brought up to date on 17 and 18 November, to carry 
 - `docs/superpowers/plans/2026-11-19-fitness.md`: the build plan for that piece.
 - `docs/screenshots/fitness/`: its mocks and the pictures of the built pages, named the same way.
 - **Fitness mock:** https://claude.ai/artifact/4Fe74TZBYbNVKJg9YXfXcy. Private, so it needs sharing from its Share menu. The place, a session on a phone, Home, a routine's editor, a rest day and the switch, with the approach and the seven decisions Oliver made from it.
+- `docs/interests-spec.md`: the fourth piece, built on 19 November without a review first. Interests as folders in My pages, forms for Investing and Law, a page's source link, and headlines saved by hand with the newest three on Home. Its section 9 lists the calls most worth a look, and section 11 says what the build and its review added.
+- `docs/superpowers/plans/2026-11-19-interests.md`: the build plan for that piece.
+- `docs/screenshots/interests/`: pictures of the built pages. Nothing was mocked.
 - **Aditya's plan in Compass:** https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot. Private, so it needs sharing from its Share menu. Where each part of the plan goes, the first piece mocked on Home and the Weekly review, and the six decisions Oliver made from it.
 - `docs/art-direction/*.png`: images of the original review boards.
 - `docs/screenshots/lookdev/`: the second boat review, covering sailing, golden hour, port, storm and the four boats.
@@ -151,7 +155,7 @@ Opens on http://localhost:5173. It is also set up in `.claude/launch.json` as "c
 ```bash
 npm test
 ```
-Runs 350 unit tests, all passing (225 before Aditya's plan, 256 after its first piece, 285 on `main` once night and the dark theme were merged, 313 with the Study detail, and 350 with Fitness).
+Runs 382 unit tests, all passing (225 before Aditya's plan, 256 after its first piece, 285 on `main` once night and the dark theme were merged, 313 with the Study detail, 350 with Fitness, and 382 with interests and headlines).
 ```bash
 npm run build
 ```
@@ -159,12 +163,12 @@ Type-checks and builds; passing. The main bundle is 175 kB compressed. The 3D ch
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 206 browser tests in the installed Chrome, all passing (72 before Aditya's plan, 115 after its first piece, 127 on `main` once night and the dark theme were merged, 159 with the Study detail, and 206 with Fitness). Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed. The tests start a dev server of their own on port 5174, fresh for each run, so they never use the one open on 5173.
+Runs 237 browser tests in the installed Chrome, all passing (72 before Aditya's plan, 115 after its first piece, 127 on `main` once night and the dark theme were merged, 159 with the Study detail, 206 with Fitness, and 237 with interests and headlines). Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed. The tests start a dev server of their own on port 5174, fresh for each run, so they never use the one open on 5173.
 
 **CI** is `.github/workflows/ci.yml`: two jobs on every pull request, one for the build and unit tests and one for the browser tests in Playwright's own Chromium.
 - A pull request is only checked if its branch holds the workflow file, so the pull requests below the `ci` branch in the stack get no checks until the stack is merged.
 - The six tests in `tests/e2e/sea.spec.ts` are skipped on CI. They measure frame rate and draw calls, which depend on a graphics card, and a CI runner has none. Run them on a real machine.
-- To run the suite as CI does: `CI=1 PW_CHANNEL=chrome npm run test:e2e`. It should report 200 passed and 6 skipped.
+- To run the suite as CI does: `CI=1 PW_CHANNEL=chrome npm run test:e2e`. It should report 231 passed and 6 skipped.
 
 ### Routes
 - `/` Home. The selected date is in the URL as `?date=YYYY-MM-DD`.
@@ -172,7 +176,8 @@ Runs 206 browser tests in the installed Chrome, all passing (72 before Aditya's 
 - `/habits`: the week as a grid of ticks, a count for each habit, earlier weeks as the record, and adding, editing and deleting habits.
 - `/study` and `/study/:subjectId`: the subjects, in the order of this week's levels, each with its topic. One subject's page has its topic, its level for this week, its assessments with their preparation, its tasks, feedback, pages, links, study sessions and notes.
 - `/review`: a week's summary, ratings out of 10 for each area, a reflection of three questions, priorities and subject levels for the week after, and the saved reviews.
-- `/pages` and `/pages/:pageId`: the user's own pages, and one page's list and writing.
+- `/pages` and `/pages/:pageId`: the user's own pages, and one page's list and writing. The list begins with the interests; choosing one shows its pages, and which is chosen is not in the address.
+- `/pages/headlines`: the saved headlines, in the place a page opens.
 - `/fitness` and `/fitness/:workoutId`: only a place while Fitness is switched on in Settings; switched off, the address says so and offers the switch. The week's sessions, what was done lately, the routines, and bests and measures. The second address has one session open at the top.
 - `/settings`:
   - your name, for the greeting on Home;
@@ -203,7 +208,9 @@ Runs 206 browser tests in the installed Chrome, all passing (72 before Aditya's 
 - `study.ts`: a subject's tasks and assessments, the one-line summary, when a task is for, and a new subject's colour. Also a subject's topic (`cleanTopic`, which never rewrites it) and preparation: `isPreparation`, `preparationOf` and `preparationProgress`. A preparation task is an ordinary task with an `assessmentId`, and is preparation only while that assessment exists.
 - `feedback.ts`: what a teacher said about a subject. `cleanFeedback` tidies an entry, `subjectFeedback` lists a subject's newest first, and `feedbackTask` finds the task made from an entry, which is an ordinary task named by the entry's `taskId`.
 - `habits.ts`: which habits fall on a day, a habit's week, counts, and choosing days. A tick is one habit on one day, kept as a key in a flat list.
-- `pages.ts`: the five kinds of page, the rules for a page's list, the one-line summary, the order of the list, search and export. An item on a page is not a task and earns nothing. For Study: `subjectPages` (the pages that carry a subject), the four starters (`STARTERS`, `startersFor`) and `subjectPageLine`.
+- `pages.ts`: the five kinds of page, the rules for a page's list, the one-line summary, the order of the list, search and export. An item on a page is not a task and earns nothing. For Study: `subjectPages` (the pages that carry a subject), the four starters (`STARTERS`, `startersFor`) and `subjectPageLine`. `storedItems` keeps only what is an item when a save is opened.
+- `interests.ts`: the three starting points and what each offers (`FORM_SETS`, `FORMS`, `PLAIN`, `startersIn`), an interest's pages and name, and headlines: `cleanHeadline` (the one check a headline passes, typed or from a save), `siteName` and `latestHeadlines`. A form's parts are words; nothing is read out of them.
+- `words.ts`: `cleanWords`, which keeps words as typed within a limit, and the three small helpers that read a list from a save without trusting it.
 - `review.ts`: a week's summary (`weekSummary`), which weeks can be reviewed, the award for saving one (`reviewAward`), and the excerpt shown in the list. The summary is worked out, never stored. A review is blank when nothing is written and no listed area is rated.
 - `ratings.ts`: the areas a week is rated on (four to start with, the user's own after that), and a rating kept to a whole number from 1 to 10. No total or average is ever worked out.
 - `levels.ts`: how much each subject matters, week by week. `levelsFor` gives a week's levels, carrying the last ones set when it has none of its own; `taskRank` orders tasks by them; `focusOf` names the High subjects for Home.
@@ -218,8 +225,8 @@ Runs 206 browser tests in the installed Chrome, all passing (72 before Aditya's 
 
 **`ui/`**
 - `Toast.tsx`: one toast at a time, with Undo.
-- `EditorFrame.tsx`: the frame every editor shares: a popover beside the row on wider screens, a draggable sheet on phones. `place.ts` decides where the popover sits. The cursor goes to the first text box, or to the one marked `data-focus-first`. It is a modal dialog, so a toast's Undo cannot be pressed while it is open: an editor that deletes closes first.
-- `LinkField.tsx`: the box for one web address, in the task and assessment editors. It checks the address when the box is left or Enter is pressed.
+- `EditorFrame.tsx`: the frame every editor shares: a popover beside the row on wider screens, a draggable sheet on phones. `place.ts` decides where the popover sits. The cursor goes to the first text box, or to the one marked `data-focus-first`. It is a modal dialog, so a toast's Undo cannot be pressed while it is open: an editor that deletes closes first. On its way out it takes no more presses, so a second press of an "Add" button adds nothing.
+- `LinkField.tsx`: the box for one web address, in the task, assessment, page and headline editors. It checks the address when the box is left or Enter is pressed.
 - `DraftField.tsx`: a text box that saves as it is typed. Use it for any box whose record is tidied on the way in, or a space typed at the end is lost.
 - `SegmentedProgress.tsx`: one segment per task, a single bar above 20.
 - `LevelChips.tsx`: High, Medium and Normal for a subject, used by the Weekly review and by Study. Pressing the one that is set clears it.
@@ -261,7 +268,8 @@ Runs 206 browser tests in the installed Chrome, all passing (72 before Aditya's 
 - `ui/ListRows.tsx` holds the rows that a page's list, a routine's lines and a session's lines share.
 
 **`features/pages/`**
-- `PagesPage` (the list and the open page's sheet), `PageItems` (a page's list, with the smaller square tick), and `PageEditor` (title, kind, subject, date, delete).
+- `PagesPage` (the list and the open page's sheet), `PageItems` (a page's list, with the smaller square tick), and `PageEditor` (title, kind, subject, interest, source link, date, delete).
+- `Interests` (the interests at the head of the list, the head of one that is chosen, what it can start, and its editor) and `Headlines` (the headlines' sheet, a row, and the editor). `features/home/HomeHeadlines` is the newest three on Home.
 
 **`features/review/`**
 - `ReviewPage`: the week's sheet and the list of saved reviews. Its priorities reuse Home's `TaskRow`, `TaskComposer` and `TaskEditor`.
@@ -342,7 +350,7 @@ The full list is in `docs/next-stages.md`.
 1. **Done on 18 November: the stack is merged.** All thirteen pull requests are in `main`, in order. None was reviewed by anyone but Oliver.
 2. **A founder opens Home on a real phone,** and in Safari.
 3. **Merge pull request 15, and commit the other work in progress.** `study-detail` is committed and up to date with `main`. `new-waters` has uncommitted changes and was cut from an older commit, so it will need updating from `main`.
-4. **Aditya's plan.** The first three of its five pieces are built. Piece 1 is merged into `main`. Piece 2, the Study detail, is on `study-detail`, as pull request 15 against `main`. Piece 3, Fitness, is on `fitness`, which was cut from `study-detail`; Oliver approved its design on 19 November, and its review page is https://claude.ai/artifact/4Fe74TZBYbNVKJg9YXfXcy. Oliver approved both for the founders; the review pages are https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot and https://claude.ai/artifact/K3yezjZJ4BZDaCC9FQk4Bs. Pieces 4 and 5 (interests in My pages, search and backup) each need their own design and review before they are built: see `docs/next-stages.md`, Stage 8.
+4. **Aditya's plan.** Four of its five pieces are built. Pieces 1 to 3 (Home and the Weekly review, the Study detail, Fitness) are merged into `main`; Oliver approved each for the founders, and the review pages are https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot, https://claude.ai/artifact/K3yezjZJ4BZDaCC9FQk4Bs and https://claude.ai/artifact/4Fe74TZBYbNVKJg9YXfXcy. Piece 4, interests and headlines, is on `interests`; it was built without a review first, by Oliver's instruction of 19 November, and waits for him to go through it. Piece 5 (search and backup) is next, built the same way: see `docs/next-stages.md`, Stage 8.
 5. **New waters, then decorations,** the two parts of Stage 7 still to build, each with a short spec of its own first. Night and the dark theme are merged into `main`; Oliver kept the blue selection and approved the look on 18 November. From here on a component names a colour role, never a step: `src/design/roles.test.ts` holds that.
 6. **Three rules for study sessions are still open,** each built to the recommendation in the mock at https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4 (private; share it from its Share menu): whether sessions count toward the port and the storm, when a week's tasks are made, and what changing a session does to tasks already made. The rules are in `docs/habits-spec.md`, and the mock that settled its place on Home is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b (private; share it from its Share menu). Oliver has accepted the Habits page as a first version; Josh and Aditya have not seen it.
 7. **Boat look review round three**, when Oliver is ready.

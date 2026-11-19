@@ -1,5 +1,6 @@
 import { dayMonth, longDate, shortDay } from './dates';
 import type { Progress } from './tasks';
+import type { PageForm } from './interests';
 import type { ISODate, Page, PageItem, PageKind, Subject } from './types';
 
 export const PAGE_LIMITS = { title: 80, item: 140, items: 200, text: 20_000 };
@@ -19,12 +20,38 @@ const oneLine = (s: string) => s.trim().replace(/\s+/g, ' ');
 export const cleanPageTitle = (title: string): string => oneLine(title).slice(0, PAGE_LIMITS.title);
 const cleanItem = (text: string): string => oneLine(text).slice(0, PAGE_LIMITS.item);
 
-/** A new page. One started from a subject already has its subject, and may have its title. */
-export const newPage = (kind: PageKind, id: string, now: string, start: { title?: string; subjectId?: string } = {}): Page => ({
-  id, title: cleanPageTitle(start.title ?? '') || 'Untitled', kind, items: [], text: '', ...(start.subjectId ? { subjectId: start.subjectId } : {}), createdAt: now, updatedAt: now,
-});
+/** What a new page can start with: a title, a subject, an interest, and a form whose parts and list it opens with. */
+export interface PageStart { title?: string; subjectId?: string; interestId?: string; form?: PageForm; /** Makes the ids of a form's parts and list. Without one they are numbered from the page's own id. */ lineId?: () => string }
+
+/** A new page. One started from a subject or an interest already carries it, and one started from a form has its parts ready to fill in. */
+export function newPage(kind: PageKind, id: string, now: string, start: PageStart = {}): Page {
+  let n = 0;
+  const mint = start.lineId ?? (() => `${id}-${++n}`), form = start.form;
+  return {
+    id, title: cleanPageTitle(start.title ?? form?.title ?? '') || 'Untitled', kind,
+    items: (form?.items ?? []).map((text) => ({ id: mint(), text, done: false })), text: '',
+    ...(start.subjectId ? { subjectId: start.subjectId } : {}), ...(start.interestId ? { interestId: start.interestId } : {}),
+    ...(form ? { form: form.id } : {}), ...(form?.fields?.length ? { fields: form.fields.map((label) => ({ id: mint(), label, text: '' })) } : {}),
+    createdAt: now, updatedAt: now,
+  };
+}
 
 /** The date a page aims for. Only goals and projects show one. */
+/**
+ * A page's list from a save: only what has an id and words, each id once. A save can be edited by hand, and one
+ * entry that is not an item must not stop My pages opening.
+ */
+export function storedItems(value: unknown): PageItem[] {
+  const seen = new Set<string>();
+  return (Array.isArray(value) ? value : []).flatMap((x): PageItem[] => {
+    if (!x || typeof x !== 'object') return [];
+    const { id, text, done } = x as Record<string, unknown>;
+    if (typeof id !== 'string' || !id || typeof text !== 'string' || !text.trim() || seen.has(id)) return [];
+    seen.add(id);
+    return [{ id, text: text.slice(0, PAGE_LIMITS.item), done: done === true }];
+  });
+}
+
 export const aimOf = (page: Page): ISODate | undefined => (kindOf(page.kind).dated ? page.aimFor : undefined);
 /** Only a goal can be reached. */
 export const isReached = (page: Page): boolean => page.kind === 'goal' && !!page.reachedOn;
@@ -70,7 +97,8 @@ export function pageLine(page: Page): string {
   if (isReached(page)) return `Reached ${shortDay(page.reachedOn!)}`;
   const c = listCount(page), aim = aimOf(page);
   const count = c.total ? `${c.done} of ${c.total}${page.kind === 'goal' ? (c.total === 1 ? ' step' : ' steps') : ''}` : '';
-  const facts = capital([count, aim ? `aim for ${dayMonth(aim)}` : ''].filter(Boolean).join(', ')), words = excerpt(page.text);
+  // a form with nothing written under it says its first part that has something in it
+  const facts = capital([count, aim ? `aim for ${dayMonth(aim)}` : ''].filter(Boolean).join(', ')), words = excerpt(page.text) || excerpt(page.fields?.find((f) => f.text.trim())?.text ?? '');
   return page.kind === 'note' ? words || facts || 'Nothing written yet' : facts || words || 'Nothing here yet';
 }
 
@@ -123,8 +151,10 @@ export function pagesAsText(pages: Page[], subjects: Subject[], today: ISODate):
     const k = kindOf(p.kind), subject = subjects.find((s) => s.id === p.subjectId), aim = aimOf(p);
     const facts = [k.label, subject?.name, aim && `Aim for ${longDate(aim)}`, isReached(p) && `Reached on ${longDate(p.reachedOn!)}`].filter(Boolean).map((x) => `${x}.`).join(' ');
     const list = p.items.length ? [`${k.list}\n${p.items.map((i) => `[${i.done ? 'x' : ' '}] ${i.text}`).join('\n')}`] : [];
+    // a form's parts that have something in them, each under its heading, and where the page is from
+    const parts = (p.fields ?? []).filter((f) => f.text.trim()).map((f) => `${f.label}\n${f.text.trim()}`), source = p.link ? [`Source: ${p.link}`] : [];
     const text = p.text.trim() ? [p.kind === 'note' ? p.text.trim() : `${k.text}\n${p.text.trim()}`] : [];
-    return [`${p.title}\n${'='.repeat(p.title.length)}\n${facts}`, ...(k.listFirst ? [...list, ...text] : [...text, ...list])].join('\n\n');
+    return [`${p.title}\n${'='.repeat(p.title.length)}\n${facts}`, ...source, ...parts, ...(k.listFirst ? [...list, ...text] : [...text, ...list])].join('\n\n');
   };
   return [`My pages, from Compass. ${longDate(today)}.`, ...[...open, ...reached].map(one)].join('\n\n\n') + '\n';
 }

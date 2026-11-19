@@ -89,6 +89,8 @@ export function EditorFrame({ open, anchor, title, labelId, onClose, children }:
       {open && (
         <motion.div initial={wide ? AWAY.wide : AWAY.sheet} animate={closing ? (wide ? AWAY.wide : AWAY.sheet) : wide ? SHOWN.wide : SHOWN.sheet}
           onAnimationComplete={() => { if (closing) onClose(); }}
+          // on its way out it takes no more presses: a second press of "Add" in that moment would add a second one
+          inert={closing}
           drag={wide ? false : 'y'} dragListener={false} dragControls={grip} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 1 }}
           onDragEnd={(_, info) => { if (info.offset.y > DISMISS.distance || info.velocity.y > DISMISS.speed) requestClose(); }}
           style={{ transformOrigin: wide ? origin : 'top left' }}

@@ -1,7 +1,7 @@
 import { addDaysISO, weekdayOf, weekStartOf } from './dates';
 import { isDue, tickKey } from './habits';
 import { DEFAULT_AREAS } from './ratings';
-import type { Assessment, Best, Boat, Feedback, Habit, ISODate, Levels, LogEntry, Measure, Page, QuickLink, RatingArea, Review, Routine, Session, Settings, Subject, Task, Workout } from './types';
+import type { Assessment, Best, Boat, Feedback, Habit, Headline, Interest, ISODate, Levels, LogEntry, Measure, Page, QuickLink, RatingArea, Review, Routine, Session, Settings, Subject, Task, Workout } from './types';
 
 export interface CompassData {
   subjects: Subject[];
@@ -34,6 +34,10 @@ export interface CompassData {
   /** Bests and measures, kept by hand, in the order they were added. */
   bests: Best[];
   measures: Measure[];
+  /** Folders in My pages, in the order they were made. A page names the interest it is kept in. */
+  interests: Interest[];
+  /** Headlines saved by hand. The newest three show on Home. */
+  headlines: Headline[];
   boat: Boat;
   settings: Settings;
   /** True while the data is the generated sample. */
@@ -176,10 +180,10 @@ export function seed(today: ISODate): CompassData {
   // the sample shows what a subject's page can hold: Biology has a topic and one piece of feedback. No task is touched by either
   const subjects = SUBJECTS.map((s) => (s.id === 'bio' ? { ...s, topic: 'Cell structure and transport' } : s));
   const feedback: Feedback[] = [{ id: 'fb-1', subjectId: 'bio', date: d(-5), about: 'Practical report', words: 'A clear method. Explain what the results mean, not only what they were.', work: 'Say what each result means' }];
-  return { subjects, feedback, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), ...sampleFitness(today), sessions: [], sessionsMade: [], reviews, pages: samplePages(today), links: [], areas: DEFAULT_AREAS, levels: {}, boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
+  return { subjects, feedback, tasks, assessments, log: sampleLog(412, 23, today), ...sampleHabits(today), ...sampleFitness(today), sessions: [], sessionsMade: [], reviews, pages: samplePages(today), interests: [], headlines: [], links: [], areas: DEFAULT_AREAS, levels: {}, boat: DEFAULT_BOAT, settings: DEFAULT_SETTINGS, sample: true };
 }
 
 /** A clean start: the same subjects, nothing else, and the first boat. */
 export function empty(): CompassData {
-  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], pages: [], feedback: [], routines: [], workouts: [], bests: [], measures: [], links: [], areas: DEFAULT_AREAS, levels: {}, boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
+  return { subjects: SUBJECTS, tasks: [], assessments: [], log: [], habits: [], ticks: [], sessions: [], sessionsMade: [], reviews: [], pages: [], feedback: [], routines: [], workouts: [], bests: [], measures: [], interests: [], headlines: [], links: [], areas: DEFAULT_AREAS, levels: {}, boat: { ...DEFAULT_BOAT, stage: 'dinghy', seen: ['dinghy'] }, settings: DEFAULT_SETTINGS, sample: false };
 }

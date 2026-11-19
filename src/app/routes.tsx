@@ -21,6 +21,8 @@ export const router = createBrowserRouter([
       { path: '/habits', element: <HabitsPage /> },
       { path: '/review', element: <ReviewPage /> },
       { path: '/pages', element: <PagesPage /> },
+      // the saved headlines are kept in My pages, and are not a page: a fixed address is matched before a page's id
+      { path: '/pages/headlines', element: <PagesPage headlines /> },
       { path: '/pages/:pageId', element: <PagesPage /> },
       { path: '/fitness', element: <FitnessPage /> },
       { path: '/fitness/:workoutId', element: <FitnessPage /> },

@@ -3,10 +3,11 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { isISODate, todayISO, weekStartOf } from '../domain/dates';
 import { type CompassData, empty, sampleLog, seed } from '../domain/seed';
 import { cleanDays, isDue, tickKey } from '../domain/habits';
-import { addItem, cleanPageTitle, editItem, insertItem, moveItem, newPage, PAGE_LIMITS, removeItem, toggleItem, untickAll } from '../domain/pages';
+import { addItem, cleanPageTitle, editItem, insertItem, moveItem, newPage, PAGE_KINDS, PAGE_LIMITS, removeItem, storedItems, toggleItem, untickAll } from '../domain/pages';
 import { rekeyed, withLevel } from '../domain/levels';
 import { cleanFeedback, feedbackTask, storedFeedback } from '../domain/feedback';
 import { canStart, cleanWords, FITNESS_LIMITS, newWorkout, storedBests, storedMeasures, storedRoutines, storedWorkouts } from '../domain/fitness';
+import { cleanHeadline, formOf, INTEREST_LIMITS, interestName, isReadyMade, siteName, startersIn, storedFields, storedHeadlines, storedInterests } from '../domain/interests';
 import { cleanUrl, LINK_LIMITS, linkName, storedLink, storedLinks } from '../domain/links';
 import { AREA_LIMITS, cleanRating, storedAreas } from '../domain/ratings';
 import { canReview, isBlank, reviewAward } from '../domain/review';
@@ -14,7 +15,7 @@ import { madeKey, sessionTasksDue } from '../domain/sessions';
 import { cleanTopic, nextColour } from '../domain/study';
 import { cleanTitle } from '../domain/tasks';
 import { storedTheme } from '../domain/theme';
-import { type Assessment, type Best, type Boat, type Feedback, type Habit, type ISODate, type Level, type Measure, type Page, type PageItem, type PageKind, type Priority, type QuickLink, type RatingArea, type Review, type Routine, type Session, type Settings, type Subject, SUBJECT_COLOURS, type SubjectColour, type Task, type Workout, type WorkoutLine } from '../domain/types';
+import { type Assessment, type Best, type Boat, type Feedback, type FormSet, type Habit, type Headline, type Interest, type ISODate, type Level, type Measure, type Page, type PageItem, type PageKind, type Priority, type QuickLink, type RatingArea, type Review, type Routine, type Session, type Settings, type Subject, SUBJECT_COLOURS, type SubjectColour, type Task, type Workout, type WorkoutLine } from '../domain/types';
 import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged, workoutAward } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
 
@@ -105,8 +106,8 @@ export interface CompassStore extends CompassData {
   /** Start a page of this kind, named "Untitled". Returns its id. */
   /** A page started from a subject carries it, and may have its title. A subject that does not exist is left off. */
   addPage: (kind: PageKind, start?: { title?: string; subjectId?: string }) => string;
-  /** Change a page. `null` clears its date or its subject. An empty title keeps the last good one. */
-  updatePage: (id: string, patch: { title?: string; kind?: PageKind; text?: string; aimFor?: ISODate | null; subjectId?: string | null }) => void;
+  /** Change a page. `null` clears its date, its subject or its interest. An empty title keeps the last good one, and an interest that does not exist is left off. */
+  updatePage: (id: string, patch: { title?: string; kind?: PageKind; text?: string; aimFor?: ISODate | null; subjectId?: string | null; interestId?: string | null }) => void;
   deletePage: (id: string) => Page | null;
   restorePage: (page: Page) => void;
   /** Mark a goal as reached today, or reopen it. Other kinds of page cannot be reached. */
@@ -164,6 +165,25 @@ export interface CompassStore extends CompassData {
   deleteKept: (list: KeptList, id: string) => { item: Best | Measure; index: number } | null;
   /** Put a best or a measure back at its place, in place of any record with its id. */
   restoreKept: (list: KeptList, item: Best | Measure, index: number) => void;
+  /** Add an interest: a folder in My pages. With no name typed it takes the name of where it starts from. Returns its id, or null when it has no name or there are eight already. */
+  addInterest: (input: { name: string; forms: FormSet }) => string | null;
+  /** Rename an interest or change where it starts from. An empty name keeps the last good one. */
+  updateInterest: (id: string, patch: { name?: string; forms?: FormSet }) => void;
+  /** Remove an interest. Its pages are kept, in no interest. Returns what Undo needs to put it all back. */
+  deleteInterest: (id: string) => { interest: Interest; index: number; pageIds: string[] } | null;
+  restoreInterest: (removed: { interest: Interest; index: number; pageIds: string[] }) => void;
+  /** Start a page in an interest from one of the forms it offers. Returns its id, or null when the interest is unknown or does not offer that form. */
+  startPage: (interestId: string, formId: string) => string | null;
+  /** Write in one of a form's parts. It is ordinary writing, kept as typed, up to 2,000 characters. */
+  setPageField: (pageId: string, fieldId: string, text: string) => void;
+  /** Set a page's link, or clear it with an empty address. Returns false, with nothing changed, when the address is not a web address. */
+  setPageLink: (id: string, url: string) => boolean;
+  /** Save a headline. Returns its id, or null when it has no title, no web address or no real date, or there are sixty already. */
+  addHeadline: (input: { title: string; url: string; source?: string; date: string; tag?: string }) => string | null;
+  /** Change a headline. Returns false, with nothing changed, when the change would leave it without a title, a web address or a real date. */
+  updateHeadline: (id: string, patch: { title?: string; url?: string; source?: string; date?: string; tag?: string }) => boolean;
+  deleteHeadline: (id: string) => { headline: Headline; index: number } | null;
+  restoreHeadline: (headline: Headline, index: number) => void;
   /** Add a habit, for every day unless days are given. Returns its id, or null when the name is empty. */
   addHabit: (name: string, days?: number[]) => string | null;
   updateHabit: (id: string, patch: { name?: string; days?: number[] }) => void;
@@ -244,6 +264,23 @@ function storedSubject(subject: Subject): Subject {
 
 /** The settings that outlast the data: the theme, which belongs to the device, and whether Fitness is shown. */
 const kept = (settings: Settings): Partial<Settings> => ({ theme: settings.theme, ...(settings.fitness === true ? { fitness: true } : {}) });
+
+/**
+ * A page from a save. Its link is kept only if it is a web address, its parts only where they have an id and a label,
+ * its form only if it is one, and its interest only if it is named by an id. Its list keeps only what is an item,
+ * a kind that is not one of the five is a note, and a page with no list, no writing or no dates gets empty ones,
+ * so a save cut short or edited by hand cannot stop a page opening.
+ */
+function storedPage(page: Page): Page {
+  const { link, fields, form, interestId, ...rest } = page, keptLink = storedLink(link), keptFields = storedFields(fields);
+  const made = typeof rest.createdAt === 'string' && rest.createdAt ? rest.createdAt : new Date(0).toISOString();
+  return {
+    ...rest, kind: PAGE_KINDS.some((k) => k.id === rest.kind) ? rest.kind : 'note', items: storedItems(rest.items), text: typeof rest.text === 'string' ? rest.text : '',
+    createdAt: made, updatedAt: typeof rest.updatedAt === 'string' && rest.updatedAt ? rest.updatedAt : made,
+    ...(keptLink ? { link: keptLink } : {}), ...(keptFields ? { fields: keptFields } : {}),
+    ...(typeof form === 'string' && formOf(form) ? { form } : {}), ...(typeof interestId === 'string' && interestId ? { interestId } : {}),
+  };
+}
 
 /** Keep the boat being sailed within what has been earned. */
 function clampStage(boat: Boat, miles: number, days: number): Boat {
@@ -544,6 +581,7 @@ export const useCompass = create<CompassStore>()(
             text: patch.text !== undefined ? patch.text.slice(0, PAGE_LIMITS.text) : p.text,
             aimFor: patch.aimFor === null ? undefined : patch.aimFor ?? p.aimFor,
             subjectId: patch.subjectId === null ? undefined : patch.subjectId ?? p.subjectId,
+            interestId: patch.interestId === null ? undefined : patch.interestId !== undefined && s.interests.some((i) => i.id === patch.interestId) ? patch.interestId : p.interestId,
             // only a goal can be reached, so a page that stops being one is open again
             reachedOn: kind === 'goal' ? p.reachedOn : undefined,
           };
@@ -676,6 +714,72 @@ export const useCompass = create<CompassStore>()(
         return { item, index };
       },
       restoreKept: (list, item, index) => set((s) => withKept(s, list, (items) => putBack(items, item, index))),
+      addInterest: (input) => {
+        const name = interestName(input.name, input.forms);
+        if (!name || get().interests.length >= INTEREST_LIMITS.max) return null;
+        const id = newId().replace('t-', 'in-');
+        set((s) => ({ interests: [...s.interests, { id, name, forms: input.forms }] }));
+        return id;
+      },
+      updateInterest: (id, patch) => set((s) => ({
+        interests: changed(s.interests, id, (i) => ({ ...i, name: patch.name !== undefined ? cleanWords(patch.name, INTEREST_LIMITS.name) || i.name : i.name, forms: patch.forms ?? i.forms })),
+      })),
+      deleteInterest: (id) => {
+        const index = get().interests.findIndex((i) => i.id === id), interest = get().interests[index];
+        if (!interest) return null;
+        const pageIds = get().pages.filter((p) => p.interestId === id).map((p) => p.id);
+        // the pages are kept, as a deleted subject's are, and not marked as changed: nothing about them was touched
+        set((s) => ({ interests: s.interests.filter((i) => i.id !== id), pages: s.pages.map((p) => (p.interestId === id ? { ...p, interestId: undefined } : p)) }));
+        return { interest, index, pageIds };
+      },
+      restoreInterest: (removed) => set((s) => ({
+        interests: putBack(s.interests, removed.interest, removed.index),
+        pages: s.pages.map((p) => (removed.pageIds.includes(p.id) ? { ...p, interestId: removed.interest.id } : p)),
+      })),
+      startPage: (interestId, formId) => {
+        // what the interest can start is asked of its own pages, so a page that comes with a title is made once
+        // however fast its button is pressed
+        const interest = get().interests.find((i) => i.id === interestId), form = interest ? startersIn(interest, get().pages).find((f) => f.id === formId) : undefined;
+        if (!interest || !form) return null;
+        const id = newId().replace('t-', 'p-');
+        // a plain kind is a page like any other, so it remembers no form
+        set((s) => ({ pages: [...s.pages, newPage(form.kind, id, new Date().toISOString(), { interestId, title: form.title, form: isReadyMade(form) ? form : undefined })] }));
+        return id;
+      },
+      setPageField: (pageId, fieldId, text) => set((s) => ({
+        pages: changePage(s.pages, pageId, (p) => (p.fields?.some((f) => f.id === fieldId) ? { ...p, fields: p.fields.map((f) => (f.id === fieldId ? { ...f, text: text.slice(0, INTEREST_LIMITS.field) } : f)) } : p)),
+      })),
+      setPageLink: (id, url) => {
+        const clean = url.trim() ? cleanUrl(url) : undefined;
+        if (clean === null || !get().pages.some((p) => p.id === id)) return false;
+        set((s) => ({ pages: changePage(s.pages, id, (p) => { const { link, ...rest } = p; return clean ? { ...rest, link: clean } : link ? rest : p; }) }));
+        return true;
+      },
+      addHeadline: (input) => {
+        const clean = cleanHeadline(input);
+        if (!clean || get().headlines.length >= INTEREST_LIMITS.headlines) return null;
+        const id = newId().replace('t-', 'hl-');
+        set((s) => ({ headlines: [...s.headlines, { id, ...clean }] }));
+        return id;
+      },
+      updateHeadline: (id, patch) => {
+        const before = get().headlines.find((h) => h.id === id);
+        if (!before) return false;
+        // a source that was taken from the site is taken again when the address changes; one that was typed stays
+        const source = patch.source ?? (patch.url !== undefined && before.source === siteName(before.url) ? '' : before.source);
+        // checked as a new one is, so a change can never leave a headline that could not have been saved
+        const clean = cleanHeadline({ title: patch.title ?? before.title, url: patch.url ?? before.url, source, date: patch.date ?? before.date, tag: patch.tag ?? before.tag });
+        if (!clean) return false;
+        set((s) => ({ headlines: changed(s.headlines, id, () => ({ id, ...clean })) }));
+        return true;
+      },
+      deleteHeadline: (id) => {
+        const index = get().headlines.findIndex((h) => h.id === id), headline = get().headlines[index];
+        if (!headline) return null;
+        set((s) => ({ headlines: s.headlines.filter((h) => h.id !== id) }));
+        return { headline, index };
+      },
+      restoreHeadline: (headline, index) => set((s) => ({ headlines: putBack(s.headlines, headline, index) })),
       addHabit: (name, days) => {
         const clean = cleanTitle(name).slice(0, 60), on = cleanDays(days ?? [0, 1, 2, 3, 4, 5, 6]);
         if (!clean || on.length === 0) return null;
@@ -733,18 +837,20 @@ export const useCompass = create<CompassStore>()(
       name: 'compass:v1',
       version: 1,
       storage: createJSONStorage(safeStorage),
-      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, routines, workouts, bests, measures, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, routines, workouts, bests, measures, boat, settings, sample }),
+      partialize: ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, routines, workouts, bests, measures, interests, headlines, boat, settings, sample }) => ({ subjects, tasks, assessments, log, habits, ticks, sessions, sessionsMade, reviews, pages, links, areas, levels, feedback, routines, workouts, bests, measures, interests, headlines, boat, settings, sample }),
       // anything unreadable falls back to the sample, so a bad save can never stop the app opening
       merge: (saved, current) => {
         const s = saved as Partial<CompassData> | undefined;
         if (!s || !Array.isArray(s.tasks) || !Array.isArray(s.log) || !s.boat || !s.settings) return current;
         // a save from before habits existed gets the sample habits if it is still the sample, and none if it is the user's own
         const fresh = s.sample !== false, habits = Array.isArray(s.habits) ? s.habits : fresh ? current.habits : [], ticks = Array.isArray(s.ticks) ? s.ticks : fresh ? current.ticks : [];
-        return { ...current, ...s, habits, ticks, sessions: Array.isArray(s.sessions) ? s.sessions : [], sessionsMade: Array.isArray(s.sessionsMade) ? s.sessionsMade : [], reviews: Array.isArray(s.reviews) ? s.reviews : fresh ? current.reviews : [], pages: Array.isArray(s.pages) ? s.pages : fresh ? current.pages : [],
+        return { ...current, ...s, habits, ticks, sessions: Array.isArray(s.sessions) ? s.sessions : [], sessionsMade: Array.isArray(s.sessionsMade) ? s.sessionsMade : [], reviews: Array.isArray(s.reviews) ? s.reviews : fresh ? current.reviews : [], pages: Array.isArray(s.pages) ? records<Page>(s.pages, 'id', 'title').map(storedPage) : fresh ? current.pages : [],
           // a save from before links, areas and levels existed starts with none set, and the four starting areas
           // and nothing in those lists is taken on trust: a save can be edited by hand, and a link is only a link if it is a web address
           links: storedLinks(s.links), areas: storedAreas(s.areas), levels: s.levels && typeof s.levels === 'object' && !Array.isArray(s.levels) ? s.levels : {},
           feedback: storedFeedback(s.feedback),
+          // a save from before interests and headlines has none of either
+          interests: storedInterests(s.interests), headlines: storedHeadlines(s.headlines),
           // a save from before Fitness gets the sample's training week if it is still the sample, and none if it is the user's own;
           // what a save does hold is kept only where it is a record
           routines: s.routines === undefined ? (fresh ? current.routines : []) : storedRoutines(s.routines),
