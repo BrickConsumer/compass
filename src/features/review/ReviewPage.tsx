@@ -1,9 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
-import { useState } from 'react';
-import { addDaysISO, dayOfMonth, isoWeek, longDate, shortDay, toISO, weekDays, weekdayShort, weekLabel, weekStartOf } from '../../domain/dates';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import { addDaysISO, dayOfMonth, isISODate, isoWeek, longDate, shortDay, toISO, weekDays, weekdayShort, weekLabel, weekStartOf } from '../../domain/dates';
 import { sessionCount, sessionsForWeek } from '../../domain/fitness';
-import { isBlank, reviewAward, reviewExcerpt, weekSummary } from '../../domain/review';
+import { canReview, isBlank, reviewAward, reviewExcerpt, weekSummary } from '../../domain/review';
 import { KINDS } from '../../domain/study';
 import { tasksForWeek } from '../../domain/tasks';
 import { type ISODate, type Review, SUBJECT_COLOURS } from '../../domain/types';
@@ -186,6 +187,13 @@ export function ReviewPage() {
   const today = useToday(), startsOn = useCompass((s) => s.settings.weekStartsOn), reviews = useCompass((s) => s.reviews);
   const thisWeek = weekStartOf(today, startsOn), [week, setWeek] = useState(thisWeek), areas = useCompass((s) => s.areas);
   const kept = reviews.filter((r) => r.savedAt && !isBlank(r, areas)).sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+  // a review found by search comes here asking for its week. A week still to come cannot be reviewed, so it is not opened
+  const location = useLocation(), navigate = useNavigate(), asked = (location.state as { week?: string } | null)?.week;
+  useEffect(() => {
+    if (!asked) return;
+    if (isISODate(asked) && canReview(asked, today, startsOn)) setWeek(weekStartOf(asked, startsOn));
+    navigate(location.pathname, { replace: true, state: null });
+  }, [asked, today, startsOn, navigate, location.pathname]);
   return (
     <main className="mx-auto flex max-w-[1100px] flex-col gap-5 px-4 pb-32 pt-[max(16px,env(safe-area-inset-top,0px))] sm:px-5 sm:pb-12 lg:pl-1.5 lg:pr-7 lg:pt-8">
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 sm:pl-5">

@@ -2,7 +2,7 @@ import { isISODate, weekDays, weekdayOf } from './dates';
 import { cleanDays } from './habits';
 import type { Progress } from './tasks';
 import type { Best, ISODate, Measure, Routine, RoutineLine, Workout, WorkoutLine } from './types';
-import { cleanWords, type Loose, objects, once, words } from './words';
+import { cleanWords, type Loose, objects, once, time, words } from './words';
 
 export { cleanWords };
 
@@ -31,7 +31,7 @@ export function storedWorkouts(value: unknown): Workout[] {
     const id = words(x.id), name = cleanWords(words(x.name), L.routineName), date = words(x.date);
     if (!id || !name || !isISODate(date)) return [];
     const lines = once(objects(x.lines).flatMap((l): WorkoutLine[] => { const text = cleanWords(words(l.text), L.line); return words(l.id) && text ? [{ id: words(l.id), text, done: l.done === true }] : []; }));
-    return [{ id, routineId: words(x.routineId), name, date, lines, note: words(x.note).slice(0, L.note), ...(words(x.finishedAt) ? { finishedAt: words(x.finishedAt) } : {}), ...(x.milesAwarded === true ? { milesAwarded: true as const } : {}) }];
+    return [{ id, routineId: words(x.routineId), name, date, lines, note: words(x.note).slice(0, L.note), ...(time(x.finishedAt) ? { finishedAt: time(x.finishedAt) } : {}), ...(x.milesAwarded === true ? { milesAwarded: true as const } : {}) }];
   })).filter((w) => {
     // a session that names no routine is nobody's second session
     const key = `${w.routineId}|${w.date}`;

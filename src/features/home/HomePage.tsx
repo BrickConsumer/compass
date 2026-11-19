@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useOutletContext, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate, useOutletContext, useSearchParams } from 'react-router';
 import type { ShellContext } from '../../app/AppShell';
 import { addDaysISO, isISODate, isoWeek, longDate, shortDate, weekLabel, weekStartOf } from '../../domain/dates';
 import { greeting } from '../../domain/greeting';
@@ -52,6 +52,10 @@ export function HomePage() {
   // the storm follows a missed day, but only once that day is over
   const yesterday = addDaysISO(selected, -1), stormy = yesterday < today && missedDay(tasks, yesterday);
   const closeEditor = useCallback(() => setEditing(null), []);
+  // A task found by search comes here asking for its editor, on its day. The asking is used once, so coming back to
+  // the day later does not open it again.
+  const location = useLocation(), navigate = useNavigate(), asked = (location.state as { task?: string } | null)?.task;
+  useEffect(() => { if (!asked) return; setEditing({ id: asked }); navigate(`${location.pathname}${location.search}`, { replace: true, state: null }); }, [asked, navigate, location.pathname, location.search]);
 
   return (
     <main className="mx-auto flex max-w-[1560px] flex-col px-4 pb-32 lg:min-h-dvh pt-[max(12px,env(safe-area-inset-top,0px))] sm:px-5 sm:pb-10 lg:pl-1.5 lg:pr-7 lg:pt-4">

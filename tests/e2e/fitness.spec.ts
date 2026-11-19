@@ -724,10 +724,12 @@ test('on a phone, every button, link and box to tick in Fitness is tall enough f
       expect(box.height, await control.evaluate((el) => `${el.tagName} ${el.getAttribute('aria-label') ?? el.textContent}`)).toBeGreaterThanOrEqual(44);
     }
   };
-  await tall(place(page).locator('button, a, label:has(input[type="checkbox"]), input:not([type="checkbox"]), textarea'), 60);
+  // How many there are depends on the day of the week: a routine set for today is in the week, and not on offer as
+  // well. The counts only make sure the controls were found at all, so they are set below any day's.
+  await tall(place(page).locator('button, a, label:has(input[type="checkbox"]), input:not([type="checkbox"]), textarea'), 30);
   await page.goto('/');
   await expect(page.locator('[data-training="foot"]')).toBeVisible();
-  await tall(page.locator('[data-training="foot"]').locator('button, a, label:has(input[type="checkbox"])'), 5);
+  await tall(page.locator('[data-training="foot"]').locator('button, a, label:has(input[type="checkbox"])'), 1);
 });
 
 test('a session is started, ticked and finished by keyboard alone', async ({ page }) => {
@@ -796,7 +798,8 @@ test('the routines that can be started say so in their names', async ({ page }) 
 
 test('a stray Backspace or Delete does not remove a line where there is no Undo', async ({ page }) => {
   await wide(page);
-  await fit(page, '/fitness', { routines: [GYM], workouts: [] });
+  // with no fixed day, so that it is on offer whatever day the tests are run on: set for today it would be in the week instead
+  await fit(page, '/fitness', { routines: [{ ...GYM, days: [] }], workouts: [] });
   await routineRow(page, 'rt-gym').getByRole('button').click();
   const list = editor(page).locator('[data-item]');
   await list.first().getByRole('button').focus();

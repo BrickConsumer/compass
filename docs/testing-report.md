@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, and sections 16 and 17 on 19 November |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, and sections 16 to 18 on 19 November |
 | Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it. Section 14, the Study detail, is on the branch `study-detail`, cut from that |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 382 unit tests pass and 237 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16 and interests and headlines in section 17; before the five it was 225 and 72, and all of those still pass unchanged.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 430 unit tests pass and 267 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17 and search and backup in section 18; before the six it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -483,7 +483,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 19). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 20). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -544,7 +544,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 19).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 20).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -627,7 +627,7 @@ On 18 November, after the piece was committed, `main` was merged into the branch
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 19).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 20).
 
 ### Calls made in the build that the founders can overrule
 
@@ -682,7 +682,7 @@ It also noted things that are older than this piece: Home is wider than a 320 px
 
 ### Found on the way
 
-- **Home is 21 px wider than a 320 px screen,** with or without Fitness. Its date and its two round buttons do not fit below about 341 px. Left alone, and listed in section 19. Fitness's own pages fit at 320 px, and a test holds that Home is no wider with Fitness than without.
+- **Home is 21 px wider than a 320 px screen,** with or without Fitness. Its date and its two round buttons do not fit below about 341 px. Left alone, and listed in section 20. Fitness's own pages fit at 320 px, and a test holds that Home is no wider with Fitness than without.
 - **The ring on Home had no room for a thumb.** A habit's ring is pressed through its name, but a session's name is a button of its own. The test that measures every control found it. Fixed.
 - **One run lost its dev server near the end,** and the last twelve tests could not connect. None was a Fitness test, and the next run passed. This is the fault described in section 14.
 - **Two older tests of the look review page failed on CI,** on this piece's pull request and, earlier the same day, on `main` after a merge that changed only documents. A CI runner draws the sea in software. One test counted the graphics driver's remark on its own speed ("GPU stall due to ReadPixels") as a warning from the page. The other compared two pictures of the still scene before it had settled. The remark is now left out where warnings are counted, in that test and in one like it for the dark theme, and the pictures are taken again until a pair matches, which a scene that kept moving never would. Neither could be reproduced on a laptop, with or without software drawing. On the next run on CI the driver's remark failed nothing and the still scene matched, but the runner was slower still and two tests ran out of time. The fittings test rebuilds the boat for each fitting and had been taking 20 to 31 seconds on CI against a limit of 30, so it is given three times as long. An older Study test pressed "Edit subject" straight after choosing another subject, without waiting for it to show; on a slow machine that opens the editor of the subject about to leave, and the editor then goes with it. This one was reproduced, on a processor slowed six times, and the test now waits for the subject. The same press on a slow phone would do the same to a person, for the half second the page takes to change.
@@ -690,7 +690,7 @@ It also noted things that are older than this piece: Home is wider than a 320 px
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 19).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 20).
 - Whether Escape inside a line being changed keeps the editor open in browsers other than Chrome.
 
 ### Calls made in the build that the founders can overrule
@@ -752,14 +752,72 @@ Left as they are, to be decided:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 19).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 20).
 - A double tap by finger. A mouse says which press of a run it is; a finger may not, so a touch in the same place straight after is treated as one. Tried with a mouse only.
 
 ### Calls made in the build that the founders can overrule
 
 They are in the specification: section 9 for the calls made in the design, and section 11 for those made in the build. The largest are that headlines are saved by hand and nothing is fetched, that a student adds their own interests with Investing and Law as two starting points, and that a form's parts are words.
 
-## 18. Built differently from the approved spec
+## 18. Search and backup
+
+Built on 19 November on the branch `search-and-backup`, to [search-and-backup-spec.md](search-and-backup-spec.md). It is the last of five pieces of Aditya's plan. **It was designed and built without a review first,** as section 17 was. The specification's section 8 lists the calls most worth a look.
+
+![Search for "essay", with the kinds above what was found](screenshots/search-backup/1-search-1440.png)
+
+### What was built
+
+- **Search:** the menu that opens with Cmd or Ctrl and K finds everything Compass keeps, from the second character typed: tasks, subjects, assessments, feedback, study sessions, pages and what is written in them, interests, headlines, habits, saved reviews, links, and what Fitness keeps while it is switched on. A result says what it is and where it is kept, shows the words found when they are in its writing, and opens the thing itself.
+- **Kinds:** once anything is found, a row of kinds with counts narrows it.
+- **A backup,** in Settings: one JSON file holding everything, made in the browser and sent nowhere.
+- **Restoring one:** Compass reads the file and says what it holds before anything changes. Restoring replaces everything but the theme, and its toast can take it back.
+- **Opening a save, made stricter.** A backup is opened by the same check as the browser's own save, and that check now reads only Compass's own data and builds every record again from typed parts.
+- **A page that fails as it is drawn** is replaced by a few words, with the rail and the way to Settings still there.
+
+### Checked
+
+- **Unit tests, 48 new:** every row of the specification's search table; matching by every word, in any case, with and without accents; the order of results; excerpts; counts by kind and the limits of what is shown; each check a save passes, with whole records kept exactly and broken ones dropped or mended; a save of one of every kind of record opening exactly as it was saved; a value of the wrong kind in every part of every record, more than 1,500 cases; the backup file written and read back; each refusal; restore, its Undo, and a backup edited by hand.
+- **Browser tests, 30 new:** a task found by its notes and opened on its day with its editor; kinds and their counts; a page found by a part of its form; a headline opened in a new tab that cannot reach back; a review opened on its week and an interest opened chosen; Fitness found only while on; the arrows and typing; the download, named for the day and holding everything; restore, what it says first, "Keep what is here", and Undo; each refusal; a restored backup after a reload; a backup edited by hand; every place opened with something of the wrong kind in every part of every record; the page that says a page could not be shown; a restore the browser will not keep; announcements and focus; widths from 320 to 1440 px; thumb sizes; and a restore by keyboard alone.
+- **Everything from before:** the 382 unit tests and 237 browser tests pass. One older test file was changed, `tests/e2e/fitness.spec.ts`, for two tests that depended on the day of the week: see "Found on the way".
+- **In the dark theme:** all 267 browser tests pass with the device set to dark.
+- **As CI runs it:** 261 pass and the six sea tests are skipped, as designed.
+- **On every day of the week:** both suites were run with the clock moved on by one to six days, in the tests and in the app together. All pass.
+- **Pictures** of the built menu and of Settings are in `screenshots/search-backup/`, numbered.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 19 November, ran the unit tests, and tried the running app with its own probes and the worst files it could build. It confirmed that no record a real, unedited save could hold is dropped or changed; that a file's keys cannot reach the store's functions or the prototype of every object; that no address but an http or https one can reach a link; that nothing is sent anywhere; and that nothing is searched while the menu is closed. A search over 3,000 tasks and 100 long pages took 10 to 23 ms. These were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| **A backup edited by hand could stop Home opening, on every load.** A task marked done with `true` and not a time passed the check, and sorting the day's tasks then failed. | A task is built again from typed parts, as is every other record. A page that fails is replaced by a few words inside Compass. |
+| A review saved at "last Sunday" and not a time failed the Weekly review | The time is kept only if it is one |
+| A page whose date to aim for was a list made opening a save throw. From a file, nothing was said. From the browser's own save, Compass opened on the sample and then wrote over the save. | A day is checked as a day whatever kind of thing is there, and a file that cannot be opened is refused in words |
+| A test of this piece failed on Saturdays and Sundays | Its habit is for every day |
+| "bio test" did not find a Biology task called "Revise for the test", which is the specification's own example | A word in what a thing belongs to counts |
+| The downloaded file's address was dropped after a second, which a phone's "save this file?" can outlast | It is kept for a minute |
+| What a backup holds might not be announced, and both answers dropped focus to the page | It is said in a place that is there beforehand, and focus goes back to the button that asked |
+| "Download a backup" in search saved a file at once, so Enter after "do" downloaded one | Both commands go to Settings |
+| A restore the browser would not save was silent, with the backup on screen and the old data saved | It says so and puts back what was here |
+| Bests and measures were not found by value; an excerpt was wrong for accented text; unsaved reviews were found; a letter typed with a kind in hand was lost; a subject or a page could be kept twice; a user's own save with no assessments got the sample's; the count of what a backup holds named a training week nobody had seen | Each put right |
+
+### Found on the way
+
+- **The sample's pages were stamped as if a day began at midnight in London.** For some hours after midnight anywhere east of it, the newest sample page was "changed later than now", so a page changed just then did not come first in My pages, and an older test failed. The clock passed midnight during this work, which is how it was seen. They are stamped by the device's own clock now.
+- **Two older Fitness tests depended on the day of the week.** One expected a routine to be on offer that is set for Mondays and Fridays, and failed on a Friday. One counted the controls on the page, of which there are fewer on a Tuesday and a Wednesday. Both would have failed on CI on those days. Each now holds on any day.
+- **A test raced the browser's file box.** Playwright hands the file box to a test only once the test is listening for it, and a listener added in the same breath as the key press was sometimes too late. It listens from the start now. Seen once in eight runs.
+- **One run lost its dev server part-way,** and every test after that failed at once. The next run passed. This is the fault described in section 14.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 20). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
+- Whether a screen reader announces what a backup holds. The place it is said in is built the way that is announced; nobody has listened.
+
+### Calls made in the build that the founders can overrule
+
+They are in the specification: section 8 for the calls made in the design, and section 10 for those made in the build. The largest are that search lives in the menu and not on a page of its own, that restoring replaces everything and does not merge, and that a save is now checked far more strictly when it is opened.
+
+## 19. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -773,7 +831,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 19. Known limitations
+## 20. Known limitations
 
 - Home is 21 px wider than a 320 px screen: its date and its two round buttons do not fit below about 341 px.
 
