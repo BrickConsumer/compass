@@ -270,8 +270,8 @@ function storedSubject(subject: Subject): Subject {
   return { id: subject.id, name: subject.name, colour, ...(typeof subject.notes === 'string' ? { notes: subject.notes } : {}), ...(topic ? { topic } : {}), ...(kept.length ? { links: kept } : {}) };
 }
 
-/** The settings that outlast the data: the theme, which belongs to the device, and whether Fitness is shown. */
-const kept = (settings: Settings): Partial<Settings> => ({ theme: settings.theme, ...(settings.fitness === true ? { fitness: true } : {}) });
+/** The settings that outlast the data: the theme, which belongs to the device, whether Fitness is shown and whether headlines are fetched. */
+const kept = (settings: Settings): Partial<Settings> => ({ theme: settings.theme, ...(settings.fitness === true ? { fitness: true } : {}), ...(settings.headlines === true ? { headlines: true } : {}) });
 
 /**
  * A page from a save. Its link is kept only if it is a web address, its parts only where they have an id and a label,
@@ -907,9 +907,10 @@ export const useCompass = create<CompassStore>()(
       resetSample: () => set((s) => { const next = seed(todayISO()); return { ...next, settings: { ...next.settings, ...kept(s.settings) } }; }),
       clearAll: () => set((s) => { const next = empty(); return { ...next, settings: { ...next.settings, ...kept(s.settings) } }; }),
       restoreBackup: (data) => {
-        const before = dataOf(get()), next = backupData(data), { theme: _theirs, ...settings } = next.settings, theme = before.settings.theme;
-        // the theme belongs to the device, so it is this device's whatever the backup had
-        set({ ...next, settings: { ...settings, ...(theme !== undefined ? { theme } : {}) } });
+        const before = dataOf(get()), next = backupData(data), { theme: _theirs, headlines: _theirSwitch, ...settings } = next.settings, mine = before.settings;
+        // the theme belongs to the device, so it is this device's whatever the backup had. So does whether headlines are
+        // fetched: a file from another device, or another person, must not be what turns the network on here
+        set({ ...next, settings: { ...settings, ...(mine.theme !== undefined ? { theme: mine.theme } : {}), ...(mine.headlines === true ? { headlines: true } : {}) } });
         return before;
       },
       undoRestore: (before) => set(dataOf(before)),

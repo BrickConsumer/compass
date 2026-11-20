@@ -1,0 +1,48 @@
+name: Headlines
+
+# Builds the list of headlines that Compass can fetch, and puts it on a branch of its own.
+# What it reads, and the terms that let it, are in docs/fetched-headlines-spec.md.
+on:
+  schedule:
+    # every four hours, at 17 minutes past, when the scheduler is less busy
+    - cron: '17 */4 * * *'
+  # and by hand, from the Actions tab
+  workflow_dispatch:
+
+# It writes one file to the branch "headlines". It never writes to main, which is protected.
+permissions:
+  contents: write
+
+# One run at a time, and a run that has started is left to finish.
+concurrency:
+  group: headlines
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish the list
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      # nothing is installed: the scripts have no dependencies
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      # with no branch yet there is no list. If the branch cannot be read for any other reason the run stops here,
+      # so that a list is never built from nothing while an earlier one exists
+      - name: Take the list as it stands
+        run: bash scripts/take-headlines.sh out/headlines.json
+      - name: Read the sources and build the list
+        env:
+          # empty until a founder adds it. The Guardian is not asked while it is off: see the specification, section 9
+          GUARDIAN_KEY: ${{ secrets.GUARDIAN_KEY }}
+        run: node scripts/publish-headlines.mjs out/headlines.json
+      - name: Publish it
+        run: bash scripts/push-headlines.sh out/headlines.json
+      # the list is published first, and then the run fails if a source has not been read for a day,
+      # which is how its owner comes to hear of it
+      - name: Say so when a source has gone quiet
+        env:
+          GUARDIAN_KEY: ${{ secrets.GUARDIAN_KEY }}
+        run: node scripts/publish-headlines.mjs --check out/headlines.json

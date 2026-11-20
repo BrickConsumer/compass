@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { cleanHeadline, FORM_SETS, FORMS, formOf, interestPages, latestHeadlines, startersIn, storedFields, storedHeadlines, storedInterests } from './interests';
+import { shownHeadlines } from './fetched';
+import { cleanHeadline, FORM_SETS, FORMS, formOf, interestPages, startersIn, storedFields, storedHeadlines, storedInterests } from './interests';
 import { newPage, pageLine, pagesAsText } from './pages';
-import type { Headline, Interest, Page } from './types';
+import type { Headline, Interest, ISODate, Page } from './types';
 
 const NOW = '2026-11-19T09:00:00.000Z';
 const INVESTING: Interest = { id: 'in-1', name: 'Investing', forms: 'investing' }, LAW: Interest = { id: 'in-2', name: 'Law', forms: 'law' }, OWN: Interest = { id: 'in-3', name: 'Chess', forms: 'none' };
@@ -114,7 +115,6 @@ describe('headlines', () => {
 
   it('puts the newest day first, and of two for one day the one saved later', () => {
     const all = [headline('a', '2026-11-09'), headline('b', '2026-11-12'), headline('c', '2026-11-12'), headline('d', '2026-11-11')];
-    expect(latestHeadlines(all).map((h) => h.id)).toEqual(['c', 'b', 'd']);
-    expect(latestHeadlines(all, 10).map((h) => h.id)).toEqual(['c', 'b', 'd', 'a']);
+    expect(shownHeadlines(all, null, [], '2026-11-20' as ISODate).map((h) => h.id)).toEqual(['c', 'b', 'd', 'a']);
   });
 });

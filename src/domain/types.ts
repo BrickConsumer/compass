@@ -182,7 +182,7 @@ export interface PageField { id: string; label: string; /** Up to 2,000 characte
 
 /**
  * A headline saved by hand: its title, where the article is, where it is from and the day it was published.
- * Compass fetches nothing: a headline is only what was typed, and its address opens in a new tab.
+ * It is only what was typed, and its address opens in a new tab. Fetched headlines are not kept here: see `FeedList`.
  */
 export interface Headline {
   id: string;
@@ -257,6 +257,11 @@ export interface Settings {
   theme?: Theme;
   /** True while the Fitness place is shown. Absent means off, which hides the place and keeps what is in it. */
   fitness?: boolean;
+  /**
+   * True while Compass fetches its public list of headlines. Absent means off, and off is how Compass starts:
+   * while it is off, nothing is asked of anywhere.
+   */
+  headlines?: boolean;
 }
 
 type SubjectPaint = Record<SubjectColour, { dot: string; tint: string; text: string }>;

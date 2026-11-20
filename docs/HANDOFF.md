@@ -116,6 +116,9 @@ Written 16 November 2026 and brought up to date on 17 and 18 November, to carry 
 - `docs/search-and-backup-spec.md`: the fifth and last piece, built on 19 November without a review first. Search across everything in the command menu, a backup file downloaded and restored in Settings, and a stricter check of every save as it is opened. Its section 8 lists the calls most worth a look, and section 10 says what the build and its review added.
 - `docs/superpowers/plans/2026-11-19-search-and-backup.md`: the build plan for that piece.
 - `docs/screenshots/search-backup/`: pictures of the built menu and of Settings. Nothing was mocked.
+- `docs/fetched-headlines-spec.md`: headlines that arrive by themselves, built on 20 November. Oliver chose the approach (a list Compass publishes), the sources and how Home shows them. Section 4 holds each source's terms, section 9 what the Guardian needs before it is switched on, section 10 the calls most worth a look, and section 12 what the build and its review added.
+- `docs/superpowers/plans/2026-11-20-fetched-headlines.md`: the build plan for that piece.
+- `docs/screenshots/fetched-headlines/`: pictures of the built pages, with a list the job really built.
 - **Aditya's plan in Compass:** https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot. Private, so it needs sharing from its Share menu. Where each part of the plan goes, the first piece mocked on Home and the Weekly review, and the six decisions Oliver made from it.
 - `docs/art-direction/*.png`: images of the original review boards.
 - `docs/screenshots/lookdev/`: the second boat review, covering sailing, golden hour, port, storm and the four boats.
@@ -150,6 +153,16 @@ These versions are installed.
 
 **Motion 14.14 is installed.** Components use `m` from `motion/react-m`, and the engine is loaded after the first paint (`src/design/motionFeatures.ts`). Using `motion` from `motion/react` inside the app throws, on purpose.
 
+### The headlines job
+
+Fetched headlines come from a file that a job on GitHub rebuilds every four hours: `.github/workflows/headlines.yml`. It runs four steps with nothing installed, and commits `headlines.json` to the branch `headlines`, which holds that file and a note and shares no history with `main`. The specification, `docs/fetched-headlines-spec.md`, says what it reads and why it may.
+
+- **To run it by hand:** the Actions tab, "Headlines", "Run workflow". Or on a laptop, without publishing: `node scripts/publish-headlines.mjs out/headlines.json`, which reads the real feeds and writes the list into `out/`, a folder git ignores.
+- **When a run fails,** GitHub tells the repository's owner. Its last step fails on purpose when a source has not been read for a day; the list was still published. Its first step fails when the branch is there and cannot be read, and then nothing is published, so that a list is never built from nothing.
+- **GitHub stops scheduled jobs** in a public repository after 60 days with no activity in it, and says so by email. Running the job by hand starts it again. Until then Compass says how old its list is.
+- **To add a source:** read its terms, write them into the specification's section 4, and add a row to `FEED_SOURCES` in `src/domain/feeds.ts`. A headline's address must be on the site named there.
+- **The Guardian** is in that table and off. Turning it on is four steps, in the specification's section 9, and each is a founder's to do.
+
 ### Commands
 ```bash
 npm run dev
@@ -158,7 +171,7 @@ Opens on http://localhost:5173. It is also set up in `.claude/launch.json` as "c
 ```bash
 npm test
 ```
-Runs 429 unit tests, all passing (225 before Aditya's plan, 256 after its first piece, 285 on `main` once night and the dark theme were merged, 313 with the Study detail, 350 with Fitness, 382 with interests and headlines, 430 with search and backup, and 429 once two unused searches were taken out and the small faults put right).
+Runs 563 unit tests, all passing (225 before Aditya's plan, 256 after its first piece, 285 on `main` once night and the dark theme were merged, 313 with the Study detail, 350 with Fitness, 382 with interests and headlines, 430 with search and backup, 429 once two unused searches were taken out and the small faults put right, 456 with the new waters, and 563 with fetched headlines). Seven of them, in `scripts/headlines-job.test.ts`, run the headlines job's two shell scripts against a throwaway repository, so they need `git` and `bash`.
 ```bash
 npm run build
 ```
@@ -166,7 +179,7 @@ Type-checks and builds; passing. The main bundle is 175 kB compressed. The 3D ch
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 280 browser tests in the installed Chrome, all passing (72 before Aditya's plan, 115 after its first piece, 127 on `main` once night and the dark theme were merged, 159 with the Study detail, 206 with Fitness, 237 with interests and headlines, 267 with search and backup, and 280 with the small faults put right). Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed. The tests start a dev server of their own on port 5174, fresh for each run, so they never use the one open on 5173.
+Runs 327 browser tests in the installed Chrome, all passing (72 before Aditya's plan, 115 after its first piece, 127 on `main` once night and the dark theme were merged, 159 with the Study detail, 206 with Fitness, 237 with interests and headlines, 267 with search and backup, 280 with the small faults put right, 292 with the new waters, and 327 with fetched headlines). No test asks anything of the real network: the tests of fetched headlines hand the page its list. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed. The tests start a dev server of their own on port 5174, fresh for each run, so they never use the one open on 5173.
 
 **CI** is `.github/workflows/ci.yml`: two jobs on every pull request, one for the build and unit tests and one for the browser tests in Playwright's own Chromium.
 - A pull request is only checked if its branch holds the workflow file, so the pull requests below the `ci` branch in the stack get no checks until the stack is merged.
@@ -180,12 +193,13 @@ Runs 280 browser tests in the installed Chrome, all passing (72 before Aditya's 
 - `/study` and `/study/:subjectId`: the subjects, in the order of this week's levels, each with its topic. One subject's page has its topic, its level for this week, its assessments with their preparation, its tasks, feedback, pages, links, study sessions and notes.
 - `/review`: a week's summary, ratings out of 10 for each area, a reflection of three questions, priorities and subject levels for the week after, and the saved reviews.
 - `/pages` and `/pages/:pageId`: the user's own pages, and one page's list and writing. The list begins with the interests; choosing one shows its pages, and which is chosen is not in the address.
-- `/pages/headlines`: the saved headlines, in the place a page opens.
+- `/pages/headlines`: the headlines, in the place a page opens. With "Fetch headlines" on, the fetched ones come first, each with "Keep", and the saved ones follow.
 - `/fitness` and `/fitness/:workoutId`: only a place while Fitness is switched on in Settings; switched off, the address says so and offers the switch. The week's sessions, what was done lately, the routines, and bests and measures. The second address has one session open at the top.
 - `/settings`:
   - your name, for the greeting on Home;
   - week start, pause and fold the sea;
   - "Show Fitness", which is off at first;
+  - "Fetch headlines", which is off at first (`/settings#headlines` goes straight to it). It is the only thing in Compass that asks anything of a network;
   - the areas rated in the Weekly review, and the links (`/settings#links` goes straight to them);
   - download a backup of everything, or restore from one (`/settings#data` and `/settings#restore` go straight to the two buttons);
   - reset the sample data, or clear everything (with an in-page confirm);
@@ -213,7 +227,9 @@ Runs 280 browser tests in the installed Chrome, all passing (72 before Aditya's 
 - `feedback.ts`: what a teacher said about a subject. `cleanFeedback` tidies an entry, `subjectFeedback` lists a subject's newest first, and `feedbackTask` finds the task made from an entry, which is an ordinary task named by the entry's `taskId`.
 - `habits.ts`: which habits fall on a day, a habit's week, counts, and choosing days. A tick is one habit on one day, kept as a key in a flat list.
 - `pages.ts`: the five kinds of page, the rules for a page's list, the one-line summary, the order of the list, search and export. An item on a page is not a task and earns nothing. For Study: `subjectPages` (the pages that carry a subject), the four starters (`STARTERS`, `startersFor`) and `subjectPageLine`. `storedItems` keeps only what is an item when a save is opened.
-- `interests.ts`: the three starting points and what each offers (`FORM_SETS`, `FORMS`, `PLAIN`, `startersIn`), an interest's pages and name, and headlines: `cleanHeadline` (the one check a headline passes, typed or from a save), `siteName` and `latestHeadlines`. A form's parts are words; nothing is read out of them.
+- `interests.ts`: the three starting points and what each offers (`FORM_SETS`, `FORMS`, `PLAIN`, `startersIn`), an interest's pages and name, and saved headlines: `cleanHeadline` (the one check a headline passes, typed or from a save) and `siteName`. A form's parts are words; nothing is read out of them.
+- `feeds.ts`: the published list of headlines and every rule about it. **It imports nothing, on purpose:** the headlines job runs it in plain Node exactly as written, so an import without a file's ending would break the job. `FEED_SOURCES` is the sources, each with its own site and whether it is on. `parseFeed` and `cleanItem` read and check a headline, `buildList` builds the list, `readList` is the check the app makes of a published file, and `publish` and `quietSources` are what the job does.
+- `fetched.ts`: fetched headlines on the device. `watchWords` (the lines of a Watchlist page), `namedIn`, `shownHeadlines` (saved and fetched together, in Home's order), `fetchedRows`, `heldList` (what may still be shown at a time) and the words for how old the list is.
 - `words.ts`: `cleanWords`, which keeps words as typed within a limit, and the small helpers that read a list from a save without trusting it.
 - `search.ts`: `searchAll`, which finds everything Compass keeps by every word typed, in the order names first and writing after; `countByKind` and `shownResults` for the menu. Each thing found says what it is, where it is kept and where it opens. Fitness is searched only while it is switched on.
 - `stored.ts`: what is kept from a save, list by list: the boat, the settings, the log, habits, sessions, reviews, levels, tasks and assessments. Each record is built again from typed parts, so a save or a backup edited by hand cannot put a value of the wrong kind where a page will trip on it. The checks for the newer lists are beside their rules (`links.ts`, `feedback.ts`, `fitness.ts`, `interests.ts`, `pages.ts`).
@@ -227,6 +243,7 @@ Runs 280 browser tests in the installed Chrome, all passing (72 before Aditya's 
 
 **`state/`**
 - `store.ts`: a Zustand store saved to localStorage under `compass:v1`. It falls back to memory if storage is blocked, and falls back to the sample if the saved data is corrupt. `openSave` is the one check every save passes, when Compass starts and when a backup is restored; `DATA_KEYS` names everything that is saved, and only those are read. `restoreBackup` and `undoRestore` replace everything and put it back. The store listens for another tab's save and takes it up, and reads again when its tab is looked at again, so two tabs do not write over each other. The save made as Compass opens (by `makeSessionTasks`, even with nothing due) is what first puts the data on the device: the browser tests wait for it.
+- `fetched.ts`: the fetched list of headlines, in a small store of its own, apart from the saved data and kept under `compass:fetched`. It asks for the list only while `settings.headlines` is true: when Compass opens, when the switch goes on, and when the tab is looked at, no more than every half hour. `main.tsx` starts it. **Anything that changes when or what Compass asks of the network is here,** and `src/state/fetched.test.ts` and the first tests of `tests/e2e/fetched-headlines.spec.ts` hold it to asking nothing while the switch is off and sending nothing about the student while it is on.
 - `useToday.ts`: today's date, rechecked every minute and when the tab becomes visible.
 - `useHour.ts`: the hour, rechecked the same way, for the greeting.
 
@@ -277,7 +294,7 @@ Runs 280 browser tests in the installed Chrome, all passing (72 before Aditya's 
 
 **`features/pages/`**
 - `PagesPage` (the list and the open page's sheet), `PageItems` (a page's list, with the smaller square tick), and `PageEditor` (title, kind, subject, interest, source link, date, delete).
-- `Interests` (the interests at the head of the list, the head of one that is chosen, what it can start, and its editor) and `Headlines` (the headlines' sheet, a row, and the editor). `features/home/HomeHeadlines` is the newest three on Home.
+- `Interests` (the interests at the head of the list, the head of one that is chosen, what it can start, and its editor) and `Headlines` (the headlines' sheet, a row, and the editor). `Headlines` also holds the fetched part of the page, with "Keep". `features/home/HomeHeadlines` is the three on Home: the newest saved ones with "Fetch headlines" off, and saved and fetched together with it on.
 
 **`features/review/`**
 - `ReviewPage`: the week's sheet and the list of saved reviews. Its priorities reuse Home's `TaskRow`, `TaskComposer` and `TaskEditor`.
@@ -360,7 +377,7 @@ The full list is in `docs/next-stages.md`.
 1. **Done on 18 November: the stack is merged.** All thirteen pull requests are in `main`, in order. None was reviewed by anyone but Oliver.
 2. **A founder opens Home on a real phone,** and in Safari.
 3. **Merge the new waters.** `new-waters` is built and committed (committed on 20 November so that `main` could be merged into it), and it is up to date with `main`. No pull request is open for it yet, and no founder has reviewed how the waters look; the pictures are in `docs/screenshots/waters/`.
-4. **Aditya's plan.** All five of its pieces are built. Pieces 1 to 3 (Home and the Weekly review, the Study detail, Fitness) are merged into `main`; Oliver approved each for the founders, and the review pages are https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot, https://claude.ai/artifact/K3yezjZJ4BZDaCC9FQk4Bs and https://claude.ai/artifact/4Fe74TZBYbNVKJg9YXfXcy. Pieces 4 and 5 (interests and headlines; search and backup) were built without a review first, by Oliver's instruction of 19 November, and wait for him to go through them. Both are merged into `main`, as pull requests 17 and 18. Each one's specification lists the calls made without him: see `docs/next-stages.md`, Stage 8. The small faults noted along the way were put right on 20 November on `polish` (`docs/testing-report.md`, section 19).
+4. **Aditya's plan.** All five of its pieces are built. Pieces 1 to 3 (Home and the Weekly review, the Study detail, Fitness) are merged into `main`; Oliver approved each for the founders, and the review pages are https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot, https://claude.ai/artifact/K3yezjZJ4BZDaCC9FQk4Bs and https://claude.ai/artifact/4Fe74TZBYbNVKJg9YXfXcy. Pieces 4 and 5 (interests and headlines; search and backup) were built without a review first, by Oliver's instruction of 19 November, and wait for him to go through them. Both are merged into `main`, as pull requests 17 and 18. Each one's specification lists the calls made without him: see `docs/next-stages.md`, Stage 8. The small faults noted along the way were put right on 20 November on `polish` (`docs/testing-report.md`, section 19). Oliver then went through the app and asked for the one part of piece 4 that had been left: headlines that arrive by themselves. That was designed and built the same day on `fetched-headlines` (`docs/fetched-headlines-spec.md`, and section 21 of the testing report). What is left of it is a founder's to do: the four steps that switch the Guardian on, in the specification's section 9.
 5. **Decorations,** the last part of Stage 7 (a sail mark, a pennant shape, one keepsake a season), with a short spec of its own first. New waters are built (item 3): three, reached at 800, 2,000 and 3,300 miles, to `docs/new-waters-spec.md`. A new water is one more entry in `src/features/voyage/waters.ts`. Night and the dark theme are merged into `main`; Oliver kept the blue selection and approved the look on 18 November. From here on a component names a colour role, never a step: `src/design/roles.test.ts` holds that.
 6. **Three rules for study sessions are still open,** each built to the recommendation in the mock at https://claude.ai/artifact/K8BkfUFMt7HfLrAgaY66g4 (private; share it from its Share menu): whether sessions count toward the port and the storm, when a week's tasks are made, and what changing a session does to tasks already made. The rules are in `docs/habits-spec.md`, and the mock that settled its place on Home is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b (private; share it from its Share menu). Oliver has accepted the Habits page as a first version; Josh and Aditya have not seen it.
 7. **Boat look review round three**, when Oliver is ready.

@@ -6,5 +6,6 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: { port: 5173, strictPort: true },
-  test: { include: ['src/**/*.test.ts'], environment: 'node' },
+  // the second is the headlines job's two shell scripts, run against a throwaway repository
+  test: { include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'], environment: 'node' },
 });
