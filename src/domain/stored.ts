@@ -34,7 +34,7 @@ export function storedBoat(value: unknown, fallback: Boat): Boat {
   };
 }
 
-/** The settings: the week's first day, the two switches for the sea, and the name, theme and Fitness switch where they are set. */
+/** The settings: the week's first day, the two switches for the sea, and the name, the theme and the switches for Fitness and fetched headlines where they are set. */
 export function storedSettings(value: unknown): Settings {
   const s = isPlain(value) ? value : {};
   return {
@@ -42,6 +42,7 @@ export function storedSettings(value: unknown): Settings {
     ...(typeof s.name === 'string' ? { name: s.name } : {}),
     ...(s.theme === 'auto' || s.theme === 'light' || s.theme === 'dark' ? { theme: s.theme } : {}),
     ...(typeof s.fitness === 'boolean' ? { fitness: s.fitness } : {}),
+    ...(typeof s.headlines === 'boolean' ? { headlines: s.headlines } : {}),
   };
 }
 

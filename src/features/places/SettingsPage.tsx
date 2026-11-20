@@ -26,6 +26,8 @@ export function SettingsPage() {
   useEffect(() => { if (hash === '#links') { document.getElementById('links')?.scrollIntoView(); document.getElementById('new-link-name')?.focus(); } }, [hash]);
   // the two backup commands in search come here, each with the keyboard on its own button
   useEffect(() => { if (hash === '#data' || hash === '#restore') { document.getElementById('data')?.scrollIntoView(); document.getElementById(hash === '#restore' ? 'restore-backup' : 'download-backup')?.focus(); } }, [hash]);
+  // the Headlines page's line about fetching comes here, with the keyboard on the switch
+  useEffect(() => { if (hash === '#headlines') { document.getElementById('headlines')?.scrollIntoView(); document.getElementById('fetch-headlines')?.focus(); } }, [hash]);
   // the prototype tool's two boxes show the voyage as it is, so they follow a restore and its Undo
   const voyageNow = () => { const { log } = useCompass.getState(); setMiles(milesLogged(log)); setDays(daysAtSea(log)); };
   return (
@@ -96,6 +98,14 @@ export function SettingsPage() {
       <section aria-labelledby="set-links" id="links" className="scroll-mt-6">
         <h2 id="set-links" className="text-[20px]">Links</h2>
         <LinksSettings />
+      </section>
+
+      <section aria-labelledby="set-headlines" id="headlines" className="scroll-mt-6">
+        <h2 id="set-headlines" className="text-[20px]">Headlines</h2>
+        <div className="mt-2">
+          <label className={`${row} cursor-pointer`}><span className="text-[15.5px]">Fetch headlines<span className="block max-w-[46ch] text-[13.5px] text-text-muted">Compass downloads a public list of business and economy headlines, the same list for everyone, and picks from it on this device. Nothing about you is sent. GitHub, which holds the list, sees that a device asked for it, as any website sees a visit.</span></span>
+            <input id="fetch-headlines" type="checkbox" className="tick-native size-5 accent-[var(--color-text)]" checked={s.settings.headlines === true} onChange={(e) => s.setSettings({ headlines: e.target.checked })} /></label>
+        </div>
       </section>
 
       <section aria-labelledby="set-data" id="data" className="scroll-mt-6">

@@ -1,10 +1,12 @@
 import { ArrowUpRight, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
-import { dayMonth } from '../../domain/dates';
-import { cleanHeadline, INTEREST_LIMITS, latestHeadlines } from '../../domain/interests';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { dayWords, fetchedRows, hasWatchlist, isStale, type Shown, shownHeadlines, updatedWords, watchWords } from '../../domain/fetched';
+import { FEED_SOURCES } from '../../domain/feeds';
+import { cleanHeadline, INTEREST_LIMITS } from '../../domain/interests';
 import { cleanUrl } from '../../domain/links';
-import type { Headline, ISODate } from '../../domain/types';
+import type { ISODate } from '../../domain/types';
+import { useFetched } from '../../state/fetched';
 import { useCompass } from '../../state/store';
 import { useToday } from '../../state/useToday';
 import { DraftInput } from '../../ui/DraftField';
@@ -19,38 +21,102 @@ const field = 'h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal tex
 /** What is said when the most headlines are saved and another is asked for. */
 const FULL = `${INTEREST_LIMITS.headlines} headlines are saved, which is the most. Delete one to save another.`;
 
-/** The day a headline was published, with its year when that is not this one. */
-const published = (date: ISODate, today: ISODate): string => (date.slice(0, 4) === today.slice(0, 4) ? dayMonth(date) : `${dayMonth(date)} ${date.slice(0, 4)}`);
-
 /**
- * One saved headline: its title, which opens the article in a new tab, then its tag, where it is from and the day
- * it was published. On its own page it can also be changed.
+ * One headline, saved or fetched: its title, which opens the article in a new tab, then a small label, who published
+ * it and the day. The label is a saved headline's own tag, or the line of the Watchlist that the headline names.
+ * Where saved and fetched are shown together (`mixed`), a saved one says that it is. On the Headlines page a saved
+ * one can be changed, and a fetched one kept.
  */
-export function HeadlineRow({ headline: h, today, onEdit }: { headline: Headline; today: ISODate; onEdit?: (id: string) => void }) {
+export function HeadlineRow({ row, today, mixed = false, onEdit, onKeep }: { row: Shown; today: ISODate; mixed?: boolean; onEdit?: (id: string) => void; onKeep?: (row: Shown) => void }) {
+  const mark = row.tag || row.word;
   return (
-    <li data-headline={h.id} className="border-t border-line py-1.5 first:border-t-0">
-      <a href={h.url} target="_blank" rel="noopener noreferrer" aria-label={`${h.title}, opens in a new tab`}
+    <li data-headline={row.id} data-fetched-row={row.kind === 'fetched' ? '' : undefined} className="border-t border-line py-1.5 first:border-t-0">
+      <a href={row.url} target="_blank" rel="noopener noreferrer" aria-label={`${row.title}, opens in a new tab`}
         className="flex min-h-11 items-center justify-between gap-3 rounded-[9px] text-[14.5px] font-semibold leading-[1.35] outline-offset-0 hover:bg-surface-well">
-        <span className="min-w-0 py-1 [overflow-wrap:anywhere]">{h.title}</span>
+        <span className="min-w-0 py-1 [overflow-wrap:anywhere]">{row.title}</span>
         <ArrowUpRight size={15} aria-hidden="true" className="shrink-0 text-text-muted" />
       </a>
       <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-text-muted">
-        {h.tag && <span className="rounded-[5px] px-1.5 text-[12.5px] font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)]">{h.tag}</span>}
-        <span className="min-w-0 [overflow-wrap:anywhere]">{h.source}, {published(h.date, today)}</span>
-        {onEdit && <button type="button" onClick={() => onEdit(h.id)} aria-label={`Edit ${h.title}`} className={`${quiet} ml-auto`}>Edit</button>}
+        {mark && <span data-headline-mark className="min-w-0 rounded-[5px] px-1.5 text-[12.5px] font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] [overflow-wrap:anywhere]">{mark}</span>}
+        <span className="min-w-0 [overflow-wrap:anywhere]">{row.source}, {dayWords(row.date, today)}</span>
+        {mixed && row.kind === 'saved' && <span data-saved-by-you className="font-semibold">Saved by you</span>}
+        {onEdit && row.id && <button type="button" onClick={() => onEdit(row.id!)} aria-label={`Edit ${row.title}`} className={`${quiet} ml-auto`}>Edit</button>}
+        {onKeep && row.keep && <button type="button" data-keep onClick={() => onKeep(row)} aria-label={`Keep ${row.title}`} className={`${quiet} ml-auto`}>Keep</button>}
       </p>
     </li>
+  );
+}
+
+/** The sources that are on, as the credits name them: "The Conversation (Creative Commons) and the Reserve Bank of Australia (CC BY 4.0)". */
+const CREDITS = FEED_SOURCES.filter((s) => s.on).map((s, n) => `${n > 0 && s.name.startsWith('Reserve') ? 'the ' : ''}${s.name} (${s.licence})`).join(' and ');
+
+/** How many watch words the page writes out before it says how many more there are. */
+const WORDS_SHOWN = 8;
+/** How many fetched headlines the page shows before it is asked for the rest, so that the saved ones are never far down. */
+const FIRST = 8;
+
+/**
+ * The fetched headlines, on the Headlines page while "Fetch headlines" is on: the newest eight in the list, and the
+ * rest when asked, with how old the list is, what is being watched for and who published them. "Keep" saves one by
+ * hand, so that it stays after it has left the list.
+ */
+function FetchedPart({ today }: { today: ISODate }) {
+  const headlines = useCompass((s) => s.headlines), pages = useCompass((s) => s.pages), list = useFetched((s) => s.list), failed = useFetched((s) => s.failed);
+  const words = watchWords(pages), rows = fetchedRows(headlines, list, words), now = new Date();
+  const [all, setAll] = useState(false), shown = all ? rows : rows.slice(0, FIRST);
+  // "Keep" takes its row out of this list. The keyboard goes to the row that takes its place, or to the heading
+  const part = useRef<HTMLElement>(null), next = useRef<number | null>(null);
+  useEffect(() => {
+    if (next.current === null) return;
+    const keeps = part.current?.querySelectorAll<HTMLElement>('[data-keep]') ?? [], to = keeps[Math.min(next.current, keeps.length - 1)];
+    next.current = null;
+    (to ?? part.current?.querySelector<HTMLElement>('[data-fetched-title]'))?.focus();
+  });
+  const keep = (row: Shown) => {
+    const store = useCompass.getState(), at = rows.findIndex((r) => r.key === row.key);
+    // the line of the Watchlist it names goes with it as its tag, when it is short enough to be one
+    const id = store.addHeadline({ title: row.title, url: row.url, source: row.source, date: row.date, tag: row.word && row.word.length <= INTEREST_LIMITS.tag ? row.word : '' });
+    // sixty saved is the one thing that refuses a headline from the list. Anything else would be a fault, and is not called that
+    if (!id) return toast(store.headlines.length >= INTEREST_LIMITS.headlines ? FULL : 'That headline could not be kept.');
+    if (document.activeElement instanceof HTMLElement && part.current?.contains(document.activeElement)) next.current = at;
+    toast('Headline saved.', { label: 'Undo', run: () => { useCompass.getState().deleteHeadline(id); } });
+  };
+  const said = failed
+    ? `Compass could not reach the list just now.${list ? '' : ' Your saved headlines are below.'}`
+    : !list ? 'Fetching the list.'
+    : isStale(list.checked, now) ? 'The list has not been updated for a while.'
+    : list.items.length === 0 ? 'No headlines in the list just now.'
+    : rows.length === 0 ? 'You have saved every headline in the list.' : '';
+  return (
+    <section ref={part} aria-labelledby="fetched-title" data-fetched className="mt-1">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 id="fetched-title" data-fetched-title tabIndex={-1} className="rounded-[4px] text-[20px] leading-[1.3]">Fetched</h3>
+        {(list || failed) && <p data-headlines-updated className="text-[13.5px] font-semibold text-text-muted">{updatedWords(list?.checked ?? null, now)}</p>}
+      </div>
+      {said && <p data-fetched-said className="mt-1 text-[14.5px] text-text-muted">{said}</p>}
+      {shown.length > 0 && <ul className="mt-1.5">{shown.map((row) => <HeadlineRow key={row.key} row={row} today={today} onKeep={keep} />)}</ul>}
+      {rows.length > FIRST && <div className="border-t border-line"><button type="button" data-fetched-more aria-expanded={all} onClick={() => setAll((v) => !v)} className={`${quiet} -ml-1 mt-1 min-h-11`}>{all ? 'Show fewer' : `Show all ${rows.length}`}</button></div>}
+      <p data-watching className="mt-3 max-w-[60ch] text-pretty text-[13.5px] text-text-muted [overflow-wrap:anywhere]">
+        {words.length > 0
+          ? `Watching for ${words.slice(0, WORDS_SHOWN).join(', ')}${words.length > WORDS_SHOWN ? ` and ${words.length - WORDS_SHOWN} more` : ''}: the lines of your Watchlist page. Headlines that name one come first on Home.`
+          : hasWatchlist(pages)
+            ? 'Your Watchlist page has no lines yet. Add a name to it as headlines write it, Commonwealth Bank and not CBA, and headlines that name it come first on Home.'
+            : 'Make a page called Watchlist, and headlines that name a line of it come first on Home. Write a name as headlines write it: Commonwealth Bank, not CBA.'}
+      </p>
+      <p data-credits className="mt-1 max-w-[60ch] text-pretty text-[13.5px] text-text-muted [overflow-wrap:anywhere]">From {CREDITS}. Each opens on its publisher's site. It is the same list for everyone, and nothing about you is sent.</p>
+    </section>
   );
 }
 
 type EditingHeadline = { id: string } | { fresh: true };
 
 /**
- * Every saved headline, newest first by the day it was published. Compass fetches nothing: a headline is what was
- * typed, and its address opens in a new tab. The newest three are also on Home.
+ * The Headlines page. With "Fetch headlines" off, which is how Compass starts, it is every saved headline, newest
+ * first by the day it was published: nothing is fetched, and a headline is what was typed. With it on, the fetched
+ * ones come first and the saved ones follow. Three are also on Home.
  */
 export function HeadlinesSheet() {
-  const headlines = useCompass((s) => s.headlines), today = useToday(), location = useLocation(), navigate = useNavigate();
+  const headlines = useCompass((s) => s.headlines), on = useCompass((s) => s.settings.headlines === true), today = useToday(), location = useLocation(), navigate = useNavigate();
   const [editing, setEditing] = useState<EditingHeadline | null>(null);
   // "Save a headline" in search comes here asking for the editor. The asking is used once, so coming back later does not open it again
   const asked = !!(location.state as { add?: boolean } | null)?.add;
@@ -61,19 +127,26 @@ export function HeadlinesSheet() {
     else setEditing({ fresh: true });
     navigate(location.pathname, { replace: true, state: null });
   }, [asked, navigate, location.pathname]);
-  const all = latestHeadlines(headlines, headlines.length);
+  const all = shownHeadlines(headlines, null, [], today);
   return (
     <section aria-labelledby="headlines-title" data-headlines className="flex flex-col gap-3 rounded-xl bg-surface-sheet px-5 pb-5 pt-[18px] shadow-sheet ring-1 ring-line max-sm:-mx-4 max-sm:rounded-[26px]">
       <div>
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="headlines-title" className="text-[25px] leading-[1.2]">Headlines</h2>
-          <p className="text-[13.5px] font-semibold text-text-muted">Saved by you</p>
+          {!on && <p className="text-[13.5px] font-semibold text-text-muted">Saved by you</p>}
         </div>
-        <p className="mt-1 max-w-[60ch] text-pretty text-[14.5px] text-text-muted">Each one opens its article in a new tab. Compass fetches nothing: a headline is what you typed. The newest three show on Home.</p>
+        {on
+          ? <p className="mt-1 max-w-[60ch] text-pretty text-[14.5px] text-text-muted">Each one opens its article in a new tab. Home shows three: the ones that name a line of your Watchlist first, then the newest.</p>
+          : <>
+            <p className="mt-1 max-w-[60ch] text-pretty text-[14.5px] text-text-muted">Each one opens its article in a new tab. Compass fetches nothing: a headline is what you typed. The newest three show on Home.</p>
+            <p data-fetch-offer className="mt-1 max-w-[60ch] text-pretty text-[14.5px] text-text-muted">Compass can also fetch headlines from a public list. <Link to="/settings#headlines" className="inline-flex min-h-11 items-center rounded-[6px] font-semibold text-text-link sm:min-h-0">Switch it on in Settings</Link></p>
+          </>}
       </div>
-      <div>
-        {all.length === 0 && <p className="text-[15px] text-text-muted">None saved yet.</p>}
-        <ul>{all.map((h) => <HeadlineRow key={h.id} headline={h} today={today} onEdit={(id) => setEditing({ id })} />)}</ul>
+      {on && <FetchedPart today={today} />}
+      <div className={on ? 'mt-2' : ''}>
+        {on && <h3 id="saved-title" className="text-[20px] leading-[1.3]">Saved by you</h3>}
+        {all.length === 0 && <p className={`text-[15px] text-text-muted ${on ? 'mt-1.5' : ''}`}>None saved yet.</p>}
+        <ul className={on ? 'mt-1.5' : ''}>{all.map((row) => <HeadlineRow key={row.key} row={row} today={today} onEdit={(id) => setEditing({ id })} />)}</ul>
         {headlines.length < INTEREST_LIMITS.headlines && (
           <div className={all.length ? 'border-t border-line' : ''}><button type="button" onClick={() => setEditing({ fresh: true })} data-add-headline
             className="flex min-h-[46px] w-full cursor-pointer items-center gap-1 rounded-[9px] text-left text-[15px] text-text-muted outline-offset-0 hover:bg-surface-well max-sm:min-h-[54px] max-sm:text-[16px]">

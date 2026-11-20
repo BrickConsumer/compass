@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { addDaysISO, dayMonth, todayISO } from '../../src/domain/dates';
+import { addDaysISO, todayISO } from '../../src/domain/dates';
 import { openWith, saved, sideways } from './support';
 
 const wide = (page: Page) => page.setViewportSize({ width: 1440, height: 900 });
@@ -212,7 +212,8 @@ test('a headline is saved with its source taken from its site, and shows on its 
   await expect(link).toHaveAttribute('target', '_blank');
   await expect(link).toHaveAttribute('rel', /noopener/);
   await expect(headlineRows(page).first()).toContainText('ABC');
-  await expect(headlineRows(page).first()).toContainText(`example.org, ${dayMonth(TODAY)}`);
+  // a headline published today says so, as one published yesterday would
+  await expect(headlineRows(page).first()).toContainText('example.org, today');
   await expect(page.locator('[data-headlines-row]')).toContainText('1 saved');
   await page.goto('/');
   await expect(homeHeadlines(page)).toContainText('Headlines');
@@ -244,7 +245,7 @@ test('a headline is changed and deleted with Undo', async ({ page }) => {
   await page.keyboard.press('Escape');
   await expect(editor).toBeHidden();
   await expect(headlineRows(page).first()).toContainText('Miner cuts guidance again');
-  await expect(headlineRows(page).first()).toContainText(`Sample Wire, ${dayMonth(day(-1))}`);
+  await expect(headlineRows(page).first()).toContainText('Sample Wire, yesterday');
   await headlineRows(page).first().getByRole('button', { name: /^Edit/ }).click();
   await editor.getByRole('button', { name: 'Delete' }).click();
   await expect(page.getByText('Headline deleted.')).toBeVisible();

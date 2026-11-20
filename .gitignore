@@ -9,6 +9,9 @@ test-results/
 playwright-report/
 .playwright-mcp/
 
+# the headlines job's working file, when the job is run by hand
+out/
+
 # local
 .DS_Store
 *.local

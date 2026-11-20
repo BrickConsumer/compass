@@ -101,10 +101,6 @@ export function cleanHeadline(input: { title: string; url: string; source?: stri
   return { title, url, source: sourceName(input.source ?? '', url), date: input.date as ISODate, tag: cleanWords(input.tag ?? '', L.tag) };
 }
 
-/** The newest headlines by the day they were published. Of two for one day, the one saved later comes first. */
-export const latestHeadlines = (headlines: Headline[], limit = 3): Headline[] =>
-  headlines.map((h, i) => ({ h, i })).sort((a, b) => b.h.date.localeCompare(a.h.date) || b.i - a.i).slice(0, limit).map((x) => x.h);
-
 /** Headlines from a save, each checked as a new one is: nothing is taken on trust, and nothing that is not a web address is kept. */
 export function storedHeadlines(value: unknown): Headline[] {
   return once(objects(value).flatMap((x): Headline[] => {
