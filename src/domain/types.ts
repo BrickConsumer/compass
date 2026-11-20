@@ -13,6 +13,10 @@ export interface Subject {
   colour: SubjectColour;
   /** Free notes for the subject, kept on its page. */
   notes?: string;
+  /** What the subject is on now, in the syllabus's own words. Up to 200 characters, and never rewritten. */
+  topic?: string;
+  /** The subject's own links, such as flashcards. Six at most, each a web address. */
+  links?: QuickLink[];
 }
 
 export interface Task {
@@ -35,12 +39,31 @@ export interface Task {
   milesAwarded?: true;
   /** The study session this task was made from, if any. It is an ordinary task in every other way. */
   sessionId?: string;
+  /** One web address that goes with the task. */
+  link?: string;
+  /** The assessment this task is preparation for. It is an ordinary task in every other way, and only preparation while that assessment exists. */
+  assessmentId?: string;
 }
 
-export interface Assessment { id: string; title: string; subjectId: string; date: ISODate; kind: 'test' | 'exam' | 'presentation' | 'assignment' }
+export interface Assessment { id: string; title: string; subjectId: string; date: ISODate; kind: 'test' | 'exam' | 'presentation' | 'assignment'; /** One web address: its notification. */ link?: string }
+
+/** Something a teacher said about a subject's work, and what to work on because of it. */
+export interface Feedback {
+  id: string;
+  subjectId: string;
+  date: ISODate;
+  /** What it was on, such as "Essay on the set text". Up to 80 characters, and may be empty. */
+  about: string;
+  /** What was said. 1 to 2,000 characters. */
+  words: string;
+  /** What to work on. Up to 140 characters, and may be empty. */
+  work: string;
+  /** The task made from `work`, if one was. It is only that task while the task exists. */
+  taskId?: string;
+}
 
 /** One entry in the voyage log. The log only grows. */
-export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'habit' | 'review' | 'sample'; sourceId: string; miles: number }
+export interface LogEntry { id: string; date: ISODate; source: 'task' | 'day-clear' | 'habit' | 'review' | 'workout' | 'sample'; sourceId: string; miles: number }
 
 /** A week's reflection. The week's numbers are not kept here: they are worked out from the tasks, habits and log. */
 export interface Review {
@@ -95,6 +118,85 @@ export interface Habit {
   createdOn: ISODate;
 }
 
+/** One line of a routine, such as "Squat, 3 × 5 at 60 kg". It is words, kept as typed: nothing is read out of it. */
+export interface RoutineLine { id: string; /** 1 to 140 characters. */ text: string }
+
+/** A training routine: a checklist written once and used again. On each of its days it is a set session in Fitness. */
+export interface Routine {
+  id: string;
+  /** 1 to 40 characters. */
+  name: string;
+  /** The weekdays it is set for: 0 is Sunday, 6 is Saturday. None means it has no fixed day. */
+  days: number[];
+  /** In the order shown. Forty at most. */
+  lines: RoutineLine[];
+  /** The first day it is set for. Earlier days are not days for it. */
+  createdOn: ISODate;
+}
+
+export interface WorkoutLine { id: string; text: string; done: boolean }
+
+/**
+ * One training session: a routine's name and lines, copied on the day it is started, to tick off. On screen it is
+ * a "session"; here it is a workout, because `Session` is a study session that repeats. It is not a task: it is in
+ * no day's count and changes nothing on the sea.
+ */
+export interface Workout {
+  id: string;
+  /** The routine it was started from, which may since have been changed or deleted. One session for each routine on each day. */
+  routineId: string;
+  name: string;
+  /** The day it is for, which is not always the day it was finished. */
+  date: ISODate;
+  lines: WorkoutLine[];
+  /** Up to 2,000 characters, kept as typed. */
+  note: string;
+  /** Present means finished. */
+  finishedAt?: string;
+  /** Set the first time the session is finished and never cleared, so it cannot earn twice. */
+  milesAwarded?: true;
+}
+
+/** Something kept by hand with the value before it: a best time, distance or weight. The value is words, not a number. */
+export interface Best {
+  id: string;
+  /** 1 to 40 characters. */
+  name: string;
+  value: string;
+  date: ISODate;
+  /** The value this one replaced. Only the one before is kept. */
+  was?: { value: string; date: ISODate };
+}
+
+/** Something a person chooses to measure, with its own unit. It has no target and is never judged, compared or drawn. */
+export interface Measure extends Best { /** Up to 12 characters, and may be empty. */ unit: string }
+
+/** Where an interest started from: one of the two that come with forms, or the student's own, with nothing ready-made. */
+export type FormSet = 'investing' | 'law' | 'none';
+
+/** A folder in My pages for the pages that belong together: investing, law, or anything a student names. */
+export interface Interest { id: string; /** 1 to 30 characters. */ name: string; forms: FormSet }
+
+/** One headed part of a page that was started from a form. Its text is ordinary writing, kept as typed. */
+export interface PageField { id: string; label: string; /** Up to 2,000 characters. */ text: string }
+
+/**
+ * A headline saved by hand: its title, where the article is, where it is from and the day it was published.
+ * Compass fetches nothing: a headline is only what was typed, and its address opens in a new tab.
+ */
+export interface Headline {
+  id: string;
+  /** 1 to 140 characters. */
+  title: string;
+  /** An http or https address. */
+  url: string;
+  /** Up to 40 characters. With none typed it is the name of the site. */
+  source: string;
+  date: ISODate;
+  /** A short word for what it is about, such as a ticker. Up to 8 characters, and may be empty. */
+  tag: string;
+}
+
 export type PageKind = 'note' | 'checklist' | 'goal' | 'reading' | 'project';
 
 /** One line of a page's list. It is not a task: it has no day, earns nothing and is shown nowhere else. */
@@ -116,6 +218,14 @@ export interface Page {
   /** A date to aim for. Shown on goals and projects. Nothing happens when it passes. */
   aimFor?: ISODate;
   subjectId?: string;
+  /** The interest it is kept in. A page is in one at most, and only while that interest exists. */
+  interestId?: string;
+  /** The form it was started from, which gives it its label. */
+  form?: string;
+  /** A form's headed parts, in order. */
+  fields?: PageField[];
+  /** One web address: its source. */
+  link?: string;
   /** Goals only: the day the goal was marked as reached. */
   reachedOn?: ISODate;
   createdAt: string;
@@ -145,6 +255,8 @@ export interface Settings {
   name?: string;
   /** Absent in a save from before themes existed, which is the same as automatic. It belongs to the device, so clearing the data leaves it. */
   theme?: Theme;
+  /** True while the Fitness place is shown. Absent means off, which hides the place and keeps what is in it. */
+  fitness?: boolean;
 }
 
 type SubjectPaint = Record<SubjectColour, { dot: string; tint: string; text: string }>;

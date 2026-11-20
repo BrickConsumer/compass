@@ -98,6 +98,9 @@ test('a subject can be added, renamed, recoloured and deleted with Undo, and its
 
   // deleting Biology keeps its tasks, without a subject
   await page.locator('[data-subject="bio"]').click();
+  // Wait for Biology to show before pressing anything on it. On a slow machine the subject that was open stays on
+  // screen for a moment, and "Edit subject" pressed then opens the editor of the subject that is about to leave.
+  await expect(page.locator('#subject-title')).toHaveText('Biology');
   await sheet(page).getByRole('button', { name: 'Edit subject' }).click();
   await page.getByRole('dialog', { name: 'Edit subject' }).getByRole('button', { name: 'Delete' }).click();
   await expect(page).toHaveURL(/\/study$/);

@@ -1,13 +1,16 @@
-import { ArrowLeft, Plus } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowUpRight, Plus } from 'lucide-react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { longDate, shortDay } from '../../domain/dates';
+import { formOf, INTEREST_LIMITS, interestPages } from '../../domain/interests';
 import { aimOf, isReached, kindOf, PAGE_KINDS, PAGE_LIMITS, pageLine, pagesAsText, sortPages } from '../../domain/pages';
 import { type Page, type PageKind, SUBJECT_COLOURS } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { useToday } from '../../state/useToday';
 import { chip } from '../../ui/EditorFrame';
 import { toast } from '../../ui/Toast';
+import { HeadlinesSheet } from './Headlines';
+import { type EditingInterest, InterestEditor, InterestHead, InterestList, InterestStarters } from './Interests';
 import { KindIcon, PageEditor } from './PageEditor';
 import { PageItems } from './PageItems';
 
@@ -17,12 +20,14 @@ const HINTS: Record<PageKind, string> = { note: 'Start writing', checklist: 'Any
 
 /** One page: its title, its list and its writing, in the order its kind puts them. */
 function PageSheet({ page, fresh }: { page: Page; fresh: boolean }) {
-  const subjects = useCompass((s) => s.subjects), update = useCompass((s) => s.updatePage), setReached = useCompass((s) => s.setReached);
+  const subjects = useCompass((s) => s.subjects), interests = useCompass((s) => s.interests), update = useCompass((s) => s.updatePage), setReached = useCompass((s) => s.setReached), setField = useCompass((s) => s.setPageField);
   // a page just made opens its editor, with its title ready to type
   const [editing, setEditing] = useState(fresh), [wantsList, setWantsList] = useState(false);
   useEffect(() => { if (fresh) setEditing(true); }, [fresh]);
   const k = kindOf(page.kind), subject = subjects.find((s) => s.id === page.subjectId), aim = aimOf(page), reached = isReached(page);
-  const facts = [subject?.name, aim && `aim for ${longDate(aim)}`, reached && `reached ${shortDay(page.reachedOn!)}`].filter(Boolean).join(', ');
+  // a page started from a form has headed parts, and says which form; a page kept in an interest says which
+  const parts = page.fields ?? [], formed = parts.length > 0, interest = interests.find((i) => i.id === page.interestId);
+  const facts = [formed && formOf(page.form)?.label, interest?.name, subject?.name, aim && `aim for ${longDate(aim)}`, reached && `reached ${shortDay(page.reachedOn!)}`].filter(Boolean).join(', ');
 
   const list = k.listFirst || page.items.length > 0 || wantsList
     ? <PageItems page={page} />
@@ -30,8 +35,9 @@ function PageSheet({ page, fresh }: { page: Page; fresh: boolean }) {
     : <div><button type="button" onClick={() => setWantsList(true)} className={quiet} data-add-list>Add a list</button></div>;
   const writing = (
     <div className="flex flex-col gap-2">
-      <label htmlFor="page-text" className={page.kind === 'note' ? 'sr-only' : 'font-display text-[20px] font-medium leading-[1.3]'}>{k.text}</label>
-      <textarea id="page-text" rows={page.kind === 'note' ? 10 : 4} maxLength={PAGE_LIMITS.text} value={page.text} onChange={(e) => update(page.id, { text: e.target.value })} placeholder={HINTS[page.kind]}
+      {/* a note is all writing, so its box needs no heading. Under a form's parts it is the room for anything else */}
+      <label htmlFor="page-text" className={page.kind === 'note' && !formed ? 'sr-only' : 'font-display text-[20px] font-medium leading-[1.3]'}>{formed ? 'Notes' : k.text}</label>
+      <textarea id="page-text" rows={page.kind === 'note' && !formed ? 10 : 4} maxLength={PAGE_LIMITS.text} value={page.text} onChange={(e) => update(page.id, { text: e.target.value })} placeholder={formed ? 'Anything else worth keeping' : HINTS[page.kind]}
         className="rounded-md bg-surface-sheet px-3 py-2.5 text-[16px] leading-[1.5] text-text shadow-[inset_0_0_0_1.5px_var(--color-control)] placeholder:text-text-muted sm:text-[15.5px]" />
     </div>
   );
@@ -46,10 +52,26 @@ function PageSheet({ page, fresh }: { page: Page; fresh: boolean }) {
         {facts && (
           <p className="mt-1 flex items-center gap-2 text-[14.5px] text-text-muted" data-page-facts>
             {subject && <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ background: SUBJECT_COLOURS[subject.colour].dot }} />}
-            <span>{facts[0]!.toUpperCase() + facts.slice(1)}</span>
+            <span className="[overflow-wrap:anywhere]">{facts[0]!.toUpperCase() + facts.slice(1)}</span>
           </p>
         )}
+        {page.link && (
+          <a href={page.link} target="_blank" rel="noopener noreferrer" data-page-link aria-label={`Source for ${page.title}, opens in a new tab`}
+            className="mt-1 flex min-h-11 w-fit items-center gap-1 rounded-[9px] text-[14.5px] font-semibold text-text-link sm:min-h-9">Source<ArrowUpRight size={15} aria-hidden="true" /></a>
+        )}
       </div>
+      {formed && (
+        <div className="flex flex-col gap-4" data-fields>
+          {parts.map((f) => (
+            <label key={f.id} data-field={f.label} className="flex flex-col gap-1.5 text-[14.5px] font-semibold">{f.label}
+              <textarea rows={2} maxLength={INTEREST_LIMITS.field} value={f.text} onChange={(e) => setField(page.id, f.id, e.target.value)}
+                // it grows downward with what is written; its width is the page's, however long a word in it is
+                // a browser that cannot grow a box with its words gives it more room to begin with
+                className="min-h-[4.25rem] w-full min-w-0 rounded-md bg-surface-sheet px-3 py-2.5 text-[16px] font-normal leading-[1.5] text-text shadow-[inset_0_0_0_1.5px_var(--color-control)] [field-sizing:content] not-supports-[field-sizing:content]:min-h-36 sm:text-[15.5px]" />
+            </label>
+          ))}
+        </div>
+      )}
       {k.listFirst ? <>{list}{writing}</> : <>{writing}{list}</>}
       {page.kind === 'goal' && (
         <div>
@@ -66,18 +88,40 @@ function PageSheet({ page, fresh }: { page: Page; fresh: boolean }) {
 /**
  * My pages: notes, checklists, goals, and reading and project pages, for what has no date.
  * On wider screens the pages are listed beside the one that is open; on phones the list comes first and a page opens on its own.
+ * The saved headlines open in the same place a page does.
  */
-export function PagesPage() {
+export function PagesPage({ headlines = false }: { headlines?: boolean }) {
   const today = useToday(), { pageId } = useParams(), location = useLocation(), navigate = useNavigate();
-  const pages = useCompass((s) => s.pages), subjects = useCompass((s) => s.subjects), addPage = useCompass((s) => s.addPage);
+  const pages = useCompass((s) => s.pages), subjects = useCompass((s) => s.subjects), interests = useCompass((s) => s.interests), addPage = useCompass((s) => s.addPage);
   const [choosing, setChoosing] = useState(false), [filter, setFilter] = useState<PageKind | null>(null), kinds = useRef<HTMLUListElement>(null);
+  // the interest whose pages the list is showing, if one is chosen, and the interest being added or changed
+  const [inside, setInside] = useState<string | null>(null), [editingInterest, setEditingInterest] = useState<EditingInterest | null>(null);
+  const within = interests.find((i) => i.id === inside), kept = within ? interestPages(pages, within.id) : null;
   const sorted = sortPages(pages), only = (list: Page[]) => (filter ? list.filter((p) => p.kind === filter) : list);
-  // with no page chosen, wider screens open the most recently changed one; phones show the list
-  const chosen = pages.find((p) => p.id === pageId), open = chosen ?? sorted.open[0] ?? sorted.reached[0];
+  // with no page chosen, wider screens open the most recently changed one, of the interest if one is chosen; phones show the list
+  const chosen = pages.find((p) => p.id === pageId), open = chosen ?? (kept ? kept[0] : sorted.open[0] ?? sorted.reached[0]);
   const fresh = !!open && (location.state as { fresh?: string } | null)?.fresh === open.id;
+  // on a phone, a page or the headlines open on their own, with the way back above them
+  const alone = !!chosen || headlines;
   // the note that a page was just made is used once, so going back to the page later does not open its editor again
   useEffect(() => { if (fresh) navigate(location.pathname, { replace: true, state: null }); }, [fresh, navigate, location.pathname]);
   useEffect(() => { if (choosing) kinds.current?.scrollIntoView({ block: 'nearest' }); }, [choosing]);
+
+  // When the list changes between all the pages and one interest's, what was pressed has gone with the old list.
+  // The keyboard goes to the interest's name on the way in, and back to its row on the way out, or to the head of
+  // the interests if it has been deleted.
+  const wasInside = useRef<string | null>(null);
+  useEffect(() => {
+    const before = wasInside.current;
+    wasInside.current = inside;
+    if (inside && inside !== before) document.querySelector<HTMLElement>('[data-interest-name]')?.focus();
+    else if (!inside && before) (document.querySelector<HTMLElement>(`li[data-interest="${CSS.escape(before)}"] button`) ?? document.querySelector<HTMLElement>('[data-interests-title]'))?.focus();
+  }, [inside]);
+  // an interest found by search comes here asking to be chosen. The asking is used once.
+  const askedInterest = (location.state as { interest?: string } | null)?.interest;
+  useEffect(() => { if (!askedInterest) return; setInside(askedInterest); navigate(location.pathname, { replace: true, state: null }); }, [askedInterest, navigate, location.pathname]);
+  // choosing an interest shows its pages, and beside them one of its own: not the headlines, or a page it does not hold
+  const choose = (id: string) => { setInside(id); if (headlines || (chosen && chosen.interestId !== id)) navigate('/pages'); };
 
   const start = (kind: PageKind) => { const id = addPage(kind); setChoosing(false); setFilter(null); navigate(`/pages/${id}`, { state: { fresh: id } }); };
   const exportPages = () => {
@@ -87,9 +131,9 @@ export function PagesPage() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast('Your pages were exported as a text file.');
   };
-  const row = (p: Page) => (
-    <li key={p.id} className="border-t border-line first:border-t-0">
-      <Link to={`/pages/${p.id}`} data-page={p.id} aria-current={open?.id === p.id ? 'page' : undefined}
+  const row = (p: Page, i: number) => (
+    <li key={p.id} style={{ '--i': i } as CSSProperties} className="rise-in border-t border-line first:border-t-0">
+      <Link to={`/pages/${p.id}`} data-page={p.id} aria-current={!headlines && open?.id === p.id ? 'page' : undefined}
         className="grid min-h-[60px] grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 rounded-md px-3 py-2 outline-offset-0 hover:bg-surface-well lg:aria-[current=page]:bg-surface-well sm:pl-5">
         <KindIcon kind={p.kind} />
         <span className="min-w-0">
@@ -103,29 +147,36 @@ export function PagesPage() {
 
   return (
     <main className="mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-32 pt-[max(16px,env(safe-area-inset-top,0px))] sm:px-5 sm:pb-12 lg:pl-1.5 lg:pr-7 lg:pt-8">
-      <header className={`sm:pl-5 ${chosen ? 'max-lg:hidden' : ''}`}>
+      <header className={`sm:pl-5 ${alone ? 'max-lg:hidden' : ''}`}>
         <h1 className="text-[32px] leading-[1.1] tracking-[-0.012em] lg:text-[40px]">My pages</h1>
         <p className="mt-2 max-w-[52ch] text-pretty text-[15.5px] text-text-muted">Notes, checklists, goals, and reading and project pages. A place for what has no date.</p>
       </header>
-      {chosen && <Link to="/pages" className="flex min-h-11 w-fit items-center gap-2 rounded-[9px] text-[14.5px] font-semibold text-text-link lg:hidden"><ArrowLeft size={17} aria-hidden="true" />All pages</Link>}
+      {/* the way back says what it goes back to: the list behind is one interest's while one is chosen */}
+      {alone && <Link to="/pages" className="flex min-h-11 w-fit max-w-full items-center gap-2 rounded-[9px] text-[14.5px] font-semibold text-text-link lg:hidden"><ArrowLeft size={17} aria-hidden="true" className="shrink-0" /><span className="min-w-0 [overflow-wrap:anywhere]">{within ? within.name : 'All pages'}</span></Link>}
 
-      <div className="grid items-start gap-x-8 gap-y-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <nav aria-label="My pages" className={chosen ? 'max-lg:hidden' : ''} onKeyDown={(e) => { if (e.key === 'Escape') setChoosing(false); }}>
+      {/* below the two-column width the one column is still told it may be narrower than what is in it: a part of a
+          form grows with its words, and one very long word would otherwise widen the whole page */}
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-8 gap-y-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <nav aria-label="My pages" className={alone ? 'max-lg:hidden' : ''} onKeyDown={(e) => { if (e.key === 'Escape') setChoosing(false); }}>
+          {within
+            ? <InterestHead interest={within} empty={kept!.length === 0} onBack={() => setInside(null)} onEdit={() => setEditingInterest({ id: within.id })} />
+            : <><InterestList headlinesOpen={headlines} onChoose={choose} onAdd={() => setEditingInterest({ fresh: true })} /><h2 className="px-3 pb-1 font-sans text-[13px] font-semibold text-text-muted sm:pl-5">Pages</h2></>}
           {/* with a long list, the kinds in use become a way to narrow it */}
-          {pages.length > 8 && (
+          {!within && pages.length > 8 && (
             <div className="mb-2 flex flex-wrap gap-2 px-3 sm:pl-5" role="group" aria-label="Show">
               <button type="button" aria-pressed={!filter} onClick={() => setFilter(null)} className={chip(!filter)}>All</button>
               {present.map((k) => <button key={k.id} type="button" aria-pressed={filter === k.id} onClick={() => setFilter(k.id)} className={chip(filter === k.id)}>{k.label}</button>)}
             </div>
           )}
-          <ul data-open-pages>{only(sorted.open).map(row)}</ul>
-          {only(sorted.reached).length > 0 && (
+          <ul data-open-pages>{(kept ?? only(sorted.open)).map(row)}</ul>
+          {within && <InterestStarters interest={within} />}
+          {!within && only(sorted.reached).length > 0 && (
             <>
               <h2 className="px-3 pb-1 pt-5 font-sans text-[13px] font-semibold text-text-muted sm:pl-5">Reached</h2>
               <ul data-reached-pages>{only(sorted.reached).map(row)}</ul>
             </>
           )}
-          {pages.length === 0
+          {within ? null : pages.length === 0
             ? <p className="max-w-[44ch] text-pretty px-3 pb-2 text-[15px] text-text-muted sm:pl-5">No pages yet. This is the place for what has no date: a packing list, the books for a subject, something to get better at. Start one below.</p>
             : (
               // the rule above is on a wrapper, so the button's rounded corners do not bend it
@@ -137,7 +188,7 @@ export function PagesPage() {
                 <span className={`text-[15px] max-sm:text-[16px] ${choosing ? 'font-semibold' : 'text-text-muted'}`}>New page</span>
               </button></div>
             )}
-          {(choosing || pages.length === 0) && (
+          {!within && (choosing || pages.length === 0) && (
             <ul ref={kinds} aria-label="Kinds of page" data-kinds className="mx-1 mt-1 rounded-lg bg-surface-sheet p-1.5 shadow-float sm:ml-3">
               {PAGE_KINDS.map((k) => (
                 <li key={k.id}>
@@ -149,10 +200,11 @@ export function PagesPage() {
               ))}
             </ul>
           )}
-          {pages.length > 0 && <div className="mt-3 px-3 sm:pl-5"><button type="button" onClick={exportPages} className={quiet} data-export>Export my pages</button></div>}
+          {!within && pages.length > 0 && <div className="mt-3 px-3 sm:pl-5"><button type="button" onClick={exportPages} className={quiet} data-export>Export my pages</button></div>}
+          <InterestEditor editing={editingInterest} onClose={() => setEditingInterest(null)} onAdded={setInside} onDeleted={() => setInside(null)} />
         </nav>
         {/* keyed by the page, so what was open on one page does not carry to the next */}
-        {open && <div className={chosen ? '' : 'max-lg:hidden'}><PageSheet key={open.id} page={open} fresh={fresh} /></div>}
+        {headlines ? <HeadlinesSheet /> : open && <div className={chosen ? '' : 'max-lg:hidden'}><PageSheet key={open.id} page={open} fresh={fresh} /></div>}
       </div>
     </main>
   );

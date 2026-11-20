@@ -1,9 +1,9 @@
 import { type StageId, STAGE_ORDER, STAGES } from '../features/voyage/boat/specs';
 import { type WaterId, WATER_ORDER, WATERS } from '../features/voyage/waters';
-import type { ISODate, LogEntry, Task } from './types';
+import type { ISODate, LogEntry, Task, Workout } from './types';
 
 /** Starting values, to be tuned with real use (art direction, section 13). */
-export const MILES = { task: 2, highPriority: 3, dayClear: 3, dailyTaskCap: 40, habit: 1, dailyHabitCap: 8, review: 10 } as const;
+export const MILES = { task: 2, highPriority: 3, dayClear: 3, dailyTaskCap: 40, habit: 1, dailyHabitCap: 8, review: 10, workout: 2 } as const;
 
 export const STAGE_GATES: Record<StageId, { miles: number; days: number }> = {
   dinghy: { miles: 0, days: 0 }, sloop: { miles: 250, days: 10 }, cutter: { miles: 1000, days: 40 }, schooner: { miles: 3000, days: 120 },
@@ -132,4 +132,16 @@ export function habitAward(habitId: string, date: ISODate, log: LogEntry[], toda
   const earnedToday = log.filter((e) => e.date === today && e.source === 'habit').reduce((s, e) => s + e.miles, 0);
   if (earnedToday + MILES.habit > MILES.dailyHabitCap) return null;
   return { id, date: today, source: 'habit', sourceId: `${habitId}:${date}`, miles: MILES.habit };
+}
+
+/**
+ * The log entry earned by finishing a training session, or null if there is nothing to earn.
+ * A session earns the first time it is finished or not at all, and one session's miles at most are logged on any
+ * one day, so sessions cannot be started for the miles. The entry is dated the day the session is finished, which
+ * is the day at sea, whatever day the session was for.
+ */
+export function workoutAward(workout: Workout, log: LogEntry[], today: ISODate): LogEntry | null {
+  const id = `workout:${today}`;
+  if (workout.milesAwarded || log.some((e) => e.id === id)) return null;
+  return { id, date: today, source: 'workout', sourceId: workout.id, miles: MILES.workout };
 }

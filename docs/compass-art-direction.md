@@ -264,8 +264,10 @@ Two families, clearly different, both under the SIL Open Font License and self-h
 
 | Role | Family | Package | Why |
 |---|---|---|---|
-| Display and voyage | **Brygada 1918**, variable 400 to 700, roman and italic | `@fontsource-variable/brygada-1918` 5.3.0 | Sturdy enough to stay crisp at 20 px on an ordinary laptop screen, with real character in the numerals and a calm, readable italic. Rare, so it is not already someone else's brand. |
-| Interface | **Hanken Grotesk**, variable 100 to 900, roman and italic | `@fontsource-variable/hanken-grotesk` 5.3.0 | Open and even at 13 to 16 px. Its figures are tabular by default, which suits a planner full of dates and counts. |
+| Display and voyage | **Libre Caslon Text**, static 400 and 700, with the 400 italic | `@fontsource/libre-caslon-text` 5.3.0 | A sturdy text cut of a classic printed face, moderate in contrast so its hairlines hold up at 20 px on an ordinary laptop screen. It reads as a printed nautical almanac, and its italic is the voyage's voice. Headings are set in the 400. |
+| Interface | **Source Sans 3**, variable 200 to 900, roman and italic | `@fontsource-variable/source-sans-3` 5.3.1 | A narrow, even humanist sans that stays clear at 13 to 16 px and keeps task titles and dates on one line. Tabular figures are switched on in the base styles, which suits a planner full of dates and counts. |
+
+**Changed on 18 November 2026, by Oliver for the three founders.** Josh and Aditya have agreed to go with Oliver's decisions unless he says otherwise, and Oliver approved this one. The first pairing, Brygada 1918 with Hanken Grotesk, read as too generic and AI-made. Three pairings were rendered on the real Home screen and Oliver chose Libre Caslon Text with Source Sans 3 (the others were Bricolage Grotesque with Public Sans, and Spectral with Karla; both were wider and cut off labels that Source Sans 3 keeps whole). Nothing else about type changes. The reasoning below is from the first choice and still describes how candidates were judged.
 
 Forty-two candidates were rendered with real Compass content and compared before choosing. Playfair Display and Cormorant were ruled out before testing, and Fraunces, Newsreader and Instrument Serif after it, as the faces everyone reaches for. High-contrast display serifs were set aside because their hairlines break up on low-density laptop screens, which is what many students use.
 
@@ -299,7 +301,7 @@ Rules:
 - Sentence case everywhere. No all-caps labels and no letter-spaced labels.
 - `font-variant-numeric: tabular-nums` wherever digits change or line up.
 - Headings use `text-wrap: balance`. Running text stays under 68 characters a line.
-- Fallback stacks: `"Brygada 1918 Variable", "Iowan Old Style", Palatino, Georgia, serif` and `"Hanken Grotesk Variable", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif`. The Chinese fallbacks matter, because students will type Chinese into task titles.
+- Fallback stacks: `"Libre Caslon Text", "Iowan Old Style", Palatino, Georgia, serif` and `"Source Sans 3 Variable", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif`. The Chinese fallbacks matter, because students will type Chinese into task titles.
 - Fonts load with `font-display: swap`, the two Latin files are preloaded, and the fallback faces are metric-adjusted to avoid layout shift.
 
 ## 7. Space, shape and elevation
@@ -673,8 +675,8 @@ This block is the single source for the build, in Tailwind 4's CSS-first format.
   --color-track: var(--color-paper-200);
 
   /* type */
-  --font-display: "Brygada 1918 Variable", "Iowan Old Style", Palatino, Georgia, serif;
-  --font-sans: "Hanken Grotesk Variable", system-ui, -apple-system, "Segoe UI", Roboto,
+  --font-display: "Libre Caslon Text", "Iowan Old Style", Palatino, Georgia, serif;
+  --font-sans: "Source Sans 3 Variable", system-ui, -apple-system, "Segoe UI", Roboto,
     "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
 
   /* shape */
@@ -716,7 +718,7 @@ All four were approved by Oliver on 16 November 2026.
 
 **The look review passes when** the 3D sloop is recognisable as the board's sloop when filled solid black at 64 px tall; its forms read as smooth surfaces and not as primitives; the water reads as water at dawn and at golden hour; and the window holds the display's frame rate on a founder's laptop. If it does not pass after one round of changes, the fallback is authored models (section 18), and who makes them is a decision for the founders at that point.
 
-Smaller calls made here that the founders can overrule: adding port red to the palette, Brygada 1918 and Hanken Grotesk, the mileage numbers, and showing no streak counter on Home.
+Smaller calls made here that the founders can overrule: adding port red to the palette, Libre Caslon Text and Source Sans 3 (changed from Brygada 1918 and Hanken Grotesk on 18 November), the mileage numbers, and showing no streak counter on Home.
 
 ## 20. Not in Phase 1
 

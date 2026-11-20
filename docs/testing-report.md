@@ -2,14 +2,16 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 13 added on 17 November |
-| Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, sections 16 to 18 on 19 November, and section 19 on 20 November |
+| Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it. Section 14, the Study detail, is on the branch `study-detail`, cut from that |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
 
+**Update, 18 November.** The stack this report was written against was merged into `main`, together with a motion system and a new type (Libre Caslon Text and Source Sans 3). At the merge the type-check passed, 285 unit tests passed, and all 127 browser tests passed. Where this report says no founder has reviewed a page, that was true when it was written; since 18 November Oliver decides for the founders. The motion has not been watched playing by a person, only checked at its end states.
+
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 256 unit tests pass and 115 browser tests pass. Those counts include the additions in section 13; before them it was 225 and 72, and all of those still pass unchanged.
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 429 unit tests pass and 280 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18 and the small faults put right in section 19; before the seven it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -97,7 +99,7 @@ Also checked: delete with Undo, priority changes, the command menu, and miles be
 | Criterion | Result | How it was checked |
 |---|---|---|
 | The 3D boat renders | Pass | Browser test waits for the live scene; screenshots |
-| Recognisable sailboat geometry | Pass, by eye | Screenshots. The founders' look review is still open (parked by Oliver). |
+| Recognisable sailboat geometry | Pass, by eye | Screenshots. Oliver's look review of the boat is still open (parked). |
 | Water animation works | Pass | Two captures of the canvas one second apart differ |
 | Lighting and materials are coherent | Pass, by eye | Dawn, day, golden hour, port and storm captured |
 | The scene does not obstruct the planner | Pass | It sits in its own window, folds to a strip, and the planner draws before the 3D code loads |
@@ -481,7 +483,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 17). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -542,7 +544,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 17).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 22).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -551,7 +553,325 @@ On 18 November the laptop was installing a system update, and browser runs that 
 - Frame rate with the night scene.
 - A device that changes theme by itself at sunset.
 
-## 15. New waters
+## 15. Study detail
+
+Built on 18 November on the branch `study-detail`, to [study-detail-spec.md](study-detail-spec.md). It is the second of five pieces of Aditya's plan. The sample gains a topic and one piece of feedback on Biology. No sample task was changed, so every count on Home, in Study and in the Weekly review is as it was.
+
+![A subject's page at 1440 px with every new part in use](screenshots/study-detail/1-subject-1440.png)
+
+### What was built
+
+- **A topic** for each subject, kept exactly as typed, under its name and in the list of subjects.
+- **Preparation tasks** under an assessment. Each is an ordinary task that belongs to the assessment: listed under it and not again under "Tasks", on Home in its day or week, and counted under "Coming up" as "1 of 3 prepared".
+- **One link** on a task and one on an assessment, each opening in a new tab.
+- **Feedback** on a subject, dated, with something to work on that "Make it a task" turns into an ordinary task.
+- **A subject's pages:** the My pages that carry the subject, and four starters that make a page already carrying it.
+- **A subject's links,** up to six, changed with the same rows Settings uses.
+- **The order of a subject's page:** assessments, tasks, feedback, pages, links, study sessions, notes.
+- **The saved data:** one new list (feedback) and five new optional fields. A save from before this piece opens with nothing lost, and "Clear everything" clears the new parts too.
+
+### Checked
+
+- **Unit tests, 28 new:** a topic kept as typed within its limit; which tasks are preparation, their order and their count; a preparation task while its assessment is deleted and after Undo; one link on a task and on an assessment, and what is refused; a subject's links added, changed, moved, removed and held to six; feedback tidied, ordered and kept with its subject; what to work on made into one task, once; a subject's pages in My pages' order, the starters, and the line a page shows; an older save, a save edited by hand, and "Clear everything".
+- **Browser tests, 32 new:** the topic set, shown and cleared; preparation added under an assessment, shown on Home, counted under "Coming up" and earning its miles once; an assessment deleted and brought back; a task freed from its assessment; links on a task, an assessment and a subject, each refusing what is not a web address; feedback added, changed, deleted and made into a task; a subject's pages listed and started; links changed in place and removed with Undo; the order of the page; the whole of it by keyboard alone; and no sideways scroll at 375, 390, 768, 1024 and 1440 px with every new part at its longest.
+- **Everything from before:** the 256 unit tests and 115 browser tests pass unchanged. Their files were not edited.
+- **As CI runs it:** 141 pass and the six sea tests are skipped, as designed.
+- **Against the mock:** the built pages were pictured and compared with the mock. The pictures are in `screenshots/study-detail/`, numbered, beside the mocks. Where the build differs is in the specification, section 16.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 18 November, ran the unit tests and the build, and probed the running app at 1440 and 390 px with saved data edited by hand. It found nothing critical. It confirmed that only web addresses reach a link, that deleting a subject and undoing it puts everything back once, and that the fix to the editors' frame holds. Seven findings were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| A link typed in a task's or an assessment's editor was lost when the editor was closed with Escape | What is in the box is checked and kept when the editor closes, however it closes |
+| A save with an entry that is not a record among its tasks, assessments or subjects stopped the app opening. This was so before this piece too. | A save's lists keep only records with an id and the words a page needs. A subject whose colour is not one of the eight is given one. |
+| The notice in the subject's editor did not say that deleting a subject also removes its feedback and links | It names them, and says that pages are kept |
+| A task made from feedback was listed twice on the subject's page, beside its entry and under "Tasks", and pressing one opened the editor beside the other | It is listed once, beside its entry, as the mock draws it. The rule goes by the page, so a task moved to another subject is under that subject's "Tasks". |
+| On a phone, "Change the topic" opened the editor with the cursor on Close | The topic box takes the cursor on a phone too |
+| "Preparation for" followed by a title of one long word pushed a phone's editor sideways | The line wraps inside a word |
+| A change to a task would have kept a link without checking it, had anything passed one. Nothing did. | A task's link is set only by the action that checks it |
+
+Eleven smaller findings were left as they are, for the founders to decide:
+
+- Undo can bring back a seventh link after another was added in its place. Settings has had the same gap since piece 1.
+- On a new assessment or task, a link that is refused moves the "Add" button, so the first press misses. The second adds it without the link.
+- "Make it a task" leaves the keyboard on no control. In Chrome the next Tab goes to the new tick; other browsers were not tried.
+- The list of assessments has an extra item for each assessment's preparation, which is empty for a past assessment with none. A screen reader counts them.
+- Every "Add a preparation task" box has the same spoken name, and so does every "Make it a task".
+- Deleting a feedback task, making another and then pressing Undo leaves two tasks with the same words.
+- Feedback shows its month and day, and no year.
+- "Add feedback" with only spaces in "What was said" does nothing and says nothing.
+- Rows slide over the "Tasks" heading for a moment when a preparation task is added above them.
+- Feedback whose subject does not exist is kept in the save, unseen.
+- Two tests could say more: the one for a save from before this piece checks counts only, and a task's link in the Weekly review has no test of its own.
+
+It also noted two things that are older than this piece: a subject brought back with Undo goes to the end of the list, and the toast's "Undo" is 36 px tall on a phone and lasts six seconds.
+
+### Found on the way
+
+- **An editor opened in the moment after another closed was shut again.** The browser reports a dialog's close slightly after it happens, and the frame the editors share took the late report to be about the editor now open. An older Study test began to fail once the page's order changed, which is how it was found. It is fixed in the frame, so for every editor.
+- **A feedback entry of one short line was 41 px tall on a phone,** under the 44 px a thumb needs. The test that measures every new control found it. Fixed.
+
+### Brought up to date with `main`
+
+On 18 November, after the piece was committed, `main` was merged into the branch. By then `main` held night and the dark theme, the motion system and the new type, none of which this piece was built on.
+
+- **Seven files were changed on both sides,** five of them code. Each was settled by keeping both changes. The fix to the editors' frame had been made on both sides, in the same words but for the comment.
+- **Two of the new parts named a colour step,** for the line that says an address is refused. They now name the role, which is what lets the dark theme colour them and what `src/design/roles.test.ts` requires.
+- **Unit tests:** 313 pass. That is the 285 on `main` and the 28 of this piece.
+- **Browser tests:** all 159 pass in the light theme, and all 159 pass with the device set to dark (`PW_THEME=dark`). Run as CI runs them, 153 pass and the six sea tests are skipped. That is the 127 on `main` and the 32 of this piece.
+- **The build** passes.
+- **In the dark theme,** a subject's page was opened at 1440 and 375 px. The new parts are drawn in the dark palette and the new type, nothing is wider than the screen, and the console is clean. The text that was measured (the topic, feedback, the starters and their label, and the links' button) is 7.1 to 1 or better against what is behind it. The rest was not measured.
+- **The pictures in this section were taken before the merge.** They show the light theme and the type as it was.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22).
+
+### Calls made in the build that the founders can overrule
+
+They are in the specification: section 13 for the calls made in the design, and section 16 for those made in the build. The largest is that a subject's links are changed in place on its page, not in a pop-up editor.
+
+## 16. Fitness
+
+Built on 19 November on the branch `fitness`, to [fitness-spec.md](fitness-spec.md). It is the third of five pieces of Aditya's plan. Fitness is off until it is switched on, and the sample gains an invented training week that shows only then. No sample task, habit or log entry was changed, so every count on Home, in Study, in Habits and in the Weekly review is as it was.
+
+![The Fitness place at 1440 px](screenshots/fitness/1-fitness-1440.png)
+
+### What was built
+
+- **A switch** in Settings, "Show Fitness". With it on, Fitness is a sixth place in the rail and in the phone's bar. With it off, all that shows is the switch and one search command, and everything in it is kept.
+- **Routines:** a name, the days it is set for, and lines kept as typed. A routine may have no fixed day.
+- **Sessions:** a dated copy of a routine to tick off, with a note. In the saved data a session is a `workout`, because `sessions` holds study sessions.
+- **The week,** worked out from the routines and the sessions and never stored: what is set, started, finished or still to come, a rest day, and the routines that can be started today, the one not done for longest first.
+- **Miles:** a session logs 2 nautical miles the first time it is finished, dated the day it is finished, and one session's miles at most on any one day.
+- **Bests and measures,** kept by hand, each with the value before. A measure has its own unit and is never judged.
+- **On Home,** the day's training: a ring that finishes a session as it stands and a name that opens it. **In the Weekly review,** one more figure.
+- **The saved data:** four new lists and one setting. A save from before this piece opens with nothing lost.
+
+### Checked
+
+- **Unit tests, 37 new:** words kept as typed within their limits; what is kept from a save edited by hand; which days a routine is set for; a week's sessions in order, each in its state; a session whose routine is gone; "last done" by the day a session is for; the order of the routines offered; a rest day; routines and their lines added, changed, moved, removed and held to their limits; a session started as a copy, once for a day, and what cannot be started; miles the first time and never again, for one session a day, for a late session, and never from the sample; a session reaching nothing a task counts; bests and measures added, corrected, beaten and put back; an older save, and "Clear everything" keeping the switch.
+- **Browser tests, 47 new:** nothing showing while off; the switch, the sixth place and the search command; routines added, changed and deleted with Undo; each state of a session in the week; a session started, ticked, added to, kept through a reload, finished, reopened, deleted and put away; a late session; a rest day; Recent; bests and measures; training on Home by ring and by name, on days to come and days gone; the review's figure; the whole of it by keyboard; every control tall enough for a thumb; and no sideways scroll at 320, 375, 390, 768, 1024 and 1440 px with every part at its longest.
+- **Everything from before:** the 313 unit tests and 159 browser tests pass unchanged. Their files were not edited for this piece. Four of the older browser tests were made steadier afterwards, for faults on CI that are not Fitness's: see "Found on the way".
+- **In the dark theme:** all 206 browser tests pass with the device set to dark.
+- **As CI runs it:** 200 pass and the six sea tests are skipped, as designed.
+- **Against the mock:** the built pages were pictured and compared with the mocks, in both themes. The pictures are in `screenshots/fitness/`, numbered, beside the mocks. Where the build differs is in the specification, section 19.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 19 November, ran the unit tests and the Fitness and My pages browser tests, and probed the running app with saved data edited by hand. It found nothing critical. It confirmed that miles cannot be taken twice, that a session never reaches a task's figures, that nothing shows while Fitness is off, that a save edited by hand opens with only the bad records dropped, and that My pages behaves as it did. Six findings were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| Ticking an unstarted session's ring on Home by keyboard dropped focus to the page, because the row was rebuilt when the session was made | The row keeps its identity, so the ring keeps focus |
+| A started or finished row in the week did not tell a screen reader where it stood | Its spoken name carries what it opens and where it stands |
+| A list that an Undo had taken one past its limit was cut when the save was next opened, losing what was typed last | A save's lists are not cut. A limit is held where things are added. |
+| Backspace or Delete on a line in a routine's editor removed it, with no Undo there | The keys do nothing where a line cannot be put back |
+| Focus fell to the page when a session closed, and Back reopened it | Focus returns to the session's row or the week's heading, and closing steps back or replaces the address |
+| The routines that can be started were spoken as their names alone | Each is spoken as "Start" and its name |
+
+Three smaller findings were left as they are, to be decided:
+
+- On a phone, a second "Add a best" in a row puts the cursor on Close and not on Name.
+- "Recent", "Routines", "Bests" and "Measures" are headings of the third level with none of the second above them, so a screen reader hears them as parts of "This week".
+- A session's row in the code allows a routine or a session to be missing where its state says it cannot be.
+
+The first two were put right on 20 November (section 19). The third is as it was.
+
+It also noted things that are older than this piece: Home is wider than a 320 px screen, two tabs open at once overwrite each other's saves, focus falls to the page after an item in a list is changed, and the toast's "Undo" is 36 px tall on a phone.
+
+### Found on the way
+
+- **Home is 21 px wider than a 320 px screen,** with or without Fitness. Its date and its two round buttons do not fit below about 341 px. Left alone then, and put right on 20 November (section 19). Fitness's own pages fit at 320 px, and a test holds that Home is no wider with Fitness than without.
+- **The ring on Home had no room for a thumb.** A habit's ring is pressed through its name, but a session's name is a button of its own. The test that measures every control found it. Fixed.
+- **One run lost its dev server near the end,** and the last twelve tests could not connect. None was a Fitness test, and the next run passed. This is the fault described in section 14.
+- **Two older tests of the look review page failed on CI,** on this piece's pull request and, earlier the same day, on `main` after a merge that changed only documents. A CI runner draws the sea in software. One test counted the graphics driver's remark on its own speed ("GPU stall due to ReadPixels") as a warning from the page. The other compared two pictures of the still scene before it had settled. The remark is now left out where warnings are counted, in that test and in one like it for the dark theme, and the pictures are taken again until a pair matches, which a scene that kept moving never would. Neither could be reproduced on a laptop, with or without software drawing. On the next run on CI the driver's remark failed nothing and the still scene matched, but the runner was slower still and two tests ran out of time. The fittings test rebuilds the boat for each fitting and had been taking 20 to 31 seconds on CI against a limit of 30, so it is given three times as long. An older Study test pressed "Edit subject" straight after choosing another subject, without waiting for it to show; on a slow machine that opens the editor of the subject about to leave, and the editor then goes with it. This one was reproduced, on a processor slowed six times, and the test now waits for the subject. The same press on a slow phone would do the same to a person, for the half second the page takes to change.
+- **Pull request 15 came into conflict with `main`** part-way through, when another pull request was merged. It was settled on its own branch, and this branch was moved forward to it.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 22).
+- Whether Escape inside a line being changed keeps the editor open in browsers other than Chrome.
+
+### Calls made in the build that the founders can overrule
+
+They are in the specification: section 16 for the calls made in the design, and section 19 for those made in the build. The largest are that a session whose day has passed can still be logged, that its miles are dated the day it is finished, and that a save's lists are never cut to their limits.
+
+## 17. Interests and headlines
+
+Built on 19 November on the branch `interests`, to [interests-spec.md](interests-spec.md). It is the fourth of five pieces of Aditya's plan. **It was designed and built without a review first:** Oliver asked for the rest of the app to be built without questions, to be gone through once it is finished. The specification's section 9 lists the calls most worth a look. The sample gains nothing, so Home is as it was and My pages gains only the new part of its list.
+
+![An interest and a Company page at 1440 px](screenshots/interests/2-company-1440.png)
+
+### What was built
+
+- **Interests:** folders in My pages. A student adds their own and says where it starts from: Investing, Law, or something else. The first two offer ready-made pages.
+- **Forms:** a page started as a Company, a Journal entry, a Case or Current affairs opens with headed parts, each a box of ordinary writing. Nothing is a number, a rating or a choice.
+- **A page's source link,** on any page, checked as every link is.
+- **Headlines,** saved by hand: a title, an address, where it is from, the day it was published and an optional tag. They are listed at `/pages/headlines`, and the newest three are on Home under "Any time this week".
+- **Nothing is fetched.** Compass still talks to no other service.
+- **The saved data:** two new lists, and four optional fields on a page. A save from before this piece opens with nothing lost.
+
+### Checked
+
+- **Unit tests, 32 new:** what each starting point offers; a titled page offered once; an interest's pages in order; names and limits; what is kept from a save edited by hand, for interests, a form's parts, a page's list and headlines; a headline cleaned, refused, and its source taken from its site; the newest three; every store action, with Undo; an older save; and "Clear everything".
+- **Browser tests, 31 new:** the new part of My pages; an interest added from each starting point; a Company page's eight parts kept through a reload; a titled starter going once used; a page put in an interest and taken out; an interest renamed and deleted with Undo; a source link, and what is refused as one; headlines saved, changed, deleted with Undo, and refused without a web address; the newest three on Home; the search command; no request to any other site; every control tall enough for a thumb, in the lists and in the editors; the whole of it by keyboard; and no sideways scroll at 320, 375, 390, 768, 1024 and 1440 px with every part at its longest.
+- **Everything from before:** the 350 unit tests and 206 browser tests pass. Their files were not edited for this piece.
+- **In the dark theme:** all 237 browser tests pass with the device set to dark.
+- **As CI runs it:** 231 pass and the six sea tests are skipped, as designed.
+- **Pictures** of the built pages are in `screenshots/interests/`, numbered. There are no mocks to compare them with, since nothing was mocked.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 19 November, ran the unit tests, and tried the running app with 24 browser probes of its own, including saves edited by hand. It found nothing critical. It confirmed that no address but an http or https one can reach a link, by typing, from a save or by Undo; that nothing is fetched; that a valid page from an older save cannot be dropped; and that Home is unchanged with nothing saved. These were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| Opening an interest, leaving it or adding one dropped keyboard focus to the page, and nothing said the list had changed | Focus goes to the interest's name on the way in and to its row on the way out |
+| With sixty headlines saved, "Save a headline" in search opened an editor whose button did nothing | It says that sixty is the most, and opens nothing |
+| A double press on a page that comes with a title made a second, unasked page, because the next button moved under the pointer | The second press of a double press does nothing, and the store makes a titled page once |
+| "Add interest" pressed twice quickly added two | An editor on its way out takes no more presses, in the frame every editor shares |
+| A double press on a form opened another page, whose row had moved under the pointer | The same fix: the second press does nothing wherever it lands. Found while fixing the one above. |
+| A source taken from the site stayed after the address changed | It follows the address. A typed source stays. |
+| Enter in a new headline's Address checked it and saved nothing | Enter saves the headline once the address is one |
+| A 30-letter unbroken name pushed an empty interest's page 50 px sideways at 320 px, and widened a page's editor | Both wrap. So does the way back above a page. |
+| A save with something that is not an item in a page's list took My pages down to the error screen. Older than this piece. | A page's list keeps only what is an item, and a kind that is not one is a note |
+| The Headlines row was never marked as the current one; the interest's "Edit" was named only "Edit"; a page naming an interest that is gone showed no choice as pressed | Each put right |
+| With a page open that an interest does not hold, choosing the interest left it open beside a list without it | One of the interest's own pages opens. On a phone the way back names the interest. |
+
+Left as they are, to be decided:
+
+- An Undo can take a list one past its limit, and a save's lists are not cut to their limits. This is the rule Fitness set (section 16).
+- A starter's hint shows only as a tooltip.
+- Without `field-sizing`, which Chrome has, a form's parts do not grow with what is written. They start taller there. Not seen in a browser that lacks it.
+
+### Found on the way
+
+- **A form's part widened the page by about 1,900 px below 1024 px,** when one very long word was typed in it. A box that grows with its words also grows sideways unless its column is told it may be narrower than what is in it. Fixed, and held by the width tests.
+- **A thumb test read a box as 43.9999 px tall** once in four runs, straight after its sheet slid up. It measures to the nearest pixel now.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 22).
+- A double tap by finger. A mouse says which press of a run it is; a finger may not, so a touch in the same place straight after is treated as one. Tried with a mouse only.
+
+### Calls made in the build that the founders can overrule
+
+They are in the specification: section 9 for the calls made in the design, and section 11 for those made in the build. The largest are that headlines are saved by hand and nothing is fetched, that a student adds their own interests with Investing and Law as two starting points, and that a form's parts are words.
+
+## 18. Search and backup
+
+Built on 19 November on the branch `search-and-backup`, to [search-and-backup-spec.md](search-and-backup-spec.md). It is the last of five pieces of Aditya's plan. **It was designed and built without a review first,** as section 17 was. The specification's section 8 lists the calls most worth a look.
+
+![Search for "essay", with the kinds above what was found](screenshots/search-backup/1-search-1440.png)
+
+### What was built
+
+- **Search:** the menu that opens with Cmd or Ctrl and K finds everything Compass keeps, from the second character typed: tasks, subjects, assessments, feedback, study sessions, pages and what is written in them, interests, headlines, habits, saved reviews, links, and what Fitness keeps while it is switched on. A result says what it is and where it is kept, shows the words found when they are in its writing, and opens the thing itself.
+- **Kinds:** once anything is found, a row of kinds with counts narrows it.
+- **A backup,** in Settings: one JSON file holding everything, made in the browser and sent nowhere.
+- **Restoring one:** Compass reads the file and says what it holds before anything changes. Restoring replaces everything but the theme, and its toast can take it back.
+- **Opening a save, made stricter.** A backup is opened by the same check as the browser's own save, and that check now reads only Compass's own data and builds every record again from typed parts.
+- **A page that fails as it is drawn** is replaced by a few words, with the rail and the way to Settings still there.
+
+### Checked
+
+- **Unit tests, 48 new:** every row of the specification's search table; matching by every word, in any case, with and without accents; the order of results; excerpts; counts by kind and the limits of what is shown; each check a save passes, with whole records kept exactly and broken ones dropped or mended; a save of one of every kind of record opening exactly as it was saved; a value of the wrong kind in every part of every record, more than 1,500 cases; the backup file written and read back; each refusal; restore, its Undo, and a backup edited by hand.
+- **Browser tests, 30 new:** a task found by its notes and opened on its day with its editor; kinds and their counts; a page found by a part of its form; a headline opened in a new tab that cannot reach back; a review opened on its week and an interest opened chosen; Fitness found only while on; the arrows and typing; the download, named for the day and holding everything; restore, what it says first, "Keep what is here", and Undo; each refusal; a restored backup after a reload; a backup edited by hand; every place opened with something of the wrong kind in every part of every record; the page that says a page could not be shown; a restore the browser will not keep; announcements and focus; widths from 320 to 1440 px; thumb sizes; and a restore by keyboard alone.
+- **Everything from before:** the 382 unit tests and 237 browser tests pass. One older test file was changed, `tests/e2e/fitness.spec.ts`, for two tests that depended on the day of the week: see "Found on the way".
+- **In the dark theme:** all 267 browser tests pass with the device set to dark.
+- **As CI runs it:** 261 pass and the six sea tests are skipped, as designed.
+- **On every day of the week:** both suites were run with the clock moved on by one to six days, in the tests and in the app together. All pass.
+- **Pictures** of the built menu and of Settings are in `screenshots/search-backup/`, numbered.
+
+### The review of the whole change
+
+A fresh reviewer read the whole change against the specification on 19 November, ran the unit tests, and tried the running app with its own probes and the worst files it could build. It confirmed that no record a real, unedited save could hold is dropped or changed; that a file's keys cannot reach the store's functions or the prototype of every object; that no address but an http or https one can reach a link; that nothing is sent anywhere; and that nothing is searched while the menu is closed. A search over 3,000 tasks and 100 long pages took 10 to 23 ms. These were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| **A backup edited by hand could stop Home opening, on every load.** A task marked done with `true` and not a time passed the check, and sorting the day's tasks then failed. | A task is built again from typed parts, as is every other record. A page that fails is replaced by a few words inside Compass. |
+| A review saved at "last Sunday" and not a time failed the Weekly review | The time is kept only if it is one |
+| A page whose date to aim for was a list made opening a save throw. From a file, nothing was said. From the browser's own save, Compass opened on the sample and then wrote over the save. | A day is checked as a day whatever kind of thing is there, and a file that cannot be opened is refused in words |
+| A test of this piece failed on Saturdays and Sundays | Its habit is for every day |
+| "bio test" did not find a Biology task called "Revise for the test", which is the specification's own example | A word in what a thing belongs to counts |
+| The downloaded file's address was dropped after a second, which a phone's "save this file?" can outlast | It is kept for a minute |
+| What a backup holds might not be announced, and both answers dropped focus to the page | It is said in a place that is there beforehand, and focus goes back to the button that asked |
+| "Download a backup" in search saved a file at once, so Enter after "do" downloaded one | Both commands go to Settings |
+| A restore the browser would not save was silent, with the backup on screen and the old data saved | It says so and puts back what was here |
+| Bests and measures were not found by value; an excerpt was wrong for accented text; unsaved reviews were found; a letter typed with a kind in hand was lost; a subject or a page could be kept twice; a user's own save with no assessments got the sample's; the count of what a backup holds named a training week nobody had seen | Each put right |
+
+### Found on the way
+
+- **The sample's pages were stamped as if a day began at midnight in London.** For some hours after midnight anywhere east of it, the newest sample page was "changed later than now", so a page changed just then did not come first in My pages, and an older test failed. The clock passed midnight during this work, which is how it was seen. They are stamped by the device's own clock now.
+- **Two older Fitness tests depended on the day of the week.** One expected a routine to be on offer that is set for Mondays and Fridays, and failed on a Friday. One counted the controls on the page, of which there are fewer on a Tuesday and a Wednesday. Both would have failed on CI on those days. Each now holds on any day.
+- **A test raced the browser's file box.** Playwright hands the file box to a test only once the test is listening for it, and a listener added in the same breath as the key press was sometimes too late. It listens from the start now. Seen once in eight runs.
+- **One run lost its dev server part-way,** and every test after that failed at once. The next run passed. This is the fault described in section 14.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
+- Whether a screen reader announces what a backup holds. The place it is said in is built the way that is announced; nobody has listened.
+
+### Calls made in the build that the founders can overrule
+
+They are in the specification: section 8 for the calls made in the design, and section 10 for those made in the build. The largest are that search lives in the menu and not on a page of its own, that restoring replaces everything and does not merge, and that a save is now checked far more strictly when it is opened.
+
+## 19. Small faults put right
+
+Done on 20 November on the branch `polish`, once all five pieces of Aditya's plan were merged. These are the faults that the reviews and the test runs had noted along the way and left. Nothing here is new to look at: each is a thing that now behaves as it was meant to.
+
+### What was put right
+
+| Fault | Now |
+|---|---|
+| Home was wider than a 320 px screen, by up to 21 px | Below 360 px the date in its heading is at its shortest ("Wed 30 Sep"). Home fits at 320 px with a greeting, Fitness, links and headlines all showing. |
+| "Move it to today" and a toast's "Undo" were 36 px tall on a phone | Both are 44 px there, and as they were with a pointer |
+| On a phone, the second new thing made in a row opened with the keyboard down | An editor that makes something new takes the cursor every time. Opening something that exists to look at it still leaves the keyboard down. |
+| Changing a line of a list with Enter or Escape, or deleting one by key, dropped the keyboard to the page | It stays on the line, or moves to the line that takes its place |
+| "Clear everything" replaced itself with its question and dropped the keyboard | The keyboard goes to "Keep it", and back to the button after either answer |
+| Two tabs open at once wrote over each other's saves | Each tab takes up what the other saves, and reads again when it is looked at again |
+| "Recent", "Routines", "Bests" and "Measures" in Fitness were headings under "This week" | They are headings beside it |
+| Two older searches were left in the code, unused | Taken out, with their two tests |
+
+### Found on the way
+
+- **An editor opened a second time did not take the cursor.** This was a fault from section 17's work, and it was on `main`. Making an editor take no presses on its way out left it that way for an instant on its next opening, which is the instant its first box is given the keyboard. It showed here because the test for the second new thing in a row could not pass. It is fixed in the frame every editor shares, and a test opens an editor three times.
+- **A new headline could not be saved on a phone without leaving the Address box first.** "Save headline" was ready only once the address had been checked, which happened on leaving the box. A press on a button that is not ready does not leave a box on a phone. It is ready now as soon as what is typed is a web address.
+- **Saving nothing at start-up broke every test.** Asked to stop Compass saving on opening when no study session tasks were due, the change was made and then taken out: that save is the one that puts Compass's data on the device on a first visit, and the tests wait for it.
+
+### The review of the change
+
+A fresh reviewer read the change on 20 November and drove the three shared pieces in a browser: the editor frame through every way out it could find, two tabs through deletes, half-typed boxes and unreadable saves, and the list rows in each of the three lists that use them. It found the frame's fix correct on every path, the tabs sound, and no loop. These were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| Delete held down on a line now took line after line, because each line that moved up took the keyboard | A key that is repeating does nothing on a line |
+| At exactly 359 px wide, Home's heading showed two lengths of the date at once | One length at a time, on both sides of 360 px. The test reads what is shown, not what is in the page. |
+| Deleting a line with the mouse ringed the next line as if a key had been pressed there | The keyboard moves only when a key did the deleting |
+| The voyage open in a tab behind marked a new fitting as seen the moment it was earned in the tab in front | It is marked only by a tab that is being looked at, and only when there is something to mark |
+| The last subject deleted in one tab came back from the other tab's copy | The user's own data may have no subjects. The sample with none still gets its five. |
+| A tab that was asleep could miss another tab's save | It reads again when it is looked at again |
+
+### Checked
+
+- **Unit tests:** 429 pass. Two were removed with the two unused searches, and one was added.
+- **Browser tests, 13 new,** in `tests/e2e/polish.spec.ts`: one for each row of the two tables above, and one that deletes every subject and opens every place.
+- **Everything from before:** the other 267 browser tests pass, with no file of theirs changed.
+- **In the dark theme:** all 280 browser tests pass. **As CI runs it:** 274 pass and the six sea tests are skipped.
+- **On every day of the week:** the new tests were run with the clock moved on by one to six days.
+- **A walk through every place** at 1440, 390 and 320 px, by script, with Fitness on and interests, headlines and links in place: no page scrolls sideways, no errors, and every control on a phone is at least 44 px tall but one, a link inside a sentence in the Weekly review.
+
+### Left as they are
+
+- Enter puts a line's words away and leaves the keyboard on the line, where Backspace then deletes it, with Undo. Before, the keyboard was nowhere and Backspace did nothing.
+- A session's row in the code still allows a routine or a session to be missing where its state says it cannot be.
+- On a 390 by 844 px phone the "New task" sheet is 14 px taller than the screen. "Add task" can still be reached.
+- Two tabs changing the same thing within a tenth of a second can still lose one of the changes.
+
+## 20. New waters
 
 Built on 18 November on the branch `new-waters`, to [new-waters-spec.md](new-waters-spec.md), on top of night and the dark theme. Not committed. No founder has reviewed how the waters look.
 
@@ -592,7 +912,7 @@ They are listed in the spec, section 8. The ones a founder is most likely to hav
 - A real phone, Safari or Firefox, and a screen reader by ear.
 - Frame rate in each water. The draw calls are within the same budget as home waters.
 
-## 16. Built differently from the approved spec
+## 21. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -606,13 +926,13 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 17. Known limitations
+## 22. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
 - The storm's breaking crests look like patches.
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
-- Drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
+- Drag to reorder, recurring tasks, accounts and sync are not built, by plan.
 - Night and the dark theme are built and approved by Oliver. Josh and Aditya have not seen them (section 14).
-- New waters are built and not yet reviewed by any founder (section 15). The still image draws the fjords as rounded hills, and its port does not show each water's trees.
+- New waters are built and not yet reviewed by any founder (section 20). The still image draws the fjords as rounded hills, and its port does not show each water's trees.
 - Tested in Chrome only. Safari and Firefox have not been opened.

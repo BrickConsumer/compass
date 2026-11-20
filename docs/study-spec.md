@@ -2,11 +2,13 @@
 
 | | |
 |---|---|
-| Status | **Built on 16 November 2026. No founder has reviewed the page.** Oliver decided the same day that a study session becomes an ordinary task that repeats. |
+| Status | **Built on 16 November 2026. No founder has reviewed the page.** Oliver decided the same day that a study session becomes an ordinary task that repeats. **More was added on 18 November:** a topic, preparation and a link on an assessment, a link on a task, feedback, a subject's pages and its links. Those are in [study-detail-spec.md](study-detail-spec.md). |
 | Scope | The Study page: subjects, their assessments, their study sessions, their tasks and their notes |
-| Companions | [home-screen-spec.md](home-screen-spec.md), [habits-spec.md](habits-spec.md), [testing-report.md](testing-report.md) |
+| Companions | [study-detail-spec.md](study-detail-spec.md), [home-screen-spec.md](home-screen-spec.md), [habits-spec.md](habits-spec.md), [testing-report.md](testing-report.md) |
 
 ![Study at 1440 px](screenshots/study/1-study-1440.png)
+
+The picture is from 16 November. The page as it is now, with its parts in their new order, is pictured in [study-detail-spec.md](study-detail-spec.md), section 16.
 
 ## 1. What Study is
 
@@ -23,12 +25,18 @@ Each subject in the list has one line under its name: how many tasks are open an
 
 ## 3. A subject's sheet
 
+The parts, in the order they are on the page since 18 November. Those marked "detail" are specified in [study-detail-spec.md](study-detail-spec.md), section 6.
+
 | Part | Behaviour |
 |---|---|
-| **Study sessions** | The subject's sessions, each with its days in words, such as "Every Monday, Wednesday and Friday". Selecting one opens its editor. |
-| **Assessments** | Those still ahead, soonest first. Today counts as ahead. Past ones are behind a count, such as "2 past". Selecting one opens its editor. |
+| **Topic** | What the subject is on now, under its name. Detail. |
+| **Assessments** | Those still ahead, soonest first. Today counts as ahead. Past ones are behind a count, such as "2 past". Selecting one opens its editor. Each has its preparation tasks and its notification link under it. Detail. |
 | **Tasks** | Every open task for the subject, wherever it is planned: by date, a day's tasks before the week's. Each row says when it is for ("Today", "Thu 19 Nov", "This week") in place of the subject. Done ones are behind a count. |
 | **Add a task** | The last row. The task is for any time this week and carries the subject. It appears on Home at once. |
+| **Feedback** | What teachers have said, newest first, with anything to work on. Detail. |
+| **Pages** | The My pages that carry the subject, and four ways to start one. Detail. |
+| **Links** | Up to six links to other sites. Detail. |
+| **Study sessions** | The subject's sessions, each with its days in words, such as "Every Monday, Wednesday and Friday". Selecting one opens its editor. |
 | **Notes** | Free text, saved as it is typed. |
 
 ## 4. Subjects
@@ -37,7 +45,7 @@ Each subject in the list has one line under its name: how many tasks are open an
 |---|---|
 | Name | 1 to 40 characters. An empty name is not saved. |
 | Colour | One of the eight subject colours. A new subject takes the first colour not yet used. |
-| Delete | Removes the subject and its assessments. Its tasks are kept, without a subject. A toast offers Undo, which puts everything back. |
+| Delete | Removes the subject with its assessments, sessions, feedback and links. Its tasks and pages are kept, without a subject. A toast offers Undo, which puts everything back. |
 
 ## 5. Assessments
 
@@ -46,7 +54,8 @@ Each subject in the list has one line under its name: how many tasks are open an
 | Title | 1 to 80 characters |
 | Kind | Test, exam, presentation or assignment |
 | Date | Any date |
-| Delete | With Undo |
+| Notification link | Optional. One web address, shown as "Notification" on the subject's page. |
+| Delete | With Undo. Its preparation tasks are kept, as ordinary tasks, and Undo puts them back under it. |
 
 A new assessment is confirmed with "Add assessment". Changes to an existing one save as they are made. On Home, assessments still appear under "Coming up" and as a diamond on their day, as before; they can now be changed.
 
@@ -79,5 +88,7 @@ The sample data has no sessions, so the sample week is the one the brief describ
 
 ## 7. Not in this version
 
-- **Preparation tasks attached to an assessment.** A task belongs to a subject, not yet to a particular assessment.
-- **Reordering subjects.**
+- **Reordering subjects.** They are in the order of this week's levels, then their own.
+- **What the Study detail leaves out,** which is listed in [study-detail-spec.md](study-detail-spec.md), section 14.
+
+Preparation tasks attached to an assessment were not in the first version. They were built on 18 November.

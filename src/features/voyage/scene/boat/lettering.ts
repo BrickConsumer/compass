@@ -3,7 +3,7 @@ import { type BoatSpec, nameBox } from '../../boat/specs';
 import { PAINT } from './materials';
 
 /** The voyage's italic, as on the plate: the chart rule sets the boat's name in it. */
-const FACE = 'italic 500 96px "Brygada 1918 Variable", "Iowan Old Style", Palatino, Georgia, serif';
+const FACE = 'italic 400 96px "Libre Caslon Text", "Iowan Old Style", Palatino, Georgia, serif';
 const SIZE = 96, PAD = 14;
 
 /** What the hull's shader needs to paint the name: the lettering as a texture, where it sits, and its colour. */

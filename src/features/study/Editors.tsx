@@ -2,20 +2,23 @@ import { Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { weekdayName, weekOrder } from '../../domain/habits';
-import { colourName, COLOURS, KINDS } from '../../domain/study';
+import { cleanUrl } from '../../domain/links';
+import { colourName, COLOURS, KINDS, TOPIC_LIMIT } from '../../domain/study';
 import { type Assessment, type ISODate, SUBJECT_COLOURS } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { DraftInput } from '../../ui/DraftField';
 import { chip, EditorFrame } from '../../ui/EditorFrame';
+import { LinkField } from '../../ui/LinkField';
 import { toast } from '../../ui/Toast';
 
-const label = 'flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted';
-const field = 'h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]';
-const done = 'ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-surface-inverse-hover';
-const del = 'flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-attention hover:bg-attention-tint';
+// shared with the feedback editor, so every editor on a subject's page looks the same
+export const label = 'flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted';
+export const field = 'h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]';
+export const done = 'ml-auto min-h-11 cursor-pointer rounded-md bg-surface-inverse px-5 text-[14.5px] font-semibold text-text-inverse hover:bg-surface-inverse-hover';
+export const del = 'flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[14.5px] font-semibold text-attention hover:bg-attention-tint';
 
-/** Rename a subject, choose its colour, or delete it. Changes save as they are made. */
-export function SubjectEditor({ id, onClose }: { id: string | null; onClose: () => void }) {
+/** Rename a subject, say what it is on now, choose its colour, or delete it. Changes save as they are made. `focus` opens it with the cursor in the topic box. */
+export function SubjectEditor({ id, focus, onClose }: { id: string | null; focus?: 'topic'; onClose: () => void }) {
   const subject = useCompass((s) => s.subjects.find((x) => x.id === id)), update = useCompass((s) => s.updateSubject), navigate = useNavigate();
   useEffect(() => { if (id && !subject) onClose(); }, [id, subject, onClose]);
   const remove = () => {
@@ -29,8 +32,14 @@ export function SubjectEditor({ id, onClose }: { id: string | null; onClose: () 
       {(close) => subject && (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); close(); }}>
           <label className={label}>Name
-            <DraftInput autoFocus required maxLength={40} value={subject.name} onSave={(name) => update(subject.id, { name })} className={field} />
+            <DraftInput autoFocus={focus !== 'topic'} required maxLength={40} value={subject.name} onSave={(name) => update(subject.id, { name })} className={field} />
           </label>
+          <div className="flex flex-col gap-1.5">
+            <label className={label}>Topic
+              <DraftInput data-focus-first={focus === 'topic' ? '' : undefined} maxLength={TOPIC_LIMIT} value={subject.topic ?? ''} onSave={(topic) => update(subject.id, { topic })} aria-describedby="subject-topic-help" className={field} />
+            </label>
+            <p id="subject-topic-help" className="text-[13.5px] text-text-muted">What the subject is on now, in the syllabus's own words. It is kept exactly as you type it.</p>
+          </div>
           <fieldset>
             <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Colour</legend>
             <div className="flex flex-wrap gap-2">
@@ -40,7 +49,7 @@ export function SubjectEditor({ id, onClose }: { id: string | null; onClose: () 
               ))}
             </div>
           </fieldset>
-          <p className="text-[13.5px] text-text-muted">Deleting a subject removes its assessments and ends its study sessions. Its tasks are kept, without a subject.</p>
+          <p className="text-[13.5px] text-text-muted">Deleting a subject removes its assessments, feedback and links, and ends its study sessions. Its tasks and pages are kept, without a subject.</p>
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
             <button type="button" onClick={remove} className={del}><Trash2 size={15} aria-hidden="true" />Delete</button>
             <button type="submit" className={`${done} sm:hidden`}>Done</button>
@@ -54,7 +63,7 @@ export function SubjectEditor({ id, onClose }: { id: string | null; onClose: () 
 /** What the assessment editor is showing: an existing assessment, or a new one for a subject. */
 export type EditingAssessment = { id: string } | { subjectId: string };
 
-/** Add or change an assessment: its title, what kind it is, and its date. */
+/** Add or change an assessment: its title, what kind it is, its date, and a link to its notification. */
 export function AssessmentEditor({ editing, today, onClose }: { editing: EditingAssessment | null; today: ISODate; onClose: () => void }) {
   const store = useCompass();
   const existing = editing && 'id' in editing ? store.assessments.find((a) => a.id === editing.id) : undefined, isNew = !!editing && 'subjectId' in editing;
@@ -70,7 +79,7 @@ export function AssessmentEditor({ editing, today, onClose }: { editing: Editing
     if (gone) toast('Assessment deleted.', { label: 'Undo', run: () => useCompass.getState().restoreAssessment(gone) });
   };
   return (
-    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-assessment="${CSS.escape(existing.id)}"]` : '[data-add-assessment]'} title={isNew ? 'New assessment' : 'Edit assessment'} labelId="assessment-editor-title" onClose={onClose}>
+    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-assessment="${CSS.escape(existing.id)}"]` : '[data-add-assessment]'} title={isNew ? 'New assessment' : 'Edit assessment'} labelId="assessment-editor-title" onClose={onClose} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew || store.addAssessment(draft)) close(); }}>
           <label className={label}>Title
@@ -85,6 +94,8 @@ export function AssessmentEditor({ editing, today, onClose }: { editing: Editing
           <label className={label}>Date
             <input type="date" required value={value.date} onChange={(e) => { if (e.target.value) change({ date: e.target.value }); }} className={`${field} w-fit`} />
           </label>
+          <LinkField key={existing?.id ?? 'new'} label="Notification link" value={value.link ?? ''} className={field}
+            onCommit={(url) => { if (existing) return store.setAssessmentLink(existing.id, url); const clean = url.trim() ? cleanUrl(url) : ''; if (clean === null) return false; setDraft((d) => ({ ...d, link: clean || undefined })); return true; }} />
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
             {existing && <button type="button" onClick={remove} className={del}><Trash2 size={15} aria-hidden="true" />Delete</button>}
             <button type="submit" className={`${done} ${isNew ? '' : 'sm:hidden'}`}>{isNew ? 'Add assessment' : 'Done'}</button>
@@ -119,7 +130,7 @@ export function SessionEditor({ editing, onClose }: { editing: EditingSession | 
     if (gone) toast('Session ended. Its tasks are kept.', { label: 'Undo', run: () => useCompass.getState().restoreSession(gone) });
   };
   return (
-    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-session="${CSS.escape(existing.id)}"]` : '[data-add-session]'} title={isNew ? 'New session' : 'Edit session'} labelId="session-editor-title" onClose={onClose}>
+    <EditorFrame open={!!editing && (isNew || !!existing)} anchor={existing ? `li[data-session="${CSS.escape(existing.id)}"]` : '[data-add-session]'} title={isNew ? 'New session' : 'Edit session'} labelId="session-editor-title" onClose={onClose} fresh={isNew}>
       {(close) => (
         <form method="dialog" className="contents" onSubmit={(e) => { e.preventDefault(); if (!isNew) close(); else if (store.addSession({ subjectId, ...draft })) close(); else setTried(true); }}>
           <label className={label}>Name

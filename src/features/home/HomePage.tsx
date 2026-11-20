@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useOutletContext, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate, useOutletContext, useSearchParams } from 'react-router';
 import type { ShellContext } from '../../app/AppShell';
-import { addDaysISO, isISODate, isoWeek, longDate, shortDate, weekLabel, weekStartOf } from '../../domain/dates';
+import { addDaysISO, isISODate, isoWeek, longDate, shortDate, shortDay, weekLabel, weekStartOf } from '../../domain/dates';
 import { greeting } from '../../domain/greeting';
 import { taskRank } from '../../domain/levels';
 import { allTasksInWeek, carryOver, dayMarks, missedDay, nextWeekPriorities, progress, share, tasksForDay, tasksForWeek, upcomingAssessments } from '../../domain/tasks';
@@ -13,6 +13,7 @@ import { useToday } from '../../state/useToday';
 import { SegmentedProgress } from '../../ui/SegmentedProgress';
 import { HabitsToday } from '../habits/HabitsToday';
 import { HomeLinks } from '../links/Links';
+import { HomeHeadlines } from './HomeHeadlines';
 import { DaySheet } from './DaySheet';
 import { Focus } from './Focus';
 import { HomeWindow } from './HomeWindow';
@@ -51,6 +52,10 @@ export function HomePage() {
   // the storm follows a missed day, but only once that day is over
   const yesterday = addDaysISO(selected, -1), stormy = yesterday < today && missedDay(tasks, yesterday);
   const closeEditor = useCallback(() => setEditing(null), []);
+  // A task found by search comes here asking for its editor, on its day. The asking is used once, so coming back to
+  // the day later does not open it again.
+  const location = useLocation(), navigate = useNavigate(), asked = (location.state as { task?: string } | null)?.task;
+  useEffect(() => { if (!asked) return; setEditing({ id: asked }); navigate(`${location.pathname}${location.search}`, { replace: true, state: null }); }, [asked, navigate, location.pathname, location.search]);
 
   return (
     <main className="mx-auto flex max-w-[1560px] flex-col px-4 pb-32 lg:min-h-dvh pt-[max(12px,env(safe-area-inset-top,0px))] sm:px-5 sm:pb-10 lg:pl-1.5 lg:pr-7 lg:pt-4">
@@ -62,7 +67,8 @@ export function HomePage() {
           {/* shown whichever day is selected, so the page does not jump as days are chosen */}
           {hello && <p data-greeting className="text-[15px] font-medium leading-[1.3] text-text-muted [overflow-wrap:anywhere] sm:mb-[3px]">{hello}</p>}
           <div className="flex items-center justify-between gap-3">
-            <h1 className="whitespace-nowrap text-[25px] leading-[1.2] tracking-[-0.012em] sm:text-[32px] sm:leading-[1.15] lg:text-[40px] lg:leading-[1.1]"><span className="sm:hidden">{shortDate(selected)}</span><span className="max-sm:hidden">{longDate(selected)}</span></h1>
+            <h1 className="whitespace-nowrap text-[25px] leading-[1.2] tracking-[-0.012em] sm:text-[32px] sm:leading-[1.15] lg:text-[40px] lg:leading-[1.1]">{/* three lengths of the same day: below 360 px there is no room for the month in full beside the two round buttons */}
+              <span className="min-[360px]:hidden">{shortDay(selected)}</span><span className="max-[360px]:hidden sm:hidden">{shortDate(selected)}</span><span className="max-sm:hidden">{longDate(selected)}</span></h1>
             <span className="flex gap-2 sm:hidden">
               <button type="button" onClick={openMenu} aria-label="Search" className={circle}><Search size={18} aria-hidden="true" /></button>
               <Link to="/settings" aria-label="Settings" className={circle}><SlidersHorizontal size={18} aria-hidden="true" /></Link>
@@ -99,9 +105,13 @@ export function HomePage() {
         <DaySheet date={selected} today={today} tasks={dayTasks} subjects={subjects} assessment={assessments.find((a) => a.date === selected)}
           carried={carryOver(tasks, today, startsOn)} onEdit={(id) => setEditing({ id })} rank={rank} />
         <div className="grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-1 lg:pt-[18px] xl:contents">
-          <div className="xl:pt-[18px]"><WeekList weekStart={week} current={week === thisWeek} tasks={tasksForWeek(tasks, week, rank)} subjects={subjects} onEdit={(id) => setEditing({ id })} rank={rank} /></div>
+          <div className="xl:pt-[18px]">
+            <WeekList weekStart={week} current={week === thisWeek} tasks={tasksForWeek(tasks, week, rank)} subjects={subjects} onEdit={(id) => setEditing({ id })} rank={rank} />
+            {/* saved headlines, when there are any, sit under the week's tasks */}
+            <HomeHeadlines className="mt-9" />
+          </div>
           <div className="flex flex-col gap-9 xl:pt-[18px]">
-            <ComingUp assessments={upcomingAssessments(assessments, today)} subjects={subjects} today={today} onSelect={select} />
+            <ComingUp assessments={upcomingAssessments(assessments, today)} tasks={tasks} subjects={subjects} today={today} onSelect={select} />
             <NextWeek tasks={nextWeekPriorities(tasks, today, startsOn)} subjects={subjects} today={today} weekStartsOn={startsOn} onEdit={(id) => setEditing({ id })} />
           </div>
         </div>

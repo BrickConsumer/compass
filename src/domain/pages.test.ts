@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addItem, aimOf, editItem, insertItem, isReached, kindOf, listCount, moveItem, newPage, PAGE_KINDS, PAGE_LIMITS, pageLine, pagesAsText, removeItem, searchPages, sortPages, toggleItem, untickAll } from './pages';
+import { addItem, aimOf, editItem, insertItem, isReached, kindOf, listCount, moveItem, newPage, PAGE_KINDS, PAGE_LIMITS, pageLine, pagesAsText, removeItem, sortPages, toggleItem, untickAll } from './pages';
 import type { Page, PageItem, Subject } from './types';
 
 const item = (id: string, done = false): PageItem => ({ id, text: id, done });
@@ -113,12 +113,6 @@ describe('the list of pages', () => {
     const { open, reached } = sortPages(pages);
     expect(open.map((p) => p.id)).toEqual(['new', 'old']);
     expect(reached.map((p) => p.id)).toEqual(['won', 'won-earlier']);
-  });
-
-  it('is searched by title', () => {
-    const pages = [page({ id: 'a', title: 'Biology field trip' }), page({ id: 'b', title: 'Reading for English' })];
-    expect(searchPages(pages, ' FIELD ').map((p) => p.id)).toEqual(['a']);
-    expect(searchPages(pages, '')).toEqual([]);
   });
 });
 

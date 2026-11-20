@@ -9,7 +9,12 @@ export const toISO = (date: Date): ISODate => format(date, 'yyyy-MM-dd');
 export const todayISO = (): ISODate => toISO(new Date());
 export const addDaysISO = (iso: ISODate, n: number): ISODate => toISO(addDays(d(iso), n));
 export const daysBetween = (from: ISODate, to: ISODate): number => differenceInCalendarDays(d(to), d(from));
-export const isISODate = (s: string | null | undefined): s is ISODate => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(d(s).getTime());
+/**
+ * A real day, written 'YYYY-MM-DD', from 1900 to 2999. Anything else is not one, whatever kind of thing it is: a save
+ * can hold anything where a day should be. The years are bounded because a week either side of a day must be a day
+ * too, and the year after 9999 cannot be written this way.
+ */
+export const isISODate = (s: unknown): s is ISODate => typeof s === 'string' && /^(19|2\d)\d{2}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(d(s).getTime());
 
 /** The first day of the week containing the date. Monday (1) by default, or Sunday (0). */
 export const weekStartOf = (iso: ISODate, weekStartsOn: 0 | 1 = 1): ISODate => toISO(startOfWeek(d(iso), { weekStartsOn }));

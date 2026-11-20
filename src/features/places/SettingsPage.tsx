@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
 import { THEMES } from '../../domain/theme';
 import { daysAtSea, milesLogged } from '../../domain/voyage';
@@ -7,6 +7,7 @@ import { DraftInput } from '../../ui/DraftField';
 import { chip } from '../../ui/EditorFrame';
 import { toast } from '../../ui/Toast';
 import { AreasSettings } from './AreasSettings';
+import { BackupSettings } from './BackupSettings';
 import { LinksSettings } from './LinksSettings';
 
 const row = 'flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-line py-3.5 first:border-t-0';
@@ -15,10 +16,18 @@ const button = 'min-h-11 cursor-pointer rounded-md px-4 text-[14.5px] font-semib
 /** A small, real settings page: the week, the sea, and the sample data. */
 export function SettingsPage() {
   const s = useCompass(), [confirming, setConfirming] = useState(false);
+  // The question takes the place of the button that asked it. The keyboard goes to the safe answer, and comes back
+  // to the button after either one, so it never falls to the page.
+  const clear = useRef<HTMLButtonElement>(null), asked = useRef(false);
+  useEffect(() => { if (confirming) asked.current = true; else if (asked.current) { asked.current = false; clear.current?.focus(); } }, [confirming]);
   const [miles, setMiles] = useState(() => milesLogged(s.log)), [days, setDays] = useState(() => daysAtSea(s.log));
   // "Add a link" elsewhere comes here as /settings#links: show that part, ready to type a new link's name
   const { hash } = useLocation();
   useEffect(() => { if (hash === '#links') { document.getElementById('links')?.scrollIntoView(); document.getElementById('new-link-name')?.focus(); } }, [hash]);
+  // the two backup commands in search come here, each with the keyboard on its own button
+  useEffect(() => { if (hash === '#data' || hash === '#restore') { document.getElementById('data')?.scrollIntoView(); document.getElementById(hash === '#restore' ? 'restore-backup' : 'download-backup')?.focus(); } }, [hash]);
+  // the prototype tool's two boxes show the voyage as it is, so they follow a restore and its Undo
+  const voyageNow = () => { const { log } = useCompass.getState(); setMiles(milesLogged(log)); setDays(daysAtSea(log)); };
   return (
     <main className="mx-auto flex max-w-[640px] flex-col gap-9 px-5 pb-32 pt-10 sm:pb-12 lg:pt-16">
       <h1 className="text-[32px] leading-[1.1] tracking-[-0.012em] lg:text-[40px]">Settings</h1>
@@ -61,6 +70,14 @@ export function SettingsPage() {
         </div>
       </section>
 
+      <section aria-labelledby="set-fitness">
+        <h2 id="set-fitness" className="text-[20px]">Fitness</h2>
+        <div className="mt-2">
+          <label className={`${row} cursor-pointer`}><span className="text-[15.5px]">Show Fitness<span className="block max-w-[46ch] text-[13.5px] text-text-muted">A place for your training week, what you did and anything you choose to measure. Switching it off hides it and keeps what is in it.</span></span>
+            <input type="checkbox" className="tick-native size-5 accent-[var(--color-text)]" checked={s.settings.fitness === true} onChange={(e) => s.setSettings({ fitness: e.target.checked })} /></label>
+        </div>
+      </section>
+
       <section aria-labelledby="set-sea">
         <h2 id="set-sea" className="text-[20px]">The sea</h2>
         <div className="mt-2">
@@ -81,17 +98,18 @@ export function SettingsPage() {
         <LinksSettings />
       </section>
 
-      <section aria-labelledby="set-data">
+      <section aria-labelledby="set-data" id="data" className="scroll-mt-6">
         <h2 id="set-data" className="text-[20px]">Your data</h2>
         <p className="mt-2 max-w-[56ch] text-[14.5px] text-text-muted">
           Everything is kept on this device and nowhere else. {s.sample ? 'You are looking at sample data.' : ''} {storageAvailable ? '' : 'This browser is not letting Compass save, so changes will be lost when you close the page.'}
         </p>
+        <BackupSettings onReplaced={voyageNow} />
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" className={button} onClick={() => { s.resetSample(); setMiles(412); setDays(23); toast('Sample data restored.'); }}>Reset the sample data</button>
           {confirming
             ? <><button type="button" className="min-h-11 cursor-pointer rounded-md bg-attention px-4 text-[14.5px] font-semibold text-on-attention" onClick={() => { s.clearAll(); setConfirming(false); setMiles(0); setDays(0); toast('Everything cleared.'); }}>Yes, clear everything</button>
-                <button type="button" className={button} onClick={() => setConfirming(false)}>Keep it</button></>
-            : <button type="button" className={`${button} text-attention`} onClick={() => setConfirming(true)}>Clear everything</button>}
+                <button type="button" autoFocus className={button} onClick={() => setConfirming(false)}>Keep it</button></>
+            : <button type="button" ref={clear} className={`${button} text-attention`} onClick={() => setConfirming(true)}>Clear everything</button>}
         </div>
       </section>
 

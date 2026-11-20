@@ -95,7 +95,8 @@ test.describe('on a device set to dark', () => {
 
   test('the live scene shows the night and holds together', async ({ page }) => {
     const errors: string[] = [];
-    page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.text().includes('THREE.Clock')) errors.push(m.text()); });
+    // a graphics driver's remark on its own speed is not a fault of the page: see the same line in lookdev.spec.ts
+    page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.text().includes('THREE.Clock') && !m.text().includes('GL Driver Message')) errors.push(m.text()); });
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('/lookdev');
     await expect(sea(page)).toHaveAttribute('data-scene', 'live', { timeout: 15_000 });

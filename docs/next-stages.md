@@ -2,9 +2,11 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026 |
-| Status | A recommendation. Nothing here is agreed by the founders yet. |
+| Date | 16 November 2026, updated 18 November |
+| Status | A recommendation. Since 18 November the founders go with Oliver's decisions unless he says otherwise, so what Oliver approves counts as agreed. |
 | Based on | The brief, the approved [art direction](compass-art-direction.md) and [Home spec](home-screen-spec.md), and the [testing report](testing-report.md) |
+
+**Update, 18 November.** All thirteen pull requests were merged into `main`, in order. The last one added a motion system and a new type, Libre Caslon Text with Source Sans 3. The sections below keep the wording from when each stage was written; where a line still speaks of the founders reviewing something, read it as Oliver's review.
 
 The order below puts first what protects the work already done, then what the brief still expects of Phase 1, then new product.
 
@@ -14,10 +16,10 @@ Small, and mostly decisions and checks that need a founder.
 
 | Step | Why | Size |
 |---|---|---|
-| Founders review Home and approve the Phase E changes | The brief's approval gate. Nothing is committed without it. | A meeting |
+| ~~Founders review Home and approve the Phase E changes~~ | **Oliver approved them for the founders, and everything is merged.** | Done |
 | A founder opens Home on a real phone | The only way to settle speed, heat and battery. The spec's pass bar ends with this. | Ten minutes |
 | Open Home in Safari and Firefox | Only Chrome has been tested | An hour |
-| ~~Look at the first CI run~~ | **Passed on 17 November, both jobs.** A workflow now builds and tests every pull request. It covers only the top of the stack until the stack is merged. | Done |
+| ~~Look at the first CI run~~ | **Passed on 17 November, both jobs.** A workflow now builds and tests every pull request. The stack was merged on 18 November, so CI now covers `main` too. | Done |
 | One pass with VoiceOver | Names and structure were checked by script, never by ear | An hour |
 | Boat look review, round three | Parked by Oliver. The storm crests and the folded strip are the known weak points. | Depends on the review |
 
@@ -75,7 +77,7 @@ Not built: reordering habits, pausing one without deleting it, and a view of con
 - ~~**Weekly review:** a saved reflection, a summary of tasks and habits, and next week's priorities, which Home already shows. Saving one earns ten miles under the existing rule.~~ **Built on 17 November** as a first version, to [review-spec.md](review-spec.md). No founder has reviewed it, and it was not mocked first. Its open calls are in section 7 of that document; the largest is that an old review's figures are live and not a snapshot.
 - ~~**My pages:** notes, checklists, goals, reading and project pages.~~ **Built on 17 November** as a first version, to [my-pages-spec.md](my-pages-spec.md). Oliver chose its approach the same day: one page shape with five ways to start. It also recommends that pages stand apart from tasks and miles at first. Its layout and three options for a list's tick are drawn in a [mock](https://claude.ai/artifact/NPCbrcPSUbkeHzv3q9UXu7) (private; share it from its Share menu). Oliver chose the layout and the smaller square tick from that mock. Six smaller decisions were built to their recommendations and are still open, the largest being that pages earn no miles and that an item cannot yet become a task. Josh and Aditya have not weighed in.
 
-All five destinations in the brief now exist. What is left in this stage is for the founders: reviewing the pages that were built without them.
+All five destinations in the brief now exist. What is left in this stage is Oliver's review of the pages that were built before any founder had seen them.
 
 ## Stage 7. The boat grows up
 
@@ -125,21 +127,35 @@ It is five pieces, each designed and reviewed on its own before it is built:
 | Piece | What it holds | State |
 |---|---|---|
 | 1. Home and the Weekly review | A greeting, a long-term goal and links on Home; ratings and subject levels in the review, which then decide what Home puts first | **Built on 17 November** on `home-review-additions`, to [home-and-review-additions-spec.md](home-and-review-additions-spec.md). Committed, with a pull request against `boat-fittings`. Josh and Aditya have not reviewed it. |
-| 2. Study detail | Current topic, teacher feedback, a revision checklist, past papers, links on tasks and assessments, preparation tasks | Not designed |
-| 3. Fitness | The training week, a workout log and measurements, in a place that is switched on | Not designed |
-| 4. Interests | Investing and Law Journey as folders in My pages with ready-made forms, and saved headlines on Home | Not designed |
-| 5. Search and backup | Search across everything, and a full export and import | Not designed |
+| 2. Study detail | A subject's current topic, preparation tasks and a link on an assessment, a link on a task, teacher feedback, the subject's own pages and its links | **Built on 18 November** on `study-detail`, to [study-detail-spec.md](study-detail-spec.md). Oliver chose the approach and seven decisions from the mock at https://claude.ai/artifact/K3yezjZJ4BZDaCC9FQk4Bs (private; share it from its Share menu). Josh and Aditya have not reviewed it. |
+| 3. Fitness | The training week, a record of what was done, and bests and measures kept by hand, in a place that is switched on | **Built on 19 November** on `fitness`, to [fitness-spec.md](fitness-spec.md), which Oliver approved the same day. Oliver chose the approach and seven decisions from the mock at https://claude.ai/artifact/4Fe74TZBYbNVKJg9YXfXcy (private; share it from its Share menu). Josh and Aditya have not reviewed it. |
+| 4. Interests | Investing and Law Journey as folders in My pages with ready-made forms, and saved headlines on Home | **Built on 19 November** and merged into `main` as pull request 17, to [interests-spec.md](interests-spec.md). **Not reviewed before it was built:** Oliver asked for the rest of the app to be built without questions and gone through afterwards. Its section 9 lists the calls most worth a look. Josh and Aditya have not reviewed it. |
+| 5. Search and backup | Search across everything, and a full export and import | **Built on 19 November** and merged into `main` as pull request 18, to [search-and-backup-spec.md](search-and-backup-spec.md). **Not reviewed before it was built,** as piece 4 was not. Its section 8 lists the calls most worth a look. Josh and Aditya have not reviewed it. |
 
 **Decided by Oliver on 17 November:**
 
 - Fitness is a place of its own, off until it is switched on. Investing and Law Journey are interests in My pages, not places.
 - The green and cream palette and the emoji icons do not come in.
 - In piece 1: the goal sits on the boat's plate as "Bound for"; a greeting shows once a name is set; links sit in the rail on wide screens and at the foot of Home on narrow ones; a High subject is named on Home and comes first in each list and in Study; each person names their own rating areas; and the review keeps its three questions.
+- In piece 2: a subject lists the My pages that carry it and keeps no material of its own, so a revision checklist or a list of past papers is a page; a preparation task is an ordinary task that belongs to an assessment; what feedback says to work on can become a task; and a subject's page runs assessments, tasks, feedback, pages, links, sessions, notes.
+
+**Decided by Oliver on 18 and 19 November, for piece 3:**
+
+- A routine is a checklist written once, and a session is a dated copy of it to tick off, with a note. Nothing is kept as numbers, charted or worked out.
+- A finished session logs 2 nautical miles, for one session a day. A missed session stays unticked and nothing else happens.
+- Fitness is a sixth place in the phone's bar while it is switched on. On Home, a session's name opens it and its ring finishes it as it stands.
+- A rest day says so and offers every routine, the one not done for longest first.
+- The student adds each measure, and none is suggested. A measure has no target, colour or chart, and there is no food diary.
+- With Fitness on, the Weekly review gains one figure: sessions done out of sessions set.
 
 **Still open:**
 
 - The nine smaller calls in the specification's section 12. The largest: the sample shows nothing new on Home, Study can change this week's level, and levels are kept week by week.
-- Headlines that refresh by themselves. That would be the first time Compass talks to an outside service, so it gets its own decision, with piece 4 or after it.
+- The ten smaller calls in the Study detail specification's section 13, and the build's own in its section 16. The largest: a preparation task is listed under its assessment and not again under "Tasks", and a subject's links are changed in place on its page.
+- The smaller calls in the Fitness specification's section 16, and the build's own in its section 19. The largest: a session whose day has passed can still be logged, a session's miles are dated the day it is finished, and a best or a measure keeps only the value before.
+- Every call in the interests specification's sections 9 and 11, none of which was reviewed before it was built. The largest: a student adds their own interests, with Investing and Law as two starting points; a form's parts are words, with nothing rated or chosen; and headlines are one list, saved by hand.
+- Every call in the search and backup specification's sections 8 and 10, none of which was reviewed before it was built. The largest: search lives in the menu and has no page of its own; restoring a backup replaces everything and does not merge; and a save is checked far more strictly when it is opened.
+- Headlines that refresh by themselves. Piece 4 built them saved by hand, and nothing is fetched. A feed would be the first time Compass talks to an outside service, so it still gets its own decision.
 
 The mock shows where training (piece 3) and headlines (piece 4) will sit on Home, so Home's layout does not have to be reopened for them.
 
@@ -147,7 +163,9 @@ The mock shows where training (piece 3) and headlines (piece 4) will sit on Home
 
 Accounts and sync, notifications, school licensing and any payment. The brief rules these out of the prototype, and each one changes the privacy promise, so each deserves its own decision.
 
-## Decisions the founders owe
+## Decisions still open
+
+Oliver decides these for the founders.
 
 | Decision | Needed before |
 |---|---|

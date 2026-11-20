@@ -5,24 +5,25 @@ import { kindOf, PAGE_KINDS, PAGE_LIMITS } from '../../domain/pages';
 import { type PageKind, SUBJECT_COLOURS } from '../../domain/types';
 import { useCompass } from '../../state/store';
 import { DraftInput } from '../../ui/DraftField';
+import { LinkField } from '../../ui/LinkField';
 import { chip, EditorFrame } from '../../ui/EditorFrame';
 import { toast } from '../../ui/Toast';
 
 const ICONS: Record<PageKind, LucideIcon> = { note: PenLine, checklist: ListChecks, goal: Target, reading: BookMarked, project: Shapes };
 
 /** The mark for a kind of page. Decorative: the kind is always named or plain from the page beside it. */
-export function KindIcon({ kind, size = 18 }: { kind: PageKind; size?: number }) {
+export function KindIcon({ kind, size = 18, tone = 'text-text-muted' }: { kind: PageKind; size?: number; tone?: string }) {
   const Icon = ICONS[kind];
-  return <Icon size={size} strokeWidth={size > 20 ? 1.9 : 2} aria-hidden="true" className="shrink-0 text-text-muted" />;
+  return <Icon size={size} strokeWidth={size > 20 ? 1.9 : 2} aria-hidden="true" className={`shrink-0 ${tone}`} />;
 }
 
 const label = 'flex flex-col gap-1.5 text-[13.5px] font-medium text-text-muted';
 const legend = 'mb-2 text-[13.5px] font-medium text-text-muted';
 const field = 'h-11 rounded-md bg-surface-sheet px-3 text-[16px] font-normal text-text shadow-[inset_0_0_0_1.5px_var(--color-control)]';
 
-/** Name a page, change its kind, give it a subject or a date to aim for, or delete it. Changes save as they are made. */
+/** Name a page, change its kind, give it a subject, an interest, a source link or a date to aim for, or delete it. Changes save as they are made. */
 export function PageEditor({ id, onClose }: { id: string | null; onClose: () => void }) {
-  const page = useCompass((s) => s.pages.find((p) => p.id === id)), subjects = useCompass((s) => s.subjects), update = useCompass((s) => s.updatePage), navigate = useNavigate();
+  const page = useCompass((s) => s.pages.find((p) => p.id === id)), subjects = useCompass((s) => s.subjects), interests = useCompass((s) => s.interests), update = useCompass((s) => s.updatePage), setLink = useCompass((s) => s.setPageLink), navigate = useNavigate();
   useEffect(() => { if (id && !page) onClose(); }, [id, page, onClose]);
   const remove = () => {
     if (!page) return;
@@ -55,6 +56,17 @@ export function PageEditor({ id, onClose }: { id: string | null; onClose: () => 
               ))}
             </div>
           </fieldset>
+          {interests.length > 0 && (
+            <fieldset>
+              <legend className={legend}>Interest</legend>
+              <div className="flex flex-wrap gap-2">
+                {/* a page that names an interest which is not there is in none */}
+                <button type="button" aria-pressed={!interests.some((i) => i.id === page.interestId)} onClick={() => update(page.id, { interestId: null })} className={chip(!interests.some((i) => i.id === page.interestId))}>None</button>
+                {interests.map((i) => <button key={i.id} type="button" aria-pressed={page.interestId === i.id} onClick={() => update(page.id, { interestId: i.id })} className={`${chip(page.interestId === i.id)} max-w-full [overflow-wrap:anywhere]`}>{i.name}</button>)}
+              </div>
+            </fieldset>
+          )}
+          <LinkField label="Source link" value={page.link ?? ''} onCommit={(url) => setLink(page.id, url)} className={field} />
           {kindOf(page.kind).dated && (
             <div className="flex flex-wrap items-end gap-2">
               <label className={label}>A date to aim for
