@@ -94,7 +94,7 @@ export const dayWords: (date: ISODate, today: ISODate) => string;             //
 
 ### Task 5: The pages
 
-**Files:** Modify `src/features/home/HomeHeadlines.tsx`, `src/features/pages/Headlines.tsx`, `src/features/places/SettingsPage.tsx`, `src/state/store.ts` ("Clear everything" forgets the list), `src/app/AppShell.tsx` or `src/main.tsx` (ask when it opens and when the tab is looked at).
+**Files:** Modify `src/features/home/HomeHeadlines.tsx`, `src/features/pages/Headlines.tsx`, `src/features/places/SettingsPage.tsx`, `src/state/store.ts` ("Clear everything" and a restored backup both leave the switch as it was), `src/main.tsx` (ask when it opens and when the tab is looked at).
 
 - [x] Settings: "Headlines", the switch (`#fetch-headlines`), its words. `/settings#headlines` goes to it.
 - [x] Home: the one list, the corner's words, "All headlines".
@@ -110,5 +110,6 @@ export const dayWords: (date: ISODate, today: ISODate) => string;             //
 
 - [x] Every suite: unit, browser in light and dark, and the CI way.
 - [x] Pictures in `docs/screenshots/fetched-headlines/`.
-- [x] A fresh reviewer reads the whole change. Each finding fixed with a test that failed first.
+- [x] A fresh reviewer reads the whole change. Each finding fixed with a test that failed first: the specification's section 12 lists them.
+- [x] `scripts/take-headlines.sh` and `scripts/headlines-job.test.ts` added in that pass, with the job's fourth step.
 - [x] The spec's "As built", the testing report, HANDOFF and next-stages.

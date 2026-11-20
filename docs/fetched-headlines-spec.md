@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Designed on 20 November 2026 and built the same day, on the branch `fetched-headlines`.** Oliver chose the approach (a list Compass publishes), the sources to start with and how Home shows them. Everything else here is a call made in the build, and section 10 lists the ones most worth a look. Josh and Aditya have not weighed in. |
+| Status | **Designed on 20 November 2026 and built the same day, on the branch `fetched-headlines`.** Oliver chose the approach (a list Compass publishes), the sources to start with and how Home shows them. Everything else here is a call made in the build, and section 10 lists the ones most worth a look. Section 12 says what the build and its review added. Josh and Aditya have not weighed in. |
 | Scope | Headlines that arrive by themselves, beside the ones saved by hand. The last part of piece 4 of Aditya's plan. |
 | Builds on | [interests-spec.md](interests-spec.md), section 5 (headlines saved by hand). |
 
@@ -62,7 +62,12 @@ The Headlines page credits each source by name and names the two licences.
 
 ## 5. The published list
 
-**The job.** A workflow, `.github/workflows/headlines.yml`, runs every four hours and when started by hand. It runs one script with no dependencies, `scripts/publish-headlines.mjs`, which reads each source, builds the list and writes `headlines.json`. A second script, `scripts/push-headlines.sh`, commits that file to a branch of its own, `headlines`, which holds it and a note saying what it is. Each run adds one commit. Nothing is force-pushed, and the job never writes to `main`.
+**The job.** A workflow, `.github/workflows/headlines.yml`, runs every four hours and when started by hand. It has four steps and installs nothing:
+
+1. `scripts/take-headlines.sh` takes the list as it stands on the branch. With no branch yet there is no list. If the branch cannot be read for any other reason the run stops, so that a list is never built from nothing while an earlier one exists.
+2. `scripts/publish-headlines.mjs` reads each source, builds the list and writes `headlines.json`.
+3. `scripts/push-headlines.sh` commits that file to a branch of its own, `headlines`, which holds it and a note saying what it is. Each run adds one commit. Nothing is force-pushed, and the job never writes to `main`.
+4. `scripts/publish-headlines.mjs --check` fails the run when a source that is on has not been read for a day. The list has been published by then. A failed run is how the repository's owner comes to hear that a source has gone quiet.
 
 **The file.**
 
@@ -72,6 +77,7 @@ The Headlines page credits each source by name and names the two licences.
 ```
 
 - `checked` is when the job last read at least one source.
+- The file also holds `read`: when each source was last read. The job uses it for its fourth step, and the app does not.
 - `source` is one of the ids in the table of sources that the job and the app share. `at` is when the publisher says it was published.
 
 **The rules, applied by the job when it writes and again by the app when it reads:**
@@ -80,6 +86,9 @@ The Headlines page credits each source by name and names the two licences.
 - An address must be `https` and on its source's own site (`theconversation.com`, `rba.gov.au`, or a part of them). Anything else is left out.
 - A headline stays for 30 days from when it was published, and one dated more than a day ahead is not taken. The list holds the newest 20 from each source, 60 at most.
 - A headline is in the list once, by its address.
+- A time must be a real one, between 2000 and 2100. A date can be written that no calendar can show, and one of those must never reach a page.
+- A title is shown exactly or not at all. One that would show a character's code in place of the character, such as `&eacute;`, is left out.
+- On the device, a headline goes once it is thirty days old, even from a list that is no longer being rebuilt.
 
 **When a source cannot be read,** or answers with something that holds no headline, the job keeps what the last list held from it and carries on. When none can be read it fails, publishes nothing, and the last list stays as it was.
 
@@ -97,7 +106,8 @@ The Headlines page credits each source by name and names the two licences.
 
 ### Fetching
 
-- With the switch on, Compass asks for the list when it opens, when the switch is turned on, and when its tab is looked at again, and no more often than every 30 minutes.
+- With the switch on, Compass asks for the list when it opens, when the switch is turned on, and when its tab is looked at again, and no more often than every 30 minutes, or every 5 minutes after an asking that brought no list. Both are remembered from one opening to the next.
+- A request cut short by leaving the page is not counted as one that failed.
 - The request carries no cookies and no referrer. It is a plain download of `headlines.json` from the `headlines` branch.
 - The last list read is kept on the device, apart from the student's own data. It is not in a backup and is not found by search.
 - A second tab follows the switch: turned on in one, the other asks for the list too.
@@ -152,7 +162,7 @@ Home shows the Headlines block whenever there is a headline to show, or the swit
 
 - A saved headline, its editor, its limits and its place in search and in a backup.
 - Search does not find fetched headlines: they are not the student's.
-- A backup holds the switch and not the list.
+- A backup does not hold the list, and does not change the switch. Restoring one leaves this device's switch as it was, as it leaves the theme: a file from another device, or another person, is never what turns the network on.
 
 ## 7. The list is not trusted
 
@@ -209,6 +219,8 @@ Made in the build and open to change.
 | "Fetched" comes before "Saved by you" on the page | It is what changed since the last visit | Saved first |
 | Fetched headlines are not found by search | Search finds what the student has kept | Find them too |
 | The Bureau of Statistics is left out | It has no feed | Read its web page |
+| Restoring a backup leaves the switch as it was | A file from elsewhere should not be what makes this device ask the network | The backup carries the switch, and the offer says so |
+| The job fails, after publishing, when a source has been unread for a day | A failed run is the one thing GitHub tells an owner about | A warning on the run, and no more |
 | A row's day reads "today" or "yesterday" when it is | It is how the mock read, for saved rows too | Always the date |
 
 ## 11. Not in this piece
@@ -218,3 +230,47 @@ Made in the build and open to change.
 - Headlines for the Law interest. The sources here are business and economy.
 - A choice of sources or topics for each student.
 - Telling the student that there are new headlines. Home shows them, and nothing announces them.
+
+## 12. As built
+
+Built on 20 November 2026 to sections 1 to 11, which say what Compass does. This section says what the build and its review added.
+
+**Checked before any source was added:**
+
+- The Conversation's feed and the Reserve Bank's were each read by a plain program, with nothing pretending to be a browser, and the job was run against both.
+- The Bureau of Statistics' media releases have no feed, so it was left out.
+- The Guardian's terms were read in full. They are why its part is built and off.
+
+**The review.** A fresh reviewer read the whole change and drove it in a browser, in a build made for release, and in five time zones. It found the privacy promise sound under everything it tried: no request with the switch off, and with it on one request carrying no cookie, referrer or query, and nothing of the name, the Watchlist or a saved headline. Forty-eight forms of address were tried against the rule that a headline may only open its publisher's own site, and none got through. These were fixed, each with a test that failed first:
+
+| Finding | Fix |
+|---|---|
+| **Compass did not open at all in a browser that blocks site data.** Such a browser refuses even to hand its storage over, and the new store asked for it without trying. | It is asked for inside a try, as the saved data's own storage always was. |
+| **A list holding a date no calendar can show stopped Home and the Headlines page,** on every opening, until a good list came. | A time must be between 2000 and 2100, in a headline and in the list's own `checked`. |
+| Restoring a backup that had the switch on turned it on here and asked at once | Restoring a backup leaves this device's switch as it was |
+| The device did not apply the thirty days or the twenty a source, so a list that stopped being rebuilt would never age | Both are applied when the list is read, and the thirty days again whenever it is shown |
+| A source that stopped answering would not be noticed: the job stayed green and the list said "Updated in the last hour" | The list notes when each source was last read, and the job fails after publishing when one has been unread for a day |
+| A moment's failure to read the branch was taken for "no branch yet", and a list was built from nothing | The two are told apart, and the run stops on the first |
+| One crafted title could hold the feed reader for longer than the job is given | A title longer than a headline could be is skipped before it is read |
+| A failed asking was forgotten when Compass was closed, so every opening asked again | It is remembered, and asked again after five minutes |
+| A clock that was once wrong could stop all asking | An asking dated ahead of the clock holds nothing up |
+| A title marked as html could lose part of itself around a bare "<", or show a character's code | A "<" that begins no tag is kept, the common curly marks are read by name, and a title that would still show a code is left out |
+| A forty-letter watch word with nowhere to break pushed the Headlines page sideways at 320 px | It wraps |
+| With a Watchlist page that had no lines, the page said to make one | It says the page has no lines yet |
+| The job's script failed when its folder was missing, and the push script wrote the job's name into the checkout it ran from | The folder is made, and the name is given on the one commit |
+
+**Found while fixing those:** a request cut short by leaving the page was counted as one that failed, once failures were remembered. It is put aside as though it had not been made.
+
+**Calls the build added,** beyond section 10:
+
+| The call | Why | The other way |
+|---|---|---|
+| After an asking that failed, Compass asks again after five minutes | Half an hour is long to look at "Could not be fetched" | The same half hour |
+| A headline's time must be between 2000 and 2100 | It is the plainest rule that keeps out a date no calendar can show | A window around today |
+| A title that cannot be read exactly is left out | A publisher's headline is shown as written or not at all | Show it as it came |
+
+**Not tried:**
+
+- The job on GitHub itself. Its scripts were run here against a throwaway repository as a runner has it, and its reading against the real feeds. Whether the feeds answer a GitHub runner, and whether the runner may push to `headlines`, is seen on its first run.
+- The Guardian against its own service, since there is no key.
+- A real phone, Safari or Firefox, and a screen reader by ear.

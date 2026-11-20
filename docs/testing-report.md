@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 456 unit tests pass and 292 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18, the small faults put right in section 19 and new waters in section 20; before the eight it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 563 unit tests pass and 327 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18, the small faults put right in section 19, new waters in section 20 and fetched headlines in section 21; before the nine it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -483,7 +483,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -544,7 +544,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 22).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 23).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -627,7 +627,7 @@ On 18 November, after the piece was committed, `main` was merged into the branch
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23).
 
 ### Calls made in the build that the founders can overrule
 
@@ -692,7 +692,7 @@ It also noted things that are older than this piece: Home is wider than a 320 px
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 22).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 23).
 - Whether Escape inside a line being changed keeps the editor open in browsers other than Chrome.
 
 ### Calls made in the build that the founders can overrule
@@ -754,7 +754,7 @@ Left as they are, to be decided:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 22).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 23).
 - A double tap by finger. A mouse says which press of a run it is; a finger may not, so a touch in the same place straight after is treated as one. Tried with a mouse only.
 
 ### Calls made in the build that the founders can overrule
@@ -812,7 +812,7 @@ A fresh reviewer read the whole change against the specification on 19 November,
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
 - Whether a screen reader announces what a backup holds. The place it is said in is built the way that is announced; nobody has listened.
 
 ### Calls made in the build that the founders can overrule
@@ -913,7 +913,59 @@ They are listed in the spec, section 8. The ones a founder is most likely to hav
 - A real phone, Safari or Firefox, and a screen reader by ear.
 - Frame rate in each water. The draw calls are within the same budget as home waters.
 
-## 21. Built differently from the approved spec
+## 21. Fetched headlines
+
+Built on 20 November on the branch `fetched-headlines`, to [fetched-headlines-spec.md](fetched-headlines-spec.md). It is the rest of piece 4 of Aditya's plan: headlines that arrive by themselves. Oliver went through the finished app that day, asked for this to be designed, and chose the approach, the sources and how Home shows them. Josh and Aditya have not reviewed it.
+
+It is the first thing in Compass that asks anything of a network, so most of what was tested is what it must not do.
+
+### What was built
+
+- **A list Compass publishes.** A scheduled job on GitHub reads The Conversation's business feed and the Reserve Bank's media releases every four hours, builds one small file, and commits it to a branch of its own, `headlines`.
+- **A switch, off to start.** "Fetch headlines" in Settings. With it off, Compass asks nothing of anywhere. With it on, it downloads that one file, the same for everyone.
+- **Picking on the device.** Home shows three, saved and fetched together: the ones that name a line of the Watchlist page first, then the newest. Each row says where it is from, and the heading's corner says how old the list is.
+- **The Headlines page** gains "Fetched", above "Saved by you": the newest eight, the rest when asked, and "Keep" to save one by hand.
+- **The Guardian,** as a third source, built and switched off. The specification's section 9 says what switching it on needs.
+
+### Checked
+
+- **Unit tests, 107 new.** The list's rules (44), picking on the device (31), the store that downloads it (25), and the job's two shell scripts run against a throwaway repository as a GitHub runner has it (7). In all 563 pass.
+- **Browser tests, 35 new,** in `tests/e2e/fetched-headlines.spec.ts`. The list is never asked of the real network: each test hands the page the list it should get, or refuses it. In all 327 pass.
+- **With the switch off, no request leaves the page** to anywhere but Compass itself, through Home, the Headlines page, Settings and the Voyage.
+- **With it on, one request:** to the list's address, with no query, no body, no referrer, and no cookie even when the browser holds one for that site. That last check was made to fail on purpose once, by sending cookies, to be sure it could.
+- **A hostile list:** an address that is a script, off the publisher's site, or a look-alike of it; a source that is unknown or switched off; markup in a title; a title too long; a wrong kind of value in every part; a thousand items. The bad ones are dropped, markup shows as the words it is, and only a publisher's own site can be opened.
+- **Each state of the list:** read lately, hours old, days old, not reachable with one held and with none, empty, and every one saved.
+- **In the dark theme:** all 327 browser tests pass. **As CI runs it:** 320 pass and the seven sea tests are skipped.
+- **At 390 and 320 px:** no page scrolls sideways with a headline of 140 characters and a watch word of 40 with nowhere to break, and "Keep" and each headline are 44 px tall.
+- **The job,** run here against the real feeds: 25 of 25 headlines read from The Conversation and 1 of 1 from the Reserve Bank.
+- Everything from before passes. Two older tests were changed, because a saved headline published today or yesterday now says so.
+
+### The review of the whole change
+
+A fresh reviewer read the change on 20 November and drove it in a browser, in a build made for release, and in five time zones. It found the privacy promise sound under everything it tried, and the rule about addresses sound against forty-eight forms of address. It found thirteen things, two of them serious. Each was fixed with a test that failed first, and the specification's section 12 lists them all. The two:
+
+| Finding | Fix |
+|---|---|
+| **Compass did not open at all in a browser that blocks site data,** switch on or off. Such a browser refuses even to hand its storage over. | The storage is asked for inside a try. A browser test opens Compass with its storage refused. |
+| **A list holding a date ten thousand years before any calendar stopped Home and the Headlines page,** on every opening. | A time must be between 2000 and 2100. Three browser tests hand over such a list, and plant one on the device. |
+
+### Found on the way
+
+- **A request cut short by leaving the page was counted as a failure.** This came from one of the fixes above: once a failed asking was remembered, switching on and then reloading left "Could not be fetched" for five minutes. An older test of this piece caught it. Such a request is now put aside as though it had not been made.
+- **The Reserve Bank's site refuses a program that pretends to be a browser, and answers one that does not.** The first try at reading its feed was made with an invented browser name and was refused. Plain Node, which is what the job is, is answered.
+- **Every fetched headline on one page pushed the saved ones two screens down.** Seen in the first pictures. The page shows eight, and the rest when asked.
+
+### Not checked
+
+- **The job on GitHub itself.** Whether the feeds answer a GitHub runner, and whether the runner may push to the branch, is seen on its first run after this is merged.
+- **The Guardian against its own service.** There is no key.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23).
+
+### Calls made in the build that the founders can overrule
+
+The specification lists them, with the other way each could go, in its sections 10 and 12. The largest: watch words are the lines of a Watchlist page; a backup does not change the switch; and a headline stays in the list for thirty days.
+
+## 22. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -927,7 +979,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 22. Known limitations
+## 23. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
@@ -935,5 +987,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
 - Drag to reorder, recurring tasks, accounts and sync are not built, by plan.
 - Night and the dark theme are built and approved by Oliver. Josh and Aditya have not seen them (section 14).
+- Fetched headlines are general business and economy news, the same for everyone. News for one company on request needs a server of Compass's own (section 21).
+- GitHub may run the headlines job late, and stops it after 60 days without activity in the repository. Compass then says how old its list is, and a headline goes from the device after thirty days.
 - New waters are built and not yet reviewed by any founder (section 20). The still image draws the fjords as rounded hills, and its port does not show each water's trees.
 - Tested in Chrome only. Safari and Firefox have not been opened.
