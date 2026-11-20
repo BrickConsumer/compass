@@ -1,4 +1,5 @@
 import { type StageId, STAGE_ORDER, STAGES } from '../features/voyage/boat/specs';
+import { type WaterId, WATER_ORDER, WATERS } from '../features/voyage/waters';
 import type { ISODate, LogEntry, Task } from './types';
 
 /** Starting values, to be tuned with real use (art direction, section 13). */
@@ -7,6 +8,12 @@ export const MILES = { task: 2, highPriority: 3, dayClear: 3, dailyTaskCap: 40, 
 export const STAGE_GATES: Record<StageId, { miles: number; days: number }> = {
   dinghy: { miles: 0, days: 0 }, sloop: { miles: 250, days: 10 }, cutter: { miles: 1000, days: 40 }, schooner: { miles: 3000, days: 120 },
 };
+
+/**
+ * The miles at which each water is reached. Waters come along the way, between the fittings and the boats, so there is
+ * somewhere new long before the last boat. A water needs miles only, never days at sea.
+ */
+export const WATER_MILES: Record<WaterId, number> = { home: 0, coral: 800, fjords: 2000, ice: 3300 };
 
 /** `phrase` is how the fitting reads inside a sentence: "88 more for a name on the quarter". */
 export interface Fitting { id: string; name: string; phrase: string; miles: number; stage: StageId; modelled: boolean }
@@ -37,18 +44,34 @@ export function earnedStage(miles: number, days: number): StageId {
   return stage;
 }
 
+/** The furthest water reached. */
+export function earnedWater(miles: number): WaterId {
+  let water: WaterId = 'home';
+  for (const id of WATER_ORDER) if (miles >= WATER_MILES[id]) water = id;
+  return water;
+}
+/** The next water and the miles still to go, or undefined in the last one. */
+export function nextWater(miles: number): { id: WaterId; miles: number } | undefined {
+  const next = WATER_ORDER[WATER_ORDER.indexOf(earnedWater(miles)) + 1];
+  return next ? { id: next, miles: WATER_MILES[next] - miles } : undefined;
+}
+/** How a water is recorded as seen, apart from the boats and fittings. */
+export const waterSeenId = (id: WaterId): string => `water:${id}`;
+
 export const earnedFittings = (miles: number): Fitting[] => FITTINGS.filter((f) => miles >= f.miles);
 export const nextFitting = (miles: number): Fitting | undefined => FITTINGS.find((f) => miles < f.miles);
 
-/** The ids of every boat and fitting earned so far, boats first. This is what the voyage view marks as seen. */
+/** The ids of every boat, fitting and water earned so far, boats first. This is what the voyage view marks as seen. Home waters are where everyone starts, and are not listed. */
 export const earnedIds = (miles: number, days: number): string[] =>
-  [...STAGE_ORDER.slice(0, STAGE_ORDER.indexOf(earnedStage(miles, days)) + 1), ...earnedFittings(miles).map((f) => f.id)];
+  [...STAGE_ORDER.slice(0, STAGE_ORDER.indexOf(earnedStage(miles, days)) + 1), ...earnedFittings(miles).map((f) => f.id), ...WATER_ORDER.slice(1, WATER_ORDER.indexOf(earnedWater(miles)) + 1).map(waterSeenId)];
 
 /** What has been earned since the voyage view was last opened. */
 export interface Unseen {
   /** The furthest boat earned and not yet seen. */
   stage?: StageId;
   fittings: Fitting[];
+  /** The furthest water reached and not yet seen. */
+  water?: WaterId;
 }
 
 export function unseenRewards(miles: number, days: number, seen: readonly string[]): Unseen {
@@ -56,15 +79,18 @@ export function unseenRewards(miles: number, days: number, seen: readonly string
   return {
     stage: STAGE_ORDER.slice(0, reached + 1).reverse().find((id) => !seen.includes(id)),
     fittings: earnedFittings(miles).filter((f) => !seen.includes(f.id)),
+    water: WATER_ORDER.slice(1, WATER_ORDER.indexOf(earnedWater(miles)) + 1).reverse().find((id) => !seen.includes(waterSeenId(id))),
   };
 }
 
 /**
- * The one quiet line that says something was earned: "New: bow lantern", or "The cutter is ready".
+ * The one quiet line that says something was earned: "New: bow lantern", "The cutter is ready", or "New waters: the coral shallows".
+ * A boat comes first, then a water, then a fitting: the rarer news is the one told.
  * In three parts, because the name is set in italic (the chart rule) and the words around it are not.
  */
 export function announcement(unseen: Unseen): { lead: string; name: string; tail: string } | null {
   if (unseen.stage) return { lead: '', name: `The ${STAGES[unseen.stage].name.toLowerCase()}`, tail: ' is ready' };
+  if (unseen.water) return { lead: 'New waters: ', name: WATERS[unseen.water].phrase, tail: '' };
   const latest = unseen.fittings[unseen.fittings.length - 1];
   if (!latest) return null;
   return { lead: 'New: ', name: latest.phrase.replace(/^an? /, ''), tail: unseen.fittings.length > 1 ? ` and ${unseen.fittings.length - 1} more` : '' };

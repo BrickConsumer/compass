@@ -1,11 +1,12 @@
 import { ArrowLeft, Check } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { daysAtSea, earnedFittings, earnedIds, earnedStage, FITTINGS, milesLogged, nextFitting, nextStage, STAGE_GATES, unseenRewards } from '../../domain/voyage';
+import { daysAtSea, earnedFittings, earnedIds, earnedStage, earnedWater, FITTINGS, milesLogged, nextFitting, nextStage, nextWater, STAGE_GATES, unseenRewards, WATER_MILES } from '../../domain/voyage';
 import { useCompass } from '../../state/store';
 import { DraftInput } from '../../ui/DraftField';
 import { carries, STAGE_ORDER, STAGES, type StageId } from './boat/specs';
 import { SeaWindow } from './SeaWindow';
+import { WATER_ORDER, WATERS, type WaterId } from './waters';
 
 const HULLS: [string, string][] = [['Deep navy', '#0E243A'], ['Marine', '#1A619B'], ['Teal', '#256F75'], ['Ivory', '#F6F0E4'], ['Bottle green', '#1C6048'], ['Oxblood', '#8C2D2B']];
 const SAILS: [string, string][] = [['Ivory', '#FCF8EE'], ['Flax', '#EFE0B8'], ['Tanbark', '#9A5A3C'], ['Slate', '#7E91A6'], ['Seafoam', '#BEE8D5'], ['Rose', '#F6CFC9']];
@@ -28,11 +29,13 @@ function Swatches({ label, options, value, onChange }: { label: string; options:
 /** The voyage: the boat at full size, what has been earned, and the colours you choose. */
 export function VoyagePage() {
   const boat = useCompass((s) => s.boat), log = useCompass((s) => s.log), setBoat = useCompass((s) => s.setBoat), paused = useCompass((s) => s.settings.seaPaused), navigate = useNavigate();
-  const miles = milesLogged(log), days = daysAtSea(log), earned = earnedStage(miles, days), next = nextFitting(miles), ahead = nextStage(miles, days);
+  const miles = milesLogged(log), days = daysAtSea(log), earned = earnedStage(miles, days), next = nextFitting(miles), ahead = nextStage(miles, days), reached = earnedWater(miles), beyond = nextWater(miles), sailingIn = boat.water ?? 'home';
   // what was new on arriving is remembered for this visit, so it can be marked as new after it has been recorded as seen
   const [fresh] = useState(() => unseenRewards(miles, days, boat.seen));
   // a boat that has just been earned is the first thing shown
   const [viewing, setViewing] = useState<StageId>(fresh.stage ?? boat.stage), isEarned = STAGE_ORDER.indexOf(viewing) <= STAGE_ORDER.indexOf(earned);
+  // a water that has just been reached is shown at once, as a new boat is
+  const [place, setPlace] = useState<WaterId>(fresh.water ?? sailingIn), inReach = WATER_ORDER.indexOf(place) <= WATER_ORDER.indexOf(reached);
   const fittings = useMemo(() => earnedFittings(miles).map((f) => f.id), [miles]);
   const newTag = <span className="ml-2 rounded-xs bg-note px-1.5 py-0.5 text-[12.5px] font-semibold text-on-note">New</span>;
   // everything earned so far has now been seen
@@ -42,9 +45,9 @@ export function VoyagePage() {
   return (
     <main className="mx-auto flex max-w-[1560px] flex-col gap-6 px-4 pb-32 pt-3 sm:px-5 sm:pb-10 lg:pl-1.5 lg:pr-7 lg:pt-4">
       <div className="relative">
-        <SeaWindow stage={viewing} progress={0.6} colours={{ hull: boat.hull, sail: boat.sail, pennant: boat.pennant }} fittings={fittings} boatName={boat.name} paused={paused} className="h-[42vh] min-h-[240px] rounded-[24px] sm:rounded-2xl" />
+        <SeaWindow stage={viewing} water={place} progress={0.6} colours={{ hull: boat.hull, sail: boat.sail, pennant: boat.pennant }} fittings={fittings} boatName={boat.name} paused={paused} className="h-[42vh] min-h-[240px] rounded-[24px] sm:rounded-2xl" />
         <Link to="/" className="absolute left-3 top-3 flex min-h-11 items-center gap-2 rounded-full bg-surface-sheet pl-3 pr-4 text-[14.5px] font-semibold shadow-control"><ArrowLeft size={17} aria-hidden="true" />Home</Link>
-        {!isEarned && <p className="absolute bottom-3 left-3 rounded-full bg-note px-3.5 py-1.5 text-[13.5px] font-semibold text-on-note">Preview. Not earned yet.</p>}
+        {(!isEarned || !inReach) && <p className="absolute bottom-3 left-3 rounded-full bg-note px-3.5 py-1.5 text-[13.5px] font-semibold text-on-note">{isEarned ? 'Preview. Not reached yet.' : 'Preview. Not earned yet.'}</p>}
       </div>
 
       <div className="grid gap-x-10 gap-y-9 lg:grid-cols-[1.1fr_1fr]">
@@ -59,6 +62,12 @@ export function VoyagePage() {
             <p className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-md bg-note px-3.5 py-2.5 text-[14.5px] text-on-note" data-ready>
               <span><i className="font-display text-[17px]">The {STAGES[fresh.stage].name.toLowerCase()}</i> is ready. You are still sailing the {STAGES[boat.stage].name.toLowerCase()}.</span>
               <button type="button" onClick={() => { setBoat({ stage: fresh.stage }); setViewing(fresh.stage!); }} className="min-h-11 cursor-pointer rounded-md bg-surface-inverse px-4 font-semibold text-text-inverse">Sail the {STAGES[fresh.stage].name.toLowerCase()}</button>
+            </p>
+          )}
+          {fresh.water && fresh.water !== sailingIn && (
+            <p className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-md bg-note px-3.5 py-2.5 text-[14.5px] text-on-note" data-reached>
+              <span>You have reached <i className="font-display text-[17px]">{WATERS[fresh.water].phrase}</i>. You are still {WATERS[sailingIn].where}.</span>
+              <button type="button" onClick={() => { setBoat({ water: fresh.water }); setPlace(fresh.water!); }} className="min-h-11 cursor-pointer rounded-md bg-surface-inverse px-4 font-semibold text-text-inverse">Sail {WATERS[fresh.water].where}</button>
             </p>
           )}
           <label className="flex max-w-sm flex-col gap-1.5 text-[13.5px] font-medium text-text-muted">Name
@@ -86,6 +95,23 @@ export function VoyagePage() {
               {viewing === boat.stage ? `You are sailing the ${STAGES[viewing].name.toLowerCase()}.`
                 : isEarned ? <button type="button" onClick={() => setBoat({ stage: viewing })} className="min-h-11 cursor-pointer rounded-md bg-surface-inverse px-4 font-semibold text-text-inverse">Sail the {STAGES[viewing].name.toLowerCase()}</button>
                 : `The ${STAGES[viewing].name.toLowerCase()} needs ${STAGE_GATES[viewing].miles.toLocaleString('en-GB')} miles and ${STAGE_GATES[viewing].days} days at sea.`}
+            </p>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Waters</legend>
+            <div className="flex flex-wrap gap-2">
+              {WATER_ORDER.map((id) => {
+                const got = WATER_ORDER.indexOf(id) <= WATER_ORDER.indexOf(reached);
+                return <button key={id} type="button" aria-pressed={place === id} onClick={() => setPlace(id)}
+                  className="min-h-11 cursor-pointer rounded-md px-4 text-[14.5px] font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] aria-pressed:bg-surface-inverse aria-pressed:text-text-inverse aria-pressed:shadow-none">{WATERS[id].name}{got ? '' : ' (preview)'}{id === fresh.water && newTag}</button>;
+              })}
+            </div>
+            <p className="mt-3 text-[14.5px] text-text-muted" data-water-line>
+              {place === sailingIn ? `You are sailing ${WATERS[place].where}.`
+                : inReach ? <button type="button" onClick={() => setBoat({ water: place })} className="min-h-11 cursor-pointer rounded-md bg-surface-inverse px-4 font-semibold text-text-inverse">Sail {WATERS[place].where}</button>
+                : `${WATERS[place].name} ${place === 'ice' ? 'is' : 'are'} reached at ${WATER_MILES[place].toLocaleString('en-GB')} miles.`}
+              {place === sailingIn && beyond ? ` ${beyond.miles.toLocaleString('en-GB')} more miles to ${WATERS[beyond.id].phrase}.` : ''}
             </p>
           </fieldset>
         </section>

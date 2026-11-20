@@ -481,7 +481,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 16). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 17). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -542,7 +542,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 16).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 17).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -551,7 +551,48 @@ On 18 November the laptop was installing a system update, and browser runs that 
 - Frame rate with the night scene.
 - A device that changes theme by itself at sunset.
 
-## 15. Built differently from the approved spec
+## 15. New waters
+
+Built on 18 November on the branch `new-waters`, to [new-waters-spec.md](new-waters-spec.md), on top of night and the dark theme. Not committed. No founder has reviewed how the waters look.
+
+| | |
+|---|---|
+| ![The coral shallows](screenshots/waters/coral-1-day.png) | ![The northern fjords, in port](screenshots/waters/fjords-3-port.png) |
+| ![The ice](screenshots/waters/ice-1-day.png) | ![The coral shallows at night](screenshots/waters/coral-4-night.png) |
+
+More pictures, with each water's port, night and still image, are in [screenshots/waters/](screenshots/waters/).
+
+### What was built
+
+- **Three waters:** coral shallows at 800 miles, northern fjords at 2,000 and the ice at 3,300. Each has its own light by day and by night, its own land on the horizon and its own shore in port. The ice has drift ice on the water.
+- **Reaching one is news** on Home's plate, once, and the voyage view offers it. The boat stays where it is until the water is chosen.
+- **A row of waters in the voyage view,** where any that has been reached can be chosen and any that has not can be looked at.
+- **Home waters are unchanged.**
+
+### Checked
+
+- **Unit tests:** 310 pass, 25 of them new. They cover each water's definition, its light by day and at night, the miles, the news of a new water, and the saved choice being kept within what has been reached.
+- **Browser tests, light theme:** all 139 pass, 12 of them new.
+- **Browser tests, device set to dark:** all 139 pass.
+- **Browser tests as CI runs them:** 132 pass and 7 are skipped. The seventh is the new draw-call test, which like the other six needs real graphics hardware.
+- **Draw calls:** each water stays within the budget of 40 in a frame, at sea and in port, measured in the running app.
+- **The still image** is a different picture in each of sixteen cases: four waters, day and night, at sea and in port.
+- **The build** passes. The main bundle is 184.2 kB compressed, 2.6 kB more than before the waters.
+
+### Found on the way
+
+- **Pictures taken for review showed the wrong water twice,** in the first run only: the look-review page had gone back to its defaults between a control being set and the picture being taken. It did not happen again in three further runs, and the cause was not found. The script that takes the pictures now reads which water is on show before each one and writes it down.
+
+### Calls made in the build that the founders can overrule
+
+They are listed in the spec, section 8. The ones a founder is most likely to have a view on: the boat does not move to a new water until it is chosen; only the fjords have a lighthouse; only the ice has anything floating on the water.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear.
+- Frame rate in each water. The draw calls are within the same budget as home waters.
+
+## 16. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -565,7 +606,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 16. Known limitations
+## 17. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
@@ -573,4 +614,5 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
 - Drag to reorder, recurring tasks, editing assessments, accounts and sync are not built, by plan.
 - Night and the dark theme are built and approved by Oliver. Josh and Aditya have not seen them (section 14).
+- New waters are built and not yet reviewed by any founder (section 15). The still image draws the fjords as rounded hills, and its port does not show each water's trees.
 - Tested in Chrome only. Safari and Firefox have not been opened.

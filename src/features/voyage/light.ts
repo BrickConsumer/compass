@@ -2,6 +2,8 @@
  * The light table (art direction, section 12) and the scene state derived from a day's progress.
  * Used by both the still image and the 3D scene.
  */
+import { type WaterId, WATERS } from './waters';
+
 export interface Light {
   skyTop: string; skyMid: string; skyHorizon: string;
   waterHorizon: string; waterDeep: string;
@@ -91,15 +93,25 @@ const NIGHT_STORM: Light = {
   sun: '#8f9aa6', haze: '#252e38', land: '#0a0f15', sunAmount: 0, hazeAmount: 0.75, glitter: 0.05, stars: 0, lamps: 1, lit: 0.28,
 };
 
+/** Each water's day: its own dawn, clear day and golden hour, or the table above in home waters. */
+const DAY_TABLES = Object.fromEntries(Object.values(WATERS).map((w) => [w.id, w.day ? w.day.map((d) => ({ ...d, ...DAYLIGHT })) : KEYFRAMES])) as unknown as Record<WaterId, readonly Light[]>;
+/** Each water's night: the same dusk, stars and moonrise, keeping something of the place's water and land. */
+const NIGHT_TABLES = Object.fromEntries(Object.values(WATERS).map((w) => {
+  const keep = w.night;
+  if (!keep) return [w.id, NIGHT_KEYFRAMES];
+  const mixed = (hex: string, toward?: [string, number]) => (toward ? mixHex(hex, toward[0], toward[1]) : hex);
+  return [w.id, NIGHT_KEYFRAMES.map((n) => ({ ...n, waterHorizon: mixed(n.waterHorizon, keep.waterHorizon), waterDeep: mixed(n.waterDeep, keep.waterDeep), land: mixed(n.land, keep.land) }))];
+})) as unknown as Record<WaterId, readonly Light[]>;
+
 /**
  * The light for a day: the table for its sky, darkened by however much storm is left.
  * `night` is 0 by day and 1 in the dark theme; between the two it is a change of theme under way.
  */
-export function lightFor(p: number, storm: number, night = 0): Light {
-  const s = clamp01(storm), n = clamp01(night);
-  const day = s > 0 ? mixLight(lightAt(p), STORM, s) : lightAt(p);
+export function lightFor(p: number, storm: number, night = 0, water: WaterId = 'home'): Light {
+  const s = clamp01(storm), n = clamp01(night), days = DAY_TABLES[water], nights = NIGHT_TABLES[water];
+  const day = s > 0 ? mixLight(lightAt(p, days), STORM, s) : lightAt(p, days);
   if (n === 0) return day;
-  const dark = s > 0 ? mixLight(lightAt(p, NIGHT_KEYFRAMES), NIGHT_STORM, s) : lightAt(p, NIGHT_KEYFRAMES);
+  const dark = s > 0 ? mixLight(lightAt(p, nights), NIGHT_STORM, s) : lightAt(p, nights);
   return n === 1 ? dark : mixLight(day, dark, n);
 }
 
@@ -121,6 +133,8 @@ export interface SceneState {
   inPort: boolean;
   /** The dark theme's sky: dusk, stars and moonrise in place of dawn, day and golden hour. Nothing else about the day changes. */
   night: boolean;
+  /** Where the boat is sailing. It changes the light and the land, and nothing about the day. */
+  water: WaterId;
 }
 
 export interface DayContext {
@@ -128,6 +142,8 @@ export interface DayContext {
   missedYesterday?: boolean;
   /** Show the night's sky, which the dark theme does. */
   night?: boolean;
+  /** Where the boat is sailing. Left out, home waters. */
+  water?: WaterId;
 }
 
 /** Soft daylight used for a day in port. */
@@ -135,24 +151,30 @@ const PORT_LIGHT = 0.45;
 
 /** Scene state for the selected day. `null` progress means nothing is planned. */
 export function sceneState(progress: number | null, day: DayContext = {}): SceneState {
-  const night = !!day.night;
+  const night = !!day.night, water = day.water ?? 'home';
   if (progress === null) {
     // a rest day is spent in harbour, sheltered, so it never shows the storm
-    return { progress: PORT_LIGHT, light: lightFor(PORT_LIGHT, 0, night ? 1 : 0), wind: 0.1, sailFill: 0, waveHeight: 0.05, speed: 0, storm: 0, inPort: true, night };
+    return { progress: PORT_LIGHT, light: lightFor(PORT_LIGHT, 0, night ? 1 : 0, water), wind: 0.1, sailFill: 0, waveHeight: 0.05, speed: 0, storm: 0, inPort: true, night, water };
   }
   const p = clamp01(progress), storm = day.missedYesterday ? 1 - p : 0;
   return {
-    progress: p, light: lightFor(p, storm, night ? 1 : 0),
+    progress: p, light: lightFor(p, storm, night ? 1 : 0, water),
     wind: Math.max(lerp(0.08, 1, p), storm * 0.95),
     sailFill: Math.max(lerp(0.12, 1, p), storm * 0.55),
     waveHeight: lerp(0.06, 0.22, p) + storm * 0.3,
     speed: p > 0 ? lerp(0.3, 1, p) : 0,
-    storm, inPort: false, night,
+    storm, inPort: false, night, water,
   };
 }
 
 /** A sentence describing the scene, for assistive technology. */
 export function describeScene(boatName: string, stageName: string, state: SceneState): string {
+  const said = describeDay(boatName, stageName, state);
+  // home waters are where a voyage starts, and go unsaid
+  return state.water === 'home' ? said : `${said.slice(0, -1)}, ${WATERS[state.water].where}.`;
+}
+
+function describeDay(boatName: string, stageName: string, state: SceneState): string {
   const kind = stageName.toLowerCase();
   if (state.inPort) return state.night ? `${boatName}, a ${kind}, moored in port for the evening.` : `${boatName}, a ${kind}, moored in port and taking on supplies.`;
   if (state.storm > 0.5) return `${boatName}, a ${kind}, riding out a storm.`;

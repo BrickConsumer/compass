@@ -4,6 +4,7 @@ import {
 } from 'three';
 import { bakeStatic, Batch, type Range } from './batch';
 import { paintMaterial, solid } from './boat/materials';
+import { type Shore, WATERS } from '../waters';
 
 /** A small seeded generator so scenery is the same on every visit. */
 export function seeded(seed: number): () => number {
@@ -170,7 +171,7 @@ export interface Port { group: Group; update: (time: number, still: boolean) => 
  * people carrying them aboard, a beach behind, and a lighthouse on the point.
  * Built around a boat of length L and beam B lying at the origin, bow toward +x, with the camera on +z.
  */
-export function buildPort(L: number, B: number, deckHeight: number): Port {
+export function buildPort(L: number, B: number, deckHeight: number, shore: Shore = WATERS.home.shore): Port {
   const group = new Group(), geos: BufferGeometry[] = [], mats: Material[] = [];
   const mesh = (g: BufferGeometry, m: Material, parent: Group = group) => { geos.push(g); mats.push(m); const x = new Mesh(g, m); x.castShadow = true; x.receiveShadow = true; parent.add(x); return x; };
   const timber = std('#8B6A46', 0.85), plank = std('#B08A5E', 0.85), pile = std('#5E4630', 0.9), rope = std('#D9C7A0', 0.9);
@@ -205,14 +206,26 @@ export function buildPort(L: number, B: number, deckHeight: number): Port {
   const lamp = new Mesh(new SphereGeometry(0.13, 10, 8), solid('#F2D488', 1, 0, 0.8)); lamp.position.set(x1 - 0.5, top + 2.25, pz - width / 2 + 0.25); group.add(lamp);
 
   // the shore behind: a beach, green ground, a few palms, a boathouse
-  const sand = std('#E8D3A0', 0.95), grass = std('#7E9A62', 0.95), shoreZ = pz - 9;
+  const sand = std(shore.sand, 0.95), grass = std(shore.ground, 0.95), shoreZ = pz - 9;
   const beach = mesh(new CylinderGeometry(L * 5.5, L * 5.8, 0.5, 48, 1), sand); beach.scale.set(1, 1, 0.3); beach.position.set(L * 1.2, -0.12, shoreZ - L * 1.6); beach.castShadow = false;
   const land = mesh(new SphereGeometry(L * 4.4, 40, 16, 0, Math.PI * 2, 0, Math.PI / 2), grass); land.scale.set(1, 0.16, 0.34); land.position.set(L * 1.6, 0.05, shoreZ - L * 2.2); land.castShadow = false;
-  const hill = mesh(new SphereGeometry(L * 2.2, 32, 14, 0, Math.PI * 2, 0, Math.PI / 2), std('#6C8B5A', 0.95)); hill.scale.set(1, 0.5, 0.5); hill.position.set(L * 3.2, 0.2, shoreZ - L * 3.4); hill.castShadow = false;
+  const hill = mesh(new SphereGeometry(L * 2.2, 32, 14, 0, Math.PI * 2, 0, Math.PI / 2), std(shore.hill, 0.95)); hill.scale.set(1, 0.5, 0.5); hill.position.set(L * 3.2, 0.2, shoreZ - L * 3.4); hill.castShadow = false;
   // the pier meets the beach
   mesh(new BoxGeometry(2.0, 0.14, 9.5), plank).position.set(x0 + 1.2, top - 0.07, pz - width / 2 - 4.6);
   const trunk = std('#7A5A3C', 0.9), leaf = std('#5F8A52', 0.9);
-  for (const [tx, tz, h] of [[L * 0.2, -3, 4.2], [L * 0.75, -5, 5.0], [L * 1.5, -4, 3.8], [-L * 0.5, -6, 4.6]] as const) {
+  // palms where it is warm, pines in the north, and nothing on the ice but a few pale rocks
+  const stands = [[L * 0.2, -3, 4.2], [L * 0.75, -5, 5.0], [L * 1.5, -4, 3.8], [-L * 0.5, -6, 4.6]] as const;
+  if (shore.trees === 'pine') {
+    const needle = std('#3F6B4C', 0.9);
+    for (const [tx, tz, h] of [...stands, [L * 1.1, -7, 5.6], [-L * 0.1, -8, 5.2]] as const) {
+      const t = mesh(new CylinderGeometry(0.11, 0.17, h * 0.5, 8), trunk); t.position.set(tx, h * 0.25 + 0.1, shoreZ + tz);
+      for (let i = 0; i < 3; i++) mesh(new ConeGeometry(1.25 - i * 0.3, h * 0.42, 9), needle).position.set(tx, h * (0.48 + i * 0.22) + 0.1, shoreZ + tz);
+    }
+  }
+  if (shore.trees === 'none') {
+    for (const [tx, tz, h] of stands) { const r = mesh(new SphereGeometry(h * 0.22, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2), std(shore.rock, 0.9)); r.scale.set(1.5, 0.7, 1); r.position.set(tx, 0.12, shoreZ + tz); }
+  }
+  for (const [tx, tz, h] of shore.trees === 'palm' ? stands : []) {
     const t = mesh(new CylinderGeometry(0.1, 0.16, h, 8), trunk); t.position.set(tx, h / 2 + 0.1, shoreZ + tz); t.rotation.z = 0.08 * Math.sin(tx);
     for (let i = 0; i < 8; i++) { const f = mesh(new ConeGeometry(0.42, 2.6, 6), leaf); f.position.set(tx, h + 0.1, shoreZ + tz); f.rotation.order = 'YXZ'; f.rotation.set(1.95, (i / 8) * Math.PI * 2, 0); f.translateY(-1.2); f.scale.set(1, 1, 0.28); }
   }
@@ -222,7 +235,7 @@ export function buildPort(L: number, B: number, deckHeight: number): Port {
   mesh(new BoxGeometry(0.9, 1.7, 0.08), std('#1A619B', 0.8), house).position.set(-0.8, 0.85, 1.72);
   // the lighthouse on a rocky point at the far end
   const light = new Group(); light.position.set(L * 3.3, 0, shoreZ - L * 2.6); group.add(light);
-  const rock = mesh(new SphereGeometry(4.2, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), std('#8F9499', 0.95), light); rock.scale.set(1.5, 0.42, 1.1);
+  const rock = mesh(new SphereGeometry(4.2, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), std(shore.rock, 0.95), light); rock.scale.set(1.5, 0.42, 1.1);
   const th = Math.max(9, L * 1.25);
   mesh(new CylinderGeometry(0.8, 1.3, th, 20), std('#FBF7EE', 0.8), light).position.y = 1.5 + th / 2;
   mesh(new CylinderGeometry(1.02, 1.12, th * 0.18, 20), std('#AB3935', 0.8), light).position.y = 1.5 + th * 0.45;

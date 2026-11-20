@@ -1,14 +1,15 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlwaysDepth, BackSide, Color, DirectionalLight, DoubleSide, Group, HemisphereLight, Matrix4, Mesh, MeshBasicMaterial, type PerspectiveCamera, Plane, PlaneGeometry, ShaderMaterial,
-  SphereGeometry, Vector3,
+  AlwaysDepth, BackSide, Color, CylinderGeometry, DirectionalLight, DoubleSide, Group, HemisphereLight, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D,
+  type PerspectiveCamera, Plane, PlaneGeometry, ShaderMaterial, SphereGeometry, Vector3,
 } from 'three';
 import { type BoatColours, fitOut, sheer, STAGES, type StageId, tallOf } from '../boat/specs';
 import { type DayContext, lightFor, mixHex, sceneState } from '../light';
 import { frameWatch, qualityFor, type Quality, startingQuality, stepDown, type Tier, TIERS } from '../tier';
 import { Batch, type Range, tint } from './batch';
 import { buildBoat } from './boat/buildBoat';
+import { WATERS } from '../waters';
 import { buildFlock, buildPort, flat, lighthouseParts, seeded, skyline, treeLine } from './scenery';
 import { WAVES_GLSL, waveHeight } from './waves';
 
@@ -21,6 +22,8 @@ const TAN = Math.tan((FOV * Math.PI) / 360);
 const FRAMING = { sea: { boatHeight: 0.7, boatX: 0.42 }, port: { boatHeight: 0.56, boatX: 0.47 } };
 /** Boat speed through the water at full progress, metres a second. */
 const KNOTS = 2.4;
+/** Drift ice comes round again after this many metres of water have passed. */
+const FLOE_SPAN = 130;
 
 const SKY_FRAG = `
 uniform vec3 uTop; uniform vec3 uMid; uniform vec3 uHz; uniform vec3 uSun; uniform vec3 uHaze; uniform vec3 uSunDir;
@@ -123,16 +126,6 @@ const VERT_DIR = `varying vec3 vDir; void main() { vDir = position; vec4 p = pro
 const VERT_WORLD = `varying vec3 vW; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
 const VERT_SCREEN = `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 
-/** Distant islands: where each sits across the frame, how wide and tall, how hazy, and how fast it drifts astern. */
-const ISLANDS: { kind: 'peaks' | 'hills' | 'mesa' | 'stacks'; x: number; w: number; h: number; haze: number; drift: number; trees?: boolean; beach?: boolean; light?: number }[] = [
-  { kind: 'peaks', x: 0.34, w: 0.62, h: 0.2, haze: 0.62, drift: 0.35 },
-  { kind: 'mesa', x: -0.62, w: 0.4, h: 0.11, haze: 0.56, drift: 0.45 },
-  { kind: 'hills', x: 0.2, w: 0.42, h: 0.085, haze: 0.3, drift: 0.8, trees: true, beach: true, light: 0.36 },
-  { kind: 'hills', x: -0.4, w: 0.26, h: 0.07, haze: 0.36, drift: 0.7, trees: true, beach: true },
-  { kind: 'stacks', x: -0.12, w: 0.16, h: 0.06, haze: 0.2, drift: 1 },
-  { kind: 'hills', x: 0.86, w: 0.3, h: 0.06, haze: 0.28, drift: 0.9, beach: true },
-];
-
 export interface SceneProps extends DayContext {
   stage: StageId;
   /** Share of the selected day done, or null when nothing is planned. */
@@ -152,12 +145,13 @@ export interface SceneProps extends DayContext {
   onReady?: () => void;
 }
 
-function World({ stage, progress, colours, fittings, boatName, still, missedYesterday, night, onReady, asleep, shadows }: SceneProps & { shadows: boolean }) {
+function World({ stage, progress, colours, fittings, boatName, still, missedYesterday, night, water, onReady, asleep, shadows }: SceneProps & { shadows: boolean }) {
   const { camera, size, gl, invalidate } = useThree();
   // the list is compared by what is in it, so a new array with the same fittings does not rebuild the boat
   const worn = fittings.join();
   const spec = useMemo(() => fitOut(STAGES[stage], fittings), [stage, worn]);
-  const target = useMemo(() => sceneState(progress, { missedYesterday, night }), [progress, missedYesterday, night]);
+  const target = useMemo(() => sceneState(progress, { missedYesterday, night, water }), [progress, missedYesterday, night, water]);
+  const place = WATERS[target.water];
   const cur = useRef({ p: target.progress, wind: target.wind, fill: target.sailFill, amp: target.waveHeight, speed: target.speed, storm: target.storm, night: target.night ? 1 : 0, time: 2, travel: 0 });
   const ready = useRef(false);
   const waterline = useMemo(() => new Plane(new Vector3(0, 1, 0), 0), []);
@@ -186,28 +180,6 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
     }));
     rain.frustumCulled = false; rain.renderOrder = 100;
 
-    // distant islands, each a few flat layers; they sit on the horizon and drift astern when the boat is under way
-    // each island is one mesh: its layers (hill, trees, sand) are baked together and told apart by vertex colour.
-    // The layers of an island sit at the same depth, which the depth buffer cannot tell apart at this distance, so the land is painted
-    // in order instead: far islands first, then nearer ones, and within an island in the order the layers were laid down.
-    // It still writes its depth, so the sea beyond an island does not show through its foot.
-    const parts = lighthouseParts(), landPaint = new MeshBasicMaterial({ vertexColors: true, side: DoubleSide, depthFunc: AlwaysDepth });
-    const farFirst = ISLANDS.map((def) => def.haze).sort((a, b) => b - a);
-    const place = (x: number, y: number, z: number, sx = 1, sy = 1) => new Matrix4().makeTranslation(x, y, z).scale(new Vector3(sx, sy, 1));
-    const islands = ISLANDS.map((def, i) => {
-      const land = new Batch(), lit = new Batch();
-      const layers: { on: 'land' | 'tower'; range: Range; role: 'hill' | 'trees' | 'sand' | 'tower' | 'band' | 'cap' | 'lamp'; last: string }[] = [];
-      const lay = (on: 'land' | 'tower', role: (typeof layers)[number]['role'], geo: Parameters<Batch['add']>[0], matrix: Matrix4 | null) => layers.push({ on, role, range: (on === 'land' ? land : lit).add(geo, matrix, { color: '#888888' }), last: '' });
-      lay('land', 'hill', skyline(def.kind, 11 + i * 7), null);
-      if (def.trees) lay('land', 'trees', treeLine(31 + i), place(0.02, 0.36, 0.001, 0.7, 0.16));
-      if (def.beach) lay('land', 'sand', new PlaneGeometry(1, 1), place(0, 0.035, 0.002, 0.86, 0.07));
-      if (def.light !== undefined) for (const [role, geo] of [['tower', parts.tower], ['band', parts.band], ['cap', parts.top], ['lamp', parts.lamp]] as const) lay('tower', role, geo, place(0, 0, 0.003 + layers.length * 0.001));
-      const group = new Mesh(land.geometry(), landPaint), tower = def.light !== undefined ? new Mesh(lit.geometry(), landPaint) : null;
-      // after the sky (-10) and before the sea (-1); a lighthouse straight after its own island
-      group.renderOrder = -9 + farFirst.indexOf(def.haze);
-      if (tower) tower.renderOrder = group.renderOrder + 0.5;
-      return { def, group, tower, layers };
-    });
     const gullPaint = flat('#22364a');
     const R = seeded(77);
     const flock = buildFlock(gullPaint, Array.from({ length: 7 }, (_, i) => 5 + i * 3));
@@ -216,8 +188,48 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
     const key = new DirectionalLight('#ffffff', 2.1), back = new DirectionalLight('#ffe4a6', 1.0);
     // set from the start, so the first frame compiles the right materials; the effect below follows later changes
     key.castShadow = shadows; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.04;
-    return { sky, sea, rain, islands, flock, gullPaint, hemi, key, back };
+    return { sky, sea, rain, flock, gullPaint, hemi, key, back };
   }, []);
+
+  // the land on the horizon belongs to the water being sailed, and is built again when that changes
+  const islands = useMemo(() => {
+    // distant islands, each a few flat layers; they sit on the horizon and drift astern when the boat is under way
+    // each island is one mesh: its layers (hill, trees, sand) are baked together and told apart by vertex colour.
+    // The layers of an island sit at the same depth, which the depth buffer cannot tell apart at this distance, so the land is painted
+    // in order instead: far islands first, then nearer ones, and within an island in the order the layers were laid down.
+    // It still writes its depth, so the sea beyond an island does not show through its foot.
+    const parts = lighthouseParts(), landPaint = new MeshBasicMaterial({ vertexColors: true, side: DoubleSide, depthFunc: AlwaysDepth });
+    const farFirst = place.islands.map((def) => def.haze).sort((a, b) => b - a);
+    const at = (x: number, y: number, z: number, sx = 1, sy = 1) => new Matrix4().makeTranslation(x, y, z).scale(new Vector3(sx, sy, 1));
+    const built = place.islands.map((def, i) => {
+      const land = new Batch(), lit = new Batch();
+      const layers: { on: 'land' | 'tower'; range: Range; role: 'hill' | 'trees' | 'sand' | 'tower' | 'band' | 'cap' | 'lamp'; last: string }[] = [];
+      const lay = (on: 'land' | 'tower', role: (typeof layers)[number]['role'], geo: Parameters<Batch['add']>[0], matrix: Matrix4 | null) => layers.push({ on, role, range: (on === 'land' ? land : lit).add(geo, matrix, { color: '#888888' }), last: '' });
+      lay('land', 'hill', skyline(def.kind, 11 + i * 7), null);
+      if (def.trees) lay('land', 'trees', treeLine(31 + i), at(0.02, 0.36, 0.001, 0.7, 0.16));
+      if (def.beach) lay('land', 'sand', new PlaneGeometry(1, 1), at(0, 0.035, 0.002, 0.86, 0.07));
+      if (def.light !== undefined) for (const [role, geo] of [['tower', parts.tower], ['band', parts.band], ['cap', parts.top], ['lamp', parts.lamp]] as const) lay('tower', role, geo, at(0, 0, 0.003 + layers.length * 0.001));
+      const group = new Mesh(land.geometry(), landPaint), tower = def.light !== undefined ? new Mesh(lit.geometry(), landPaint) : null;
+      // after the sky (-10) and before the sea (-1); a lighthouse straight after its own island
+      group.renderOrder = -9 + farFirst.indexOf(def.haze);
+      if (tower) tower.renderOrder = group.renderOrder + 0.5;
+      return { def, group, tower, layers };
+    });
+    return { built, dispose: () => { for (const isle of built) { isle.group.geometry.dispose(); isle.tower?.geometry.dispose(); } landPaint.dispose(); } };
+  }, [place]);
+  useEffect(() => () => islands.dispose(), [islands]);
+
+  // drift ice, in the waters that have it: every floe is an instance of one mesh, so the whole field is one draw call
+  const floes = useMemo(() => {
+    if (!place.floes) return null;
+    const R = seeded(41), paint = new MeshStandardMaterial({ color: '#f4f8fa', roughness: 0.92 });
+    const mesh = new InstancedMesh(new CylinderGeometry(1, 1.14, 0.32, 7), paint, 11);
+    mesh.receiveShadow = true; mesh.frustumCulled = false;
+    // kept clear of the boat's own track, on both sides of it
+    const at = Array.from({ length: mesh.count }, (_, i) => ({ along: (R() - 0.5) * FLOE_SPAN, side: (i % 2 ? -1 : 1) * (4.5 + R() * R() * 34), size: 0.7 + R() * 2.1, turn: R() * 6.28, squash: 0.5 + R() * 0.45 }));
+    return { mesh, paint, at, hand: new Object3D(), dispose: () => { mesh.geometry.dispose(); paint.dispose(); mesh.dispose(); } };
+  }, [place]);
+  useEffect(() => () => floes?.dispose(), [floes]);
 
   // the boat and its reflection are rebuilt when the stage, colours or port state change, and when night falls, which lights her portlights
   const boats = useMemo(() => {
@@ -226,13 +238,13 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
     const mirrorBoat = buildBoat(spec, colours, { furled: target.inPort, mirror: true });
     const flip = new Group(); flip.scale.y = -0.94; flip.add(mirrorBoat.group);
     rig.add(flip, solidBoat.group);
-    const port = target.inPort ? buildPort(spec.L, spec.beam, sheer(spec, spec.L * 0.45)) : null;
+    const port = target.inPort ? buildPort(spec.L, spec.beam, sheer(spec, spec.L * 0.45), place.shore) : null;
     if (port) {
       port.group.traverse((o) => { const m = (o as Mesh).material as { clippingPlanes?: Plane[] } | undefined; if (m) m.clippingPlanes = [waterline]; });
       rig.add(port.group);
     }
     return { rig, solidBoat, mirrorBoat, port };
-  }, [spec, colours, target.inPort, target.night, waterline]);
+  }, [spec, colours, target.inPort, target.night, place, waterline]);
   useEffect(() => () => { boats.solidBoat.dispose(); boats.mirrorBoat.dispose(); boats.port?.dispose(); }, [boats]);
   // renaming the boat repaints the lettering and nothing else
   useEffect(() => { boats.solidBoat.setName(boatName, invalidate); }, [boats, boatName, invalidate]);
@@ -272,7 +284,7 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
       c.night += (night - c.night) * k; if (Math.abs(night - c.night) < 0.002) c.night = night;
       c.time += dt; c.travel += c.speed * KNOTS * dt;
     }
-    const Lt = lightFor(c.p, c.storm, c.night), t = c.time;
+    const Lt = lightFor(c.p, c.storm, c.night, target.water), t = c.time;
     const sunElev = Math.atan((c.p < 0.5 ? 0.012 : 0.012 + 0.1 * (c.p - 0.5) * 2) * 2 * TAN), sunAz = Math.atan((SUN_X - 0.5) * 2 * TAN * f.aspect);
     const sunDir = new Vector3(Math.sin(sunAz) * Math.cos(sunElev), Math.sin(sunElev), -Math.cos(sunAz) * Math.cos(sunElev));
     const hx = Math.cos(YAW), hz = -Math.sin(YAW);
@@ -291,20 +303,33 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
 
     // islands: tinted by the light and the haze, and sliding astern as the boat makes way
     const frameW = f.frameH * f.aspect * f.k, span = frameW * 2.4, camX = (camera as PerspectiveCamera).position.x;
-    for (const isle of world.islands) {
+    for (const isle of islands.built) {
       const { def } = isle, w = def.w * frameW, h = def.h * f.frameH * f.k;
       let x = def.x * frameW - c.travel * def.drift * f.k * 0.55;
       x = ((((x + span / 2) % span) + span) % span) - span / 2;
       isle.group.position.set(camX + x, -0.4, -2600 - def.haze * 400); isle.group.scale.set(w, h, 1);
       if (isle.tower) { const th = Math.max(h * 1.5, f.frameH * f.k * 0.085); isle.tower.position.set(camX + x + (def.light! - 0.5) * w * 0.9, -0.4 + h * 0.25, -2590 - def.haze * 400); isle.tower.scale.set(th * 0.36, th, 1); }
-      const tone = mixHex(mixHex(Lt.land, '#6c8b5a', def.haze < 0.4 ? 0.28 : 0.1), Lt.skyHorizon, def.haze);
+      const tone = mixHex(mixHex(Lt.land, place.growth, def.haze < 0.4 ? 0.28 : 0.1), Lt.skyHorizon, def.haze);
       for (const layer of isle.layers) {
         const { role } = layer;
-        const hex = role === 'hill' ? tone : role === 'trees' ? mixHex(tone, Lt.land, 0.35) : role === 'sand' ? mixHex('#e8d3a0', Lt.skyHorizon, 0.4 + c.storm * 0.3)
+        const hex = role === 'hill' ? tone : role === 'trees' ? mixHex(tone, Lt.land, 0.35) : role === 'sand' ? mixHex(place.sand, Lt.skyHorizon, 0.4 + c.storm * 0.3)
           : role === 'tower' ? mixHex('#fbf7ee', Lt.skyHorizon, 0.25 + c.storm * 0.3) : role === 'band' ? mixHex('#ab3935', Lt.skyHorizon, 0.3) : role === 'cap' ? mixHex('#0e243a', Lt.skyHorizon, 0.35) : '#f2d488';
         // the light changes slowly, so most frames repaint nothing
         if (hex !== layer.last) { layer.last = hex; tint((layer.on === 'land' ? isle.group : isle.tower!).geometry, layer.range, paintbrush.set(hex)); }
       }
+    }
+    // drift ice slides astern with the water and rides the same waves; in port only the open side has any
+    if (floes) {
+      const { hand } = floes;
+      floes.at.forEach((fl, i) => {
+        const along = ((((fl.along - c.travel + FLOE_SPAN / 2) % FLOE_SPAN) + FLOE_SPAN) % FLOE_SPAN) - FLOE_SPAN / 2;
+        const x = hx * along - hz * fl.side, z = hz * along + hx * fl.side, shown = !target.inPort || fl.side > 0;
+        hand.position.set(x, waveHeight(x + hx * c.travel, z + hz * c.travel, t, c.amp) * 0.8 + 0.02, z);
+        hand.rotation.set(0, fl.turn, 0); hand.scale.set(shown ? fl.size : 0, 1, shown ? fl.size * fl.squash : 0);
+        hand.updateMatrix(); floes.mesh.setMatrixAt(i, hand.matrix);
+      });
+      floes.mesh.instanceMatrix.needsUpdate = true;
+      floes.paint.color.set(mixHex('#f4f8fa', Lt.skyHorizon, 0.18));
     }
     // gulls wheel over the water; they keep away in a storm
     world.gullPaint.color.set(mixHex('#1b2d40', Lt.skyTop, 0.3));
@@ -340,8 +365,9 @@ function World({ stage, progress, colours, fittings, boatName, still, missedYest
     <>
       <primitive object={world.sky} />
       <primitive object={world.sea} />
-      {world.islands.map((isle, i) => <primitive key={`i${i}`} object={isle.group} />)}
-      {world.islands.filter((isle) => isle.tower).map((isle, i) => <primitive key={`t${i}`} object={isle.tower!} />)}
+      {islands.built.map((isle, i) => <primitive key={`${place.id}i${i}`} object={isle.group} />)}
+      {islands.built.filter((isle) => isle.tower).map((isle, i) => <primitive key={`${place.id}t${i}`} object={isle.tower!} />)}
+      {floes && <primitive object={floes.mesh} />}
       <primitive object={world.flock.mesh} />
       <primitive object={world.hemi} />
       <primitive object={world.key} />

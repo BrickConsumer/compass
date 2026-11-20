@@ -13,8 +13,9 @@ import { nextColour } from '../domain/study';
 import { cleanTitle } from '../domain/tasks';
 import { storedTheme } from '../domain/theme';
 import type { Assessment, Boat, Habit, ISODate, Level, Page, PageItem, PageKind, Priority, QuickLink, RatingArea, Review, Session, Settings, Subject, SubjectColour, Task } from '../domain/types';
-import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged } from '../domain/voyage';
+import { awardsFor, daysAtSea, earnedStage, earnedWater, habitAward, milesLogged } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
+import { storedWater, WATER_ORDER } from '../features/voyage/waters';
 
 export interface NewTask { title: string; date: ISODate; scope: 'day' | 'week'; priority?: Priority; subjectId?: string; notes?: string }
 
@@ -134,10 +135,13 @@ function moved<T extends { id: string }>(list: T[], id: string, direction: -1 | 
 /** A list with a removed item back at the place it had. */
 const putBack = <T extends { id: string }>(list: T[], item: T, index: number): T[] => { const rest = list.filter((x) => x.id !== item.id); return [...rest.slice(0, index), item, ...rest.slice(index)]; };
 
-/** Keep the boat being sailed within what has been earned. */
+/** Keep the boat being sailed, and the water she sails in, within what has been earned. */
 function clampStage(boat: Boat, miles: number, days: number): Boat {
   const earned = STAGE_ORDER.indexOf(earnedStage(miles, days)), sailing = STAGE_ORDER.indexOf(boat.stage);
-  return sailing > earned ? { ...boat, stage: STAGE_ORDER[earned]! } : boat;
+  const reached = WATER_ORDER.indexOf(earnedWater(miles)), water = storedWater(boat.water), within = WATER_ORDER[Math.min(WATER_ORDER.indexOf(water), reached)]!;
+  const kept = sailing > earned ? { ...boat, stage: STAGE_ORDER[earned]! } : boat;
+  // home waters are saved as nothing at all, so a voyage from before there were waters reads the same
+  return within === (kept.water ?? 'home') && (kept.water === undefined || kept.water !== 'home') ? kept : { ...kept, water: within === 'home' ? undefined : within };
 }
 
 /** In-memory fallback for when local storage is unavailable. */

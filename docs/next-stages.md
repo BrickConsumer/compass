@@ -112,7 +112,9 @@ The eleven decisions in full:
 10. **The season is asked once in Settings** (northern, southern, or no seasons), the first time a season would bring something.
 11. **Order:** night and the dark theme, then waters, then decorations.
 
-Each of the three is about the size of one earlier stage, and each gets a short spec of its own before it is built. The first is written and approved by Oliver: [night-and-dark-theme-spec.md](night-and-dark-theme-spec.md), with a dark palette measured for contrast. It was built on 17 and 18 November on the branch `night-dark-theme`, on top of the Home and Weekly review additions, and committed on 18 November. Oliver saw the pictures that day, kept the blue selection over an ivory block, and approved the look as built. Josh and Aditya have seen nothing. Waters and decorations are not built.
+Each of the three is about the size of one earlier stage, and each gets a short spec of its own before it is built. The first is written and approved by Oliver: [night-and-dark-theme-spec.md](night-and-dark-theme-spec.md), with a dark palette measured for contrast. It was built on 17 and 18 November on the branch `night-dark-theme`, on top of the Home and Weekly review additions, and committed on 18 November. Oliver saw the pictures that day, kept the blue selection over an ivory block, and approved the look as built. Josh and Aditya have seen nothing.
+
+The second, new waters, was built on 18 November on the branch `new-waters`, on top of night and the dark theme, and is not committed. Oliver had asked that day for the rest of the app to be built without a further round of approval, so its spec, [new-waters-spec.md](new-waters-spec.md), was written with the build and records the calls made. The miles are 800, 2,000 and 3,300. No founder has reviewed how the waters look. Decorations are not built.
 
 ## Stage 8. Aditya's plan
 
