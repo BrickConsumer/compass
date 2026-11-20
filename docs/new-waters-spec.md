@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Built on 18 November 2026 on the branch `new-waters`, on top of night and the dark theme. Not committed.** Oliver decided what it rests on from the options page on 17 November (section 2). On 18 November he asked for the rest of the app to be built without a further round of approval, so this document was written with the build and records it. No founder has reviewed how the waters look. |
+| Status | **Built on 18 November 2026 on the branch `new-waters`, on top of night and the dark theme. Committed on 20 November and brought up to date with `main`; not yet merged.** Oliver decided what it rests on from the options page on 17 November (section 2). On 18 November he asked for the rest of the app to be built without a further round of approval, so this document was written with the build and records it. No founder has reviewed how the waters look. |
 | Scope | The second of the three parts left in Stage 7: three new waters, reached by distance and chosen in the voyage view |
 | Companions | [next-stages.md](next-stages.md), [night-and-dark-theme-spec.md](night-and-dark-theme-spec.md), [compass-art-direction.md](compass-art-direction.md), [testing-report.md](testing-report.md) |
 | Mock | [Stage 7 options](https://claude.ai/artifact/Ax2cKW9qUbCgBXG6bTEvja), a private page |

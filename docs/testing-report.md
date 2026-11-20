@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, sections 16 to 18 on 19 November, and section 19 on 20 November |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, sections 16 to 18 on 19 November, and section 19 on 20 November. Section 20, new waters, was built on 18 November and added here on 20 November |
 | Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it. Section 14, the Study detail, is on the branch `study-detail`, cut from that |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
@@ -873,7 +873,7 @@ A fresh reviewer read the change on 20 November and drove the three shared piece
 
 ## 20. New waters
 
-Built on 18 November on the branch `new-waters`, to [new-waters-spec.md](new-waters-spec.md), on top of night and the dark theme. Not committed. No founder has reviewed how the waters look.
+Built on 18 November on the branch `new-waters`, to [new-waters-spec.md](new-waters-spec.md), on top of night and the dark theme. Committed on 20 November and brought up to date with `main`; not yet merged. No founder has reviewed how the waters look.
 
 | | |
 |---|---|
