@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 429 unit tests pass and 280 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18 and the small faults put right in section 19; before the seven it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 456 unit tests pass and 292 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18, the small faults put right in section 19 and new waters in section 20; before the eight it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -891,16 +891,17 @@ More pictures, with each water's port, night and still image, are in [screenshot
 
 ### Checked
 
-- **Unit tests:** 310 pass, 25 of them new. They cover each water's definition, its light by day and at night, the miles, the news of a new water, and the saved choice being kept within what has been reached.
-- **Browser tests, light theme:** all 139 pass, 12 of them new.
-- **Browser tests, device set to dark:** all 139 pass.
-- **Browser tests as CI runs them:** 132 pass and 7 are skipped. The seventh is the new draw-call test, which like the other six needs real graphics hardware.
+- **Unit tests:** 456 pass, 27 of them new. They cover each water's definition, its light by day and at night, the miles, the news of a new water, the saved choice being kept within what has been reached, and that choice still being there when a save is opened again.
+- **Browser tests, light theme:** all 292 pass, 12 of them new.
+- **Browser tests, device set to dark:** all 292 pass.
+- **Browser tests as CI runs them:** 285 pass and 7 are skipped. The seventh is the new draw-call test, which like the other six needs real graphics hardware.
 - **Draw calls:** each water stays within the budget of 40 in a frame, at sea and in port, measured in the running app.
 - **The still image** is a different picture in each of sixteen cases: four waters, day and night, at sea and in port.
-- **The build** passes. The main bundle is 184.2 kB compressed, 2.6 kB more than before the waters.
+- **The build** passes. The main bundle is 211.0 kB compressed. Before `main` was merged in it was 184.2 kB, and the waters made up 2.6 kB of that.
 
 ### Found on the way
 
+- **Merging `main` in would have lost the chosen water on every reload.** `main`'s `storedBoat` builds a saved boat from a fixed list of fields, and the water was not on it, so a boat put in the coral shallows came back to home waters each time Compass opened. No test failed until one was written for it. It now keeps the water, with a test on the boat from a save and one on opening a whole save.
 - **Pictures taken for review showed the wrong water twice,** in the first run only: the look-review page had gone back to its defaults between a control being set and the picture being taken. It did not happen again in three further runs, and the cause was not found. The script that takes the pictures now reads which water is on show before each one and writes it down.
 
 ### Calls made in the build that the founders can overrule
