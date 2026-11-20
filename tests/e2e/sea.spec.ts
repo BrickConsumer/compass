@@ -114,3 +114,31 @@ test('a frame stays within the budget of 40 draw calls, at sea and in port', asy
   expect(draws).toBeLessThanOrEqual(40);
   await context.close();
 });
+
+test('every water stays within the same budget, at sea and in port', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const context = await browser.newContext({ viewport: { width: 1320, height: 900 } });
+  // reach every water, then sail in each in turn
+  const setup = await context.newPage();
+  await setup.goto('/settings');
+  await setup.getByLabel('Nautical miles').fill('3400');
+  await setup.getByLabel('Days at sea').fill('130');
+  await setup.getByRole('button', { name: 'Set the voyage' }).click();
+  for (const [name, where, id] of [['Coral shallows', 'in the coral shallows', 'coral'], ['Northern fjords', 'in the northern fjords', 'fjords'], ['The ice', 'among the ice', 'ice']] as const) {
+    await setup.goto('/voyage');
+    await setup.getByRole('group', { name: 'Waters' }).getByRole('button', { name: new RegExp(`^${name}`) }).click();
+    const sail = setup.locator('[data-water-line]').getByRole('button', { name: `Sail ${where}` });
+    if (await sail.count()) await sail.click();
+    await expect(setup.locator('[data-water-line]')).toContainText(`You are sailing ${where}.`);
+    const atSea = await open(context, '/');
+    await expect(atSea.locator('[data-scene]').first()).toHaveAttribute('data-water', id);
+    expect(await drawsPerFrame(atSea), `${id} at sea`).toBeLessThanOrEqual(40);
+    await atSea.close();
+    const inPort = await open(context, '/?date=2031-03-05');
+    await expect(inPort.getByRole('img', { name: /moored in port/ }).first()).toBeVisible();
+    expect(await drawsPerFrame(inPort), `${id} in port`).toBeLessThanOrEqual(40);
+    await inPort.close();
+  }
+  await context.close();
+});
+

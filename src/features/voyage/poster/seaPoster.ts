@@ -1,5 +1,6 @@
 import { type BoatColours, type BoatSpec, DEFAULT_COLOURS, tallOf } from '../boat/specs';
 import { type Light, mixHex, type SceneState } from '../light';
+import { WATERS } from '../waters';
 import { drawBoat, type PosterLook } from './drawBoat';
 
 const f1 = (n: number) => Math.round(n * 10) / 10;
@@ -59,7 +60,7 @@ function ridge(x0: number, x1: number, base: number, hMax: number, R: () => numb
 /** The whole still image as SVG markup (the contents of an <svg> with the given viewBox). */
 export function seaPoster(o: SeaPosterOptions): string {
   const { width: W, height: H, spec, state, id } = o;
-  const p = state.progress, Lt = state.light, R = seeded(9);
+  const p = state.progress, Lt = state.light, R = seeded(9), place = WATERS[state.water];
   const hz = Math.round(H * (o.horizon ?? 0.34)), dH = H - hz, tall = tallOf(spec);
   const s = (H * (o.boatHeight ?? 0.7)) / tall, k = s / 26, oy = f1(hz + H * (o.drop ?? 0.45)), ox = W * (o.boatX ?? 0.4) - (spec.L / 2) * s;
   const sunX = f1(W * (o.sunX ?? 0.8)), sunY = f1(p < 0.5 ? hz - H * 0.012 : hz - H * (0.012 + 0.1 * (p - 0.5) * 2));
@@ -93,9 +94,8 @@ export function seaPoster(o: SeaPosterOptions): string {
     clouds += `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${mixHex(Lt.skyHorizon, '#ffffff', 0.45 * Lt.lit)}" opacity="${(0.34 + 0.3 * R()).toFixed(2)}"/>`;
   }
   G.push(`<g filter="url(#${id}c)">${clouds}</g>`);
-  G.push(`<path d="${ridge(W * 0.56, W * 1.04, hz, H * 0.075, R)}" fill="${mixHex(Lt.land, Lt.skyHorizon, 0.5)}"/>`);
-  G.push(`<path d="${ridge(W * 0.7, W * 1.02, hz, H * 0.05, R)}" fill="${mixHex(Lt.land, Lt.skyHorizon, 0.28)}"/>`);
-  G.push(`<path d="${ridge(-W * 0.03, W * 0.17, hz, H * 0.045, R)}" fill="${mixHex(Lt.land, Lt.skyHorizon, 0.4)}"/>`);
+  // the land on the horizon is the water's own: low sand in the shallows, mountains in the fjords, shelves of ice
+  for (const [x0, x1, h, haze] of place.ridges) G.push(`<path d="${ridge(W * x0, W * x1, hz, H * h, R)}" fill="${mixHex(Lt.land, Lt.skyHorizon, haze)}"/>`);
   G.push(`<rect y="${hz}" width="${W}" height="${dH}" fill="url(#${id}w)"/>`);
   G.push(`<rect y="${f1(hz - H * 0.12)}" width="${W}" height="${f1(H * 0.2)}" fill="url(#${id}z)"/>`);
 
@@ -110,13 +110,21 @@ export function seaPoster(o: SeaPosterOptions): string {
     G.push(`<path d="M${f1(x - len / 2)} ${f1(y)}h${f1(len)}" stroke="${Lt.sun}" stroke-opacity="${(0.3 + 0.6 * R()).toFixed(2)}" stroke-width="${f1(0.9 + 1.7 * d)}" stroke-linecap="round"/>`);
   }
 
+  if (place.floes) {
+    // drift ice, from a generator of its own so that nothing else in the picture moves; none lies on the boat or her reflection
+    const F = seeded(41);
+    for (let i = 0; i < 9; i++) {
+      const d = 0.12 + 0.8 * F(), x = F() * W, y = hz + d * dH, rx = (6 + 26 * d) * (0.6 + F()) * (H / 276), near = Math.abs(x - (ox + (spec.L / 2) * s)) < spec.L * s * 0.9 + rx && y > oy - H * 0.08;
+      if (!near) G.push(`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(rx * 0.16)}" fill="${mixHex(mixHex('#f4f8fa', Lt.skyHorizon, 0.18), Lt.waterDeep, (1 - Lt.lit) * 0.55)}"/><ellipse cx="${f1(x)}" cy="${f1(y + rx * 0.1)}" rx="${f1(rx * 0.96)}" ry="${f1(rx * 0.12)}" fill="${Lt.waterDeep}" opacity=".25"/>`);
+    }
+  }
   if (state.inPort) {
     const lx = W * 0.84, lh = H * 0.2, lw = lh * 0.16;
     G.push(`<path d="M${f1(lx - lw)} ${hz}L${f1(lx - lw * 0.62)} ${f1(hz - lh)}H${f1(lx + lw * 0.62)}L${f1(lx + lw)} ${hz}Z" fill="${mixHex('#fdfaf3', Lt.skyHorizon, 0.25)}"/>`);
     G.push(`<rect x="${f1(lx - lw * 0.8)}" y="${f1(hz - lh * 0.62)}" width="${f1(lw * 1.6)}" height="${f1(lh * 0.16)}" fill="${mixHex('#ab3935', Lt.skyHorizon, 0.25)}"/>`);
     G.push(`<rect x="${f1(lx - lw * 0.8)}" y="${f1(hz - lh * 1.2)}" width="${f1(lw * 1.6)}" height="${f1(lh * 0.2)}" rx="${f1(lw * 0.2)}" fill="${mixHex('#0e243a', Lt.skyHorizon, 0.3)}"/>`);
     G.push(`<circle cx="${f1(lx)}" cy="${f1(hz - lh * 1.1)}" r="${f1(lw * 0.45)}" fill="#f2d488"/>`);
-    G.push(`<path d="M${f1(W * 0.52)} ${hz}Q${f1(W * 0.78)} ${f1(hz - H * 0.012)} ${W} ${f1(hz - H * 0.004)}V${f1(hz + H * 0.03)}H${f1(W * 0.52)}Z" fill="${mixHex('#e5cb8d', Lt.skyHorizon, 0.35)}"/>`);
+    G.push(`<path d="M${f1(W * 0.52)} ${hz}Q${f1(W * 0.78)} ${f1(hz - H * 0.012)} ${W} ${f1(hz - H * 0.004)}V${f1(hz + H * 0.03)}H${f1(W * 0.52)}Z" fill="${mixHex(state.water === 'home' ? '#e5cb8d' : place.sand, Lt.skyHorizon, 0.35)}"/>`);
     const py = oy - 0.9 * s, px0 = ox - spec.L * s * 1.2, px1 = ox + spec.L * s * 0.9;
     for (let x = px0 + 6 * k; x < px1; x += 2.2 * s) G.push(`<rect x="${f1(x)}" y="${f1(py)}" width="${f1(0.22 * s)}" height="${f1(oy - py + 0.4 * s)}" fill="#6b4a2f"/>`);
     G.push(`<rect x="${f1(px0)}" y="${f1(py - 0.16 * s)}" width="${f1(px1 - px0)}" height="${f1(0.2 * s)}" rx="${f1(0.05 * s)}" fill="#a8733d"/>`);

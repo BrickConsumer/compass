@@ -536,7 +536,7 @@ A stage needs both miles and days at sea, so it cannot be reached in one binge.
 | Dinghy | From the first day | 25 masthead pennant. 60 bow lantern. 120 painted sheer stripe. |
 | Sloop | 250 miles and 10 days at sea | 350 brass portlights. 500 name lettered on the quarter. 700 flags to dress ship. |
 | Cutter | 1,000 miles and 40 days at sea | 1,300 ratlines and lazy jacks. 1,700 stern lantern. 2,200 a tender on deck. |
-| Schooner | 3,000 miles and 120 days at sea | 3,600 a topsail. 4,500 gilded cove stripe. Then new waters every 1,000. |
+| Schooner | 3,000 miles and 120 days at sea | 3,600 a topsail. 4,500 gilded cove stripe. |
 
 Fittings carry forward: a lantern earned on the dinghy is on every later boat. The cutter and schooner come with an ensign.
 
@@ -552,6 +552,8 @@ At a steady pace: the sloop in about two and a half weeks, the cutter in about a
 4. The user can always choose to sail an earlier boat they have earned.
 
 Environments and seasonal decoration are designed after Phase 1. The intent is that new waters are earned by distance and seasonal items appear with the calendar, and both are kept once seen.
+
+**Built on 18 November:** three waters are reached along the way and not after the last fitting: the coral shallows at 800 miles, the northern fjords at 2,000 and the ice at 3,300. There is no water after the ice yet. See [new-waters-spec.md](new-waters-spec.md).
 
 **Decided for Stage 7, by Oliver on 17 November.** New waters are earned along the way, from about 800 miles, and not only after the last fitting as the table above has it; an earned water can be chosen, as an earned boat can. Each season leaves one keepsake. Night comes with a dark theme, which runs from dusk through stars to moonrise by the same share of the day done. The eleven decisions are listed in [next-stages.md](next-stages.md), Stage 7, and none is built yet. Josh and Aditya have not weighed in.
 

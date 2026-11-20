@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, sections 16 to 18 on 19 November, and section 19 on 20 November |
+| Date | 16 November 2026, with sections 10 to 13 added on 17 November, sections 14 and 15 on 18 November, sections 16 to 18 on 19 November, and section 19 on 20 November. Section 20, new waters, was built on 18 November and added here on 20 November |
 | Build | Branch `boat-fittings`: Phase 1 with the Phase E changes in section 2, the performance work in section 5, the reward loop in section 6, motion and the editor in section 7, Habits in section 8, Study in section 9, the Weekly review in section 10, My pages in section 11, and the later fittings in section 12. Section 13, the Home and Weekly review additions, is on the branch `home-review-additions`, cut from it. Section 14, the Study detail, is on the branch `study-detail`, cut from that |
 | Covers | The brief's completion criteria (section 11) and the Phase E visual review (section 9) |
 | Companions | [compass-art-direction.md](compass-art-direction.md), [home-screen-spec.md](home-screen-spec.md), [next-stages.md](next-stages.md) |
@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 429 unit tests pass and 280 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18 and the small faults put right in section 19; before the seven it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 456 unit tests pass and 292 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18, the small faults put right in section 19 and new waters in section 20; before the eight it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -483,7 +483,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 21). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -544,7 +544,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 21).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 22).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -627,7 +627,7 @@ On 18 November, after the piece was committed, `main` was merged into the branch
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 21).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22).
 
 ### Calls made in the build that the founders can overrule
 
@@ -692,7 +692,7 @@ It also noted things that are older than this piece: Home is wider than a 320 px
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 21).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 22).
 - Whether Escape inside a line being changed keeps the editor open in browsers other than Chrome.
 
 ### Calls made in the build that the founders can overrule
@@ -754,7 +754,7 @@ Left as they are, to be decided:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 21).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 22).
 - A double tap by finger. A mouse says which press of a run it is; a finger may not, so a touch in the same place straight after is treated as one. Tried with a mouse only.
 
 ### Calls made in the build that the founders can overrule
@@ -812,7 +812,7 @@ A fresh reviewer read the whole change against the specification on 19 November,
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 21). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 22). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
 - Whether a screen reader announces what a backup holds. The place it is said in is built the way that is announced; nobody has listened.
 
 ### Calls made in the build that the founders can overrule
@@ -871,7 +871,49 @@ A fresh reviewer read the change on 20 November and drove the three shared piece
 - On a 390 by 844 px phone the "New task" sheet is 14 px taller than the screen. "Add task" can still be reached.
 - Two tabs changing the same thing within a tenth of a second can still lose one of the changes.
 
-## 20. Built differently from the approved spec
+## 20. New waters
+
+Built on 18 November on the branch `new-waters`, to [new-waters-spec.md](new-waters-spec.md), on top of night and the dark theme. Committed on 20 November and brought up to date with `main`; not yet merged. No founder has reviewed how the waters look.
+
+| | |
+|---|---|
+| ![The coral shallows](screenshots/waters/coral-1-day.png) | ![The northern fjords, in port](screenshots/waters/fjords-3-port.png) |
+| ![The ice](screenshots/waters/ice-1-day.png) | ![The coral shallows at night](screenshots/waters/coral-4-night.png) |
+
+More pictures, with each water's port, night and still image, are in [screenshots/waters/](screenshots/waters/).
+
+### What was built
+
+- **Three waters:** coral shallows at 800 miles, northern fjords at 2,000 and the ice at 3,300. Each has its own light by day and by night, its own land on the horizon and its own shore in port. The ice has drift ice on the water.
+- **Reaching one is news** on Home's plate, once, and the voyage view offers it. The boat stays where it is until the water is chosen.
+- **A row of waters in the voyage view,** where any that has been reached can be chosen and any that has not can be looked at.
+- **Home waters are unchanged.**
+
+### Checked
+
+- **Unit tests:** 456 pass, 27 of them new. They cover each water's definition, its light by day and at night, the miles, the news of a new water, the saved choice being kept within what has been reached, and that choice still being there when a save is opened again.
+- **Browser tests, light theme:** all 292 pass, 12 of them new.
+- **Browser tests, device set to dark:** all 292 pass.
+- **Browser tests as CI runs them:** 285 pass and 7 are skipped. The seventh is the new draw-call test, which like the other six needs real graphics hardware.
+- **Draw calls:** each water stays within the budget of 40 in a frame, at sea and in port, measured in the running app.
+- **The still image** is a different picture in each of sixteen cases: four waters, day and night, at sea and in port.
+- **The build** passes. The main bundle is 211.0 kB compressed. Before `main` was merged in it was 184.2 kB, and the waters made up 2.6 kB of that.
+
+### Found on the way
+
+- **Merging `main` in would have lost the chosen water on every reload.** `main`'s `storedBoat` builds a saved boat from a fixed list of fields, and the water was not on it, so a boat put in the coral shallows came back to home waters each time Compass opened. No test failed until one was written for it. It now keeps the water, with a test on the boat from a save and one on opening a whole save.
+- **Pictures taken for review showed the wrong water twice,** in the first run only: the look-review page had gone back to its defaults between a control being set and the picture being taken. It did not happen again in three further runs, and the cause was not found. The script that takes the pictures now reads which water is on show before each one and writes it down.
+
+### Calls made in the build that the founders can overrule
+
+They are listed in the spec, section 8. The ones a founder is most likely to have a view on: the boat does not move to a new water until it is chosen; only the fjords have a lighthouse; only the ice has anything floating on the water.
+
+### Not checked
+
+- A real phone, Safari or Firefox, and a screen reader by ear.
+- Frame rate in each water. The draw calls are within the same budget as home waters.
+
+## 21. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -885,7 +927,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 21. Known limitations
+## 22. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.
@@ -893,4 +935,5 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 - The still image is side-on, so the picture shifts when the 3D scene takes over. Its port has no figures.
 - Drag to reorder, recurring tasks, accounts and sync are not built, by plan.
 - Night and the dark theme are built and approved by Oliver. Josh and Aditya have not seen them (section 14).
+- New waters are built and not yet reviewed by any founder (section 20). The still image draws the fjords as rounded hills, and its port does not show each water's trees.
 - Tested in Chrome only. Safari and Firefox have not been opened.
