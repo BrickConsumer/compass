@@ -1,4 +1,5 @@
 import type { StageId } from '../features/voyage/boat/specs';
+import type { WaterId } from '../features/voyage/waters';
 
 /** A local calendar date, 'YYYY-MM-DD', with no time zone. */
 export type ISODate = string;
@@ -237,7 +238,9 @@ export interface Boat {
   hull: string; sail: string; pennant: string;
   /** The boat being sailed: any stage that has been earned. */
   stage: StageId;
-  /** Fitting and stage ids already shown in the voyage view. */
+  /** Where the boat is sailing: any water that has been reached. Left out, home waters. */
+  water?: WaterId;
+  /** Fitting, stage and water ids already shown in the voyage view. */
   seen: string[];
   /** The long-term goal, shown as where the boat is bound for. Up to 60 characters. */
   boundFor?: string;

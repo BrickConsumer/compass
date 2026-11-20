@@ -15,6 +15,13 @@ describe('what is kept from a save', () => {
     for (const junk of [null, 'boat', 7, []]) expect(storedBoat(junk, DEFAULT_BOAT)).toEqual({ ...DEFAULT_BOAT, stage: 'dinghy', seen: [] });
   });
 
+  it('keeps the water a boat sails in, and treats one that is not a water as home waters', () => {
+    const boat = { name: 'Wren', hull: '#1A619B', sail: '#FCF8EE', pennant: '#AB3935', stage: 'cutter', seen: ['dinghy'] };
+    for (const water of ['coral', 'fjords', 'ice']) expect(storedBoat({ ...boat, water }, DEFAULT_BOAT)).toEqual({ ...boat, water });
+    // home waters are saved as nothing at all, and anything that is not a water reads as home waters
+    for (const junk of ['home', 'lagoon', 4, null, ['ice']]) expect(storedBoat({ ...boat, water: junk }, DEFAULT_BOAT)).toEqual(boat);
+  });
+
   it('keeps settings as they are, and falls back where one is not what it should be', () => {
     const whole = { weekStartsOn: 0, seaPaused: true, seaFolded: false, name: 'Sam', theme: 'dark', fitness: true };
     expect(storedSettings(whole)).toEqual(whole);

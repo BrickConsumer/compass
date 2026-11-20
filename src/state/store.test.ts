@@ -549,3 +549,62 @@ describe("the theme", () => {
     s().setSettings({ theme: "auto" });
   });
 });
+
+describe('waters', () => {
+  beforeEach(() => { s().resetSample(); });
+
+  it('a voyage starts in home waters, saved as nothing at all', () => {
+    expect(s().boat.water).toBeUndefined();
+  });
+
+  it('a water that has not been reached cannot be chosen', () => {
+    s().setBoat({ water: 'coral' });
+    expect(s().boat.water).toBeUndefined();
+    s().setBoat({ water: 'lagoon' as never });
+    expect(s().boat.water).toBeUndefined();
+  });
+
+  it('a water that has been reached can be chosen, and home waters chosen again', () => {
+    s().setSampleVoyage(2100, 60);
+    s().setBoat({ water: 'fjords' });
+    expect(s().boat.water).toBe('fjords');
+    s().setBoat({ water: 'coral' });
+    expect(s().boat.water).toBe('coral');
+    s().setBoat({ water: 'ice' });
+    expect(s().boat.water).toBe('fjords');
+    s().setBoat({ water: 'home' });
+    expect(s().boat.water).toBeUndefined();
+  });
+
+  it('reaching a water does not move the boat there: that is the sailor\'s choice', () => {
+    s().setSampleVoyage(900, 30);
+    expect(s().boat.water).toBeUndefined();
+  });
+
+  it('a shorter voyage brings the boat back within the waters it has reached', () => {
+    s().setSampleVoyage(3400, 130); s().setBoat({ water: 'ice' });
+    expect(s().boat.water).toBe('ice');
+    s().setSampleVoyage(900, 30);
+    expect(s().boat.water).toBe('coral');
+    s().setSampleVoyage(100, 5);
+    expect(s().boat.water).toBeUndefined();
+  });
+
+  it('changing the name or the colours leaves the water alone', () => {
+    s().setSampleVoyage(900, 30); s().setBoat({ water: 'coral' });
+    s().setBoat({ name: 'Petrel', hull: '#1A619B' });
+    expect(s().boat.water).toBe('coral');
+  });
+
+  it('the water chosen is still chosen when Compass is opened again', () => {
+    s().setSampleVoyage(2100, 60); s().setBoat({ water: 'fjords' });
+    const saved = JSON.parse(JSON.stringify({ ...s(), sample: false }));
+    expect((useCompass.persist.getOptions().merge!(saved, s()) as ReturnType<typeof s>).boat.water).toBe('fjords');
+    // a save that names no water, or one that is not a water, opens in home waters
+    for (const water of [undefined, 'lagoon', 7]) {
+      const other = { ...saved, boat: { ...saved.boat, water } };
+      expect((useCompass.persist.getOptions().merge!(other, s()) as ReturnType<typeof s>).boat.water).toBeUndefined();
+    }
+  });
+});
+

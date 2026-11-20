@@ -1,4 +1,5 @@
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
+import { storedWater } from '../features/voyage/waters';
 import { isISODate } from './dates';
 import { storedLink } from './links';
 import type { Assessment, Boat, Habit, Level, Levels, LogEntry, Review, Session, Settings, Task } from './types';
@@ -25,12 +26,14 @@ export const storedStrings = (value: unknown): string[] => (Array.isArray(value)
  * and what has been seen. A stage that is not one becomes the first boat, which is always earned.
  */
 export function storedBoat(value: unknown, fallback: Boat): Boat {
-  const b = isPlain(value) ? value : {}, stage = STAGE_ORDER.find((s) => s === b.stage) ?? STAGE_ORDER[0]!;
+  const b = isPlain(value) ? value : {}, stage = STAGE_ORDER.find((s) => s === b.stage) ?? STAGE_ORDER[0]!, water = storedWater(b.water);
   return {
     name: words(b.name) || fallback.name,
     hull: isPaint(b.hull) ? b.hull : fallback.hull, sail: isPaint(b.sail) ? b.sail : fallback.sail, pennant: isPaint(b.pennant) ? b.pennant : fallback.pennant,
     stage, seen: storedStrings(b.seen),
     ...(words(b.boundFor) ? { boundFor: words(b.boundFor) } : {}),
+    // home waters are saved as nothing at all; the store keeps the water within what has been reached
+    ...(water !== 'home' ? { water } : {}),
   };
 }
 

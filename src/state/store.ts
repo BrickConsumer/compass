@@ -18,8 +18,9 @@ import { cleanTitle } from '../domain/tasks';
 import { storedTheme } from '../domain/theme';
 import { once, time } from '../domain/words';
 import { type Assessment, type Best, type Boat, type Feedback, type FormSet, type Habit, type Headline, type Interest, type ISODate, type Level, type Measure, type Page, type PageItem, type PageKind, type Priority, type QuickLink, type RatingArea, type Review, type Routine, type Session, type Settings, type Subject, SUBJECT_COLOURS, type SubjectColour, type Task, type Workout, type WorkoutLine } from '../domain/types';
-import { awardsFor, daysAtSea, earnedStage, habitAward, milesLogged, workoutAward } from '../domain/voyage';
+import { awardsFor, daysAtSea, earnedStage, earnedWater, habitAward, milesLogged, workoutAward } from '../domain/voyage';
 import { STAGE_ORDER } from '../features/voyage/boat/specs';
+import { storedWater, WATER_ORDER } from '../features/voyage/waters';
 
 export interface NewTask { title: string; date: ISODate; scope: 'day' | 'week'; priority?: Priority; subjectId?: string; notes?: string; /** One web address. Anything else is left off. */ link?: string; /** The assessment it is preparation for. Kept only if that assessment exists. */ assessmentId?: string }
 
@@ -293,10 +294,13 @@ function storedPage(page: Page): Page {
   };
 }
 
-/** Keep the boat being sailed within what has been earned. */
+/** Keep the boat being sailed, and the water she sails in, within what has been earned. */
 function clampStage(boat: Boat, miles: number, days: number): Boat {
   const earned = STAGE_ORDER.indexOf(earnedStage(miles, days)), sailing = STAGE_ORDER.indexOf(boat.stage);
-  return sailing > earned ? { ...boat, stage: STAGE_ORDER[earned]! } : boat;
+  const reached = WATER_ORDER.indexOf(earnedWater(miles)), water = storedWater(boat.water), within = WATER_ORDER[Math.min(WATER_ORDER.indexOf(water), reached)]!;
+  const kept = sailing > earned ? { ...boat, stage: STAGE_ORDER[earned]! } : boat;
+  // home waters are saved as nothing at all, so a voyage from before there were waters reads the same
+  return within === (kept.water ?? 'home') && (kept.water === undefined || kept.water !== 'home') ? kept : { ...kept, water: within === 'home' ? undefined : within };
 }
 
 /** In-memory fallback for when local storage is unavailable. */

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { type BoatColours, DEFAULT_COLOURS, DRAWN_FITTINGS, STAGES, STAGE_ORDER, type StageId } from '../voyage/boat/specs';
 import { SeaWindow } from '../voyage/SeaWindow';
 import type { Tier } from '../voyage/tier';
+import { WATER_ORDER, WATERS, type WaterId } from '../voyage/waters';
 
 const HULLS: [string, string][] = [['Deep navy', '#0E243A'], ['Marine', '#1A619B'], ['Teal', '#256F75'], ['Ivory', '#F6F0E4'], ['Bottle green', '#1C6048'], ['Oxblood', '#8C2D2B']];
 const SAILS: [string, string][] = [['Ivory', '#FCF8EE'], ['Flax', '#EFE0B8'], ['Tanbark', '#9A5A3C'], ['Slate', '#7E91A6'], ['Seafoam', '#BEE8D5'], ['Rose', '#F6CFC9']];
@@ -39,12 +40,13 @@ export function LookdevPage() {
   const [missed, setMissed] = useState(false);
   // the sea is at night in the dark theme, so this starts where the theme is; it can be turned either way to compare
   const [night, setNight] = useState(useTheme() === 'dark');
+  const [water, setWater] = useState<WaterId>('home');
   const [use3d, setUse3d] = useState(true);
   const [tier, setTier] = useState<Tier>();
   const [worn, setWorn] = useState<readonly string[]>(DRAWN_FITTINGS);
   const [colours, setColours] = useState<BoatColours>(DEFAULT_COLOURS);
   const progress = planned ? done / 5 : null;
-  const windowProps = { stage, progress, colours, paused, boatName: 'The Kestrel', still: !use3d, missedYesterday: missed, night, tier, fittings: worn };
+  const windowProps = { stage, progress, colours, paused, boatName: 'The Kestrel', still: !use3d, missedYesterday: missed, night, water, tier, fittings: worn };
 
   return (
     <main className="mx-auto flex max-w-[1240px] flex-col gap-8 px-4 py-8 sm:px-7">
@@ -74,6 +76,18 @@ export function LookdevPage() {
                 <button key={id} type="button" aria-pressed={stage === id} onClick={() => setStage(id)}
                   className="h-10 cursor-pointer rounded-md px-4 text-[14.5px] font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] aria-pressed:bg-surface-inverse aria-pressed:text-text-inverse aria-pressed:shadow-none">
                   {STAGES[id].name}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-[13.5px] font-medium text-text-muted">Waters</legend>
+            <div className="flex flex-wrap gap-2">
+              {WATER_ORDER.map((id) => (
+                <button key={id} type="button" aria-pressed={water === id} onClick={() => setWater(id)}
+                  className="h-10 cursor-pointer rounded-md px-4 text-[14.5px] font-semibold shadow-[inset_0_0_0_1px_var(--color-line-strong)] aria-pressed:bg-surface-inverse aria-pressed:text-text-inverse aria-pressed:shadow-none">
+                  {WATERS[id].name}
                 </button>
               ))}
             </div>
