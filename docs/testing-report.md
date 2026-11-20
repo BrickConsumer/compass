@@ -915,7 +915,7 @@ They are listed in the spec, section 8. The ones a founder is most likely to hav
 
 ## 21. Fetched headlines
 
-Built on 20 November on the branch `fetched-headlines`, to [fetched-headlines-spec.md](fetched-headlines-spec.md). It is the rest of piece 4 of Aditya's plan: headlines that arrive by themselves. Oliver went through the finished app that day, asked for this to be designed, and chose the approach, the sources and how Home shows them. Josh and Aditya have not reviewed it.
+Built on 20 November on the branch `fetched-headlines`, to [fetched-headlines-spec.md](fetched-headlines-spec.md), and merged into `main` the same day as pull request 21. It is the rest of piece 4 of Aditya's plan: headlines that arrive by themselves. Oliver went through the finished app that day, asked for this to be designed, and chose the approach, the sources and how Home shows them. Josh and Aditya have not reviewed it.
 
 It is the first thing in Compass that asks anything of a network, so most of what was tested is what it must not do.
 
@@ -939,6 +939,7 @@ It is the first thing in Compass that asks anything of a network, so most of wha
 - **At 390 and 320 px:** no page scrolls sideways with a headline of 140 characters and a watch word of 40 with nowhere to break, and "Keep" and each headline are 44 px tall.
 - **The job,** run here against the real feeds: 25 of 25 headlines read from The Conversation and 1 of 1 from the Reserve Bank.
 - Everything from before passes. Two older tests were changed, because a saved headline published today or yesterday now says so.
+- **The job on GitHub itself.** Its first run was started by hand on 20 November, once this was merged, and took 14 seconds. Both feeds answered GitHub's machine (25 of 25 headlines read from The Conversation, 1 of 1 from the Reserve Bank), and 21 headlines were published to a new branch, `headlines`. Compass, with the switch on, then downloaded that list from its public address with one request and showed it.
 
 ### The review of the whole change
 
@@ -957,8 +958,8 @@ A fresh reviewer read the change on 20 November and drove it in a browser, in a 
 
 ### Not checked
 
-- **The job on GitHub itself.** Whether the feeds answer a GitHub runner, and whether the runner may push to the branch, is seen on its first run after this is merged.
 - **The Guardian against its own service.** There is no key.
+- **A run of the job that fails.** Its scripts' failures were tried here against a throwaway repository, and none has happened on GitHub.
 - A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23).
 
 ### Calls made in the build that the founders can overrule

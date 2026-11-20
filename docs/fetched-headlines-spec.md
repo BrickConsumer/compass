@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Designed on 20 November 2026 and built the same day, on the branch `fetched-headlines`.** Oliver chose the approach (a list Compass publishes), the sources to start with and how Home shows them. Everything else here is a call made in the build, and section 10 lists the ones most worth a look. Section 12 says what the build and its review added. Josh and Aditya have not weighed in. |
+| Status | **Designed on 20 November 2026, built the same day on the branch `fetched-headlines`, and merged into `main` as pull request 21. The job has run and its list is live.** Oliver chose the approach (a list Compass publishes), the sources to start with and how Home shows them. Everything else here is a call made in the build, and section 10 lists the ones most worth a look. Section 12 says what the build and its review added. Josh and Aditya have not weighed in. |
 | Scope | Headlines that arrive by themselves, beside the ones saved by hand. The last part of piece 4 of Aditya's plan. |
 | Builds on | [interests-spec.md](interests-spec.md), section 5 (headlines saved by hand). |
 
@@ -269,8 +269,10 @@ Built on 20 November 2026 to sections 1 to 11, which say what Compass does. This
 | A headline's time must be between 2000 and 2100 | It is the plainest rule that keeps out a date no calendar can show | A window around today |
 | A title that cannot be read exactly is left out | A publisher's headline is shown as written or not at all | Show it as it came |
 
+**Tried once it was merged,** as pull request 21: the job on GitHub itself. Its first run was started by hand on 20 November, once this was merged, and took 14 seconds. Both feeds answered GitHub's machine (25 of 25 headlines read from The Conversation, 1 of 1 from the Reserve Bank), and 21 headlines were published to a new branch, `headlines`. Compass, with the switch on, then downloaded that list from its public address with one request and showed it.
+
 **Not tried:**
 
-- The job on GitHub itself. Its scripts were run here against a throwaway repository as a runner has it, and its reading against the real feeds. Whether the feeds answer a GitHub runner, and whether the runner may push to `headlines`, is seen on its first run.
 - The Guardian against its own service, since there is no key.
+- A run of the job that fails on GitHub. Its scripts' failures were tried here against a throwaway repository.
 - A real phone, Safari or Firefox, and a screen reader by ear.
