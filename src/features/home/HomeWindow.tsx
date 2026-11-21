@@ -6,6 +6,14 @@ import { useCompass } from '../../state/store';
 import { IconSwap } from '../../ui/IconSwap';
 import { SeaWindow } from '../voyage/SeaWindow';
 
+/**
+ * How tall the sea is. On a wide screen it takes the room that the planner leaves: the height of the screen, less
+ * what a Home with something in every part needs beneath it. So Home is seen whole on a laptop, and the sea is at
+ * its full height wherever the screen is tall enough. It follows the screen and never what is on the page, so it
+ * does not move as tasks are added or another day is chosen.
+ */
+const SEA = 'h-[184px] sm:h-[220px] lg:h-[clamp(176px,calc(100dvh-696px),276px)]';
+
 const round = 'press grid size-11 cursor-pointer place-items-center rounded-full bg-surface-sheet text-text shadow-control hover:bg-surface-sheet-hover sm:size-9';
 
 /** The sea window on Home: the scene for the selected day, the voyage plate, and controls to pause, fold and open it. */
@@ -29,7 +37,7 @@ export function HomeWindow({ progress, missedYesterday }: { progress: number | n
     <div>
       <div className="relative">
         <SeaWindow stage={boat.stage} progress={progress} colours={colours} fittings={fittings} boatName={boat.name} missedYesterday={missedYesterday} paused={settings.seaPaused} still={folded}
-          className={`rounded-[24px] transition-[height] duration-[320ms] ease-[var(--ease-in-out)] motion-reduce:transition-none sm:rounded-2xl ${folded ? 'h-16' : 'h-[184px] sm:h-[220px] lg:h-[240px] min-[1440px]:h-[276px]'}`} />
+          className={`rounded-[24px] transition-[height] duration-[320ms] ease-[var(--ease-in-out)] motion-reduce:transition-none sm:rounded-2xl ${folded ? 'h-16' : SEA}`} />
         {!folded && (
           <Link to="/voyage" className="absolute bottom-4 left-4 hidden min-w-[262px] max-w-[420px] flex-col gap-1 rounded-md bg-surface-sheet px-4 pb-3 pt-2.5 shadow-float outline-offset-2 hover:bg-surface-sheet-hover lg:flex" aria-label={`Open the voyage. ${boat.name}, ${miles.toLocaleString('en-GB')} nautical miles logged, ${days} days at sea.${goal ? ` Bound for ${goal}.` : ''}${news ? ` ${newsText}.` : ''}`}>
             <span className="font-display text-[20px] italic leading-[1.15]">{boat.name}</span>

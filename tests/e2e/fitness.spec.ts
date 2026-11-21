@@ -548,23 +548,22 @@ test('with none, bests say what they are for, and a full list has no row to add 
 const trainingRing = (page: Page, name: string, date = TODAY) => page.getByRole('checkbox', { name: `Training: ${name}, ${longDate(date)}` });
 const daySheet = (page: Page) => page.locator('section[aria-labelledby="day-title"]');
 
-test("today's training is at the end of the habits line, and under the habits on a phone", async ({ page }) => {
+test("today's training is under the habits at the foot of the day's sheet, on a wide screen and on a phone", async ({ page }) => {
   await wide(page);
   await fit(page, '/');
-  const line = page.locator('[data-habits="line"]'), training = line.locator('[data-training="line"]');
-  await expect(training).toContainText('Training');
-  await expect(training).toContainText('Intervals');
-  const lastHabit = (await line.locator('[data-habit]').last().boundingBox())!, box = (await training.boundingBox())!;
-  expect(box.x).toBeGreaterThan(lastHabit.x + lastHabit.width);
+  const foot = daySheet(page).locator('[data-training="foot"]');
+  // both are measured in one go: Home may still be settling, and two readings taken apart can straddle a shift
+  const gap = () => page.evaluate(() => document.querySelector('[data-training="foot"]')!.getBoundingClientRect().top - document.querySelector('[data-habits="foot"]')!.getBoundingClientRect().bottom);
+  await expect(foot).toContainText('Training');
+  await expect(foot).toContainText('Intervals');
+  await expect(foot).toBeVisible();
+  expect(await gap()).toBeGreaterThanOrEqual(0);
   // training is not a task: the day's count is what it was
   await expect(daySheet(page)).toContainText('3 of 5 done');
   await phone(page);
-  const foot = page.locator('[data-training="foot"]');
   await expect(foot).toContainText('Intervals');
   await expect(foot).toBeVisible();
-  // both are measured in one go: Home is still settling after the resize, and two readings taken apart can straddle a shift
-  const gap = await page.evaluate(() => document.querySelector('[data-training="foot"]')!.getBoundingClientRect().top - document.querySelector('[data-habits="foot"]')!.getBoundingClientRect().bottom);
-  expect(gap).toBeGreaterThanOrEqual(0);
+  expect(await gap()).toBeGreaterThanOrEqual(0);
   expect(await sideways(page)).toBe(0);
 });
 
@@ -616,10 +615,9 @@ test('a day to come cannot be ticked, and a day that has passed can', async ({ p
 test('a day with training and no habits shows the training alone, and a day with neither shows nothing', async ({ page }) => {
   await wide(page);
   await fit(page, '/', { habits: [], ticks: [] });
-  const line = page.locator('[data-habits="line"]');
-  await expect(line.locator('[data-training="line"]')).toContainText('Intervals');
-  await expect(line.locator('[data-habit]')).toHaveCount(0);
-  await expect(line).not.toContainText('Habits');
+  await expect(daySheet(page).locator('[data-training="foot"]')).toContainText('Intervals');
+  await expect(page.locator('[data-habit]')).toHaveCount(0);
+  await expect(page.locator('[data-habits]')).toHaveCount(0);
   // tomorrow has nothing set
   await page.goto(`/?date=${day(1)}`);
   await expect(daySheet(page)).toBeVisible();
@@ -630,7 +628,7 @@ test('more than three sessions in a day are a step away', async ({ page }) => {
   await wide(page);
   const five = Array.from({ length: 5 }, (_, i) => routine(`rt-${i}`, `Routine ${i}`, [weekdayOf(TODAY)]));
   await fit(page, '/', { routines: five, workouts: [] });
-  const training = page.locator('[data-training="line"]');
+  const training = page.locator('[data-training="foot"]');
   await expect(training.locator('[data-training-item]')).toHaveCount(3);
   await training.getByRole('link', { name: '2 more' }).click();
   await expect(page).toHaveURL(/\/fitness$/);

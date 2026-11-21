@@ -83,13 +83,13 @@ function Week({ weekStart, selected, today, marks, assessments, onSelect, direct
         return (
           <button key={date} type="button" data-date={date} tabIndex={on ? 0 : -1} aria-pressed={on} aria-current={isToday ? 'date' : undefined} aria-label={name}
             onClick={() => { if (!dragged.current) onSelect(date); }} draggable={false}
-            className={`press relative isolate flex h-[68px] cursor-pointer flex-col justify-between rounded-[14px] px-0 py-2 text-left max-sm:items-center sm:h-[86px] sm:rounded-lg sm:px-3.5 sm:py-2.5 lg:px-5 ${on ? 'text-text-inverse outline-focus-inverse' : 'hover:bg-surface-well'}`}>
+            className={`press relative isolate flex h-[68px] cursor-pointer flex-col justify-between rounded-[14px] px-0 py-2 text-left max-sm:items-center sm:h-[86px] sm:rounded-lg sm:px-3.5 sm:py-2.5 lg:h-[66px] lg:px-5 lg:py-2 ${on ? 'text-text-inverse outline-focus-inverse' : 'hover:bg-surface-well'}`}>
             {on && <Knob settle={settled.current} />}
             <span className={`flex w-full justify-between text-[12.5px] font-semibold max-sm:justify-center ${on ? 'text-text-inverse-muted' : isToday ? 'text-text-link' : 'text-text-muted'}`}>
               <span><span className="sm:hidden">{weekdayShort(date)[0]}</span><span className="max-sm:hidden">{weekdayShort(date)}</span></span>
               {isToday && <span className="max-lg:hidden">Today</span>}
             </span>
-            <span className="flex items-center gap-2 font-display text-[22px] font-medium leading-none sm:text-[28px]">
+            <span className="flex items-center gap-2 font-display text-[22px] font-medium leading-none sm:text-[28px] lg:text-[24px]">
               {dayOfMonth(date)}
               {/* between phone and wide screens there is no room for the title, so the diamond sits beside the date */}
               {due && <span aria-hidden="true" className="hidden size-[7px] rotate-45 bg-highlight sm:max-xl:block" />}

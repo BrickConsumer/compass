@@ -48,7 +48,8 @@ Written 16 November 2026 and brought up to date on 17 and 18 November, to carry 
 - **A study session becomes an ordinary task that repeats,** not a kind of its own and not a reminder. It counts in progress, earns miles and moves the day's light like any task.
 
 ### Decided by Oliver on 16 November, for Stage 4
-- **Today's habits on Home** sit on a line of their own between the week and the lists from 1280 px wide, and at the foot of the day's sheet below that. Habits have round ticks; tasks keep square boxes.
+- **Today's habits on Home** sit at the foot of the day's sheet, at every width. From 16 to 21 November they had a line of their own under the week from 1280 px; Oliver gave that room to the sea (`docs/home-one-screen-spec.md`). Habits have round ticks; tasks keep square boxes.
+- **Home on a wide screen is as tall as the screen.** From 1024 px the day's sheet takes the room left under the week and scrolls inside itself when the day is long, so nothing else moves. The sea's height is the screen's height less 696 px, kept between 176 and 276 px: that 696 is what a full Home needs beneath the sea, so **anything that makes Home's upper part or its rows taller has to be taken from it**, and `tests/e2e/home-fit.spec.ts` will say so.
 
 ### Changed by Oliver on 16 November, during Stage 3
 - **The boat's name is lettered on the quarter,** not the transom, which faces away from the usual view. The fitting's id is still `transom-name`, so saved voyages match.
@@ -119,6 +120,7 @@ Written 16 November 2026 and brought up to date on 17 and 18 November, to carry 
 - `docs/fetched-headlines-spec.md`: headlines that arrive by themselves, built on 20 November. Oliver chose the approach (a list Compass publishes), the sources and how Home shows them. Section 4 holds each source's terms, section 9 what the Guardian needs before it is switched on, section 10 the calls most worth a look, and section 12 what the build and its review added.
 - `docs/superpowers/plans/2026-11-20-fetched-headlines.md`: the build plan for that piece.
 - `docs/screenshots/fetched-headlines/`: pictures of the built pages, with a list the job really built.
+- `docs/home-one-screen-spec.md`: Home on a wide screen, as Oliver asked for it on 21 November while going through the app. Home is as tall as the screen, the sea's height follows the screen's, and a long day scrolls inside the Today card. Its section 6 lists what it changed that had been decided before.
 - **Aditya's plan in Compass:** https://claude.ai/artifact/TzbYHALrhnx46UbYp1KJot. Private, so it needs sharing from its Share menu. Where each part of the plan goes, the first piece mocked on Home and the Weekly review, and the six decisions Oliver made from it.
 - `docs/art-direction/*.png`: images of the original review boards.
 - `docs/screenshots/lookdev/`: the second boat review, covering sailing, golden hour, port, storm and the four boats.
@@ -179,7 +181,7 @@ Type-checks and builds; passing. The main bundle is 175 kB compressed. The 3D ch
 ```bash
 PW_CHANNEL=chrome npm run test:e2e
 ```
-Runs 327 browser tests in the installed Chrome, all passing (72 before Aditya's plan, 115 after its first piece, 127 on `main` once night and the dark theme were merged, 159 with the Study detail, 206 with Fitness, 237 with interests and headlines, 267 with search and backup, 280 with the small faults put right, 292 with the new waters, and 327 with fetched headlines). No test asks anything of the real network: the tests of fetched headlines hand the page its list. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed. The tests start a dev server of their own on port 5174, fresh for each run, so they never use the one open on 5173.
+Runs 337 browser tests in the installed Chrome, all passing (72 before Aditya's plan, 115 after its first piece, 127 on `main` once night and the dark theme were merged, 159 with the Study detail, 206 with Fitness, 237 with interests and headlines, 267 with search and backup, 280 with the small faults put right, 292 with the new waters, 327 with fetched headlines, and 337 with Home on one screen). No test asks anything of the real network: the tests of fetched headlines hand the page its list. Without `PW_CHANNEL` it needs Playwright's own browser, which is not installed. The tests start a dev server of their own on port 5174, fresh for each run, so they never use the one open on 5173.
 
 **CI** is `.github/workflows/ci.yml`: two jobs on every pull request, one for the build and unit tests and one for the browser tests in Playwright's own Chromium.
 - A pull request is only checked if its branch holds the workflow file, so the pull requests below the `ci` branch in the stack get no checks until the stack is merged.
@@ -263,7 +265,7 @@ Runs 327 browser tests in the installed Chrome, all passing (72 before Aditya's 
 
 **`features/home/`**
 - `HomePage`, `HomeWindow` (the sea window and voyage plate), `WeekStrip`.
-- `DaySheet` (the only raised sheet), `SideLists` (any time this week, coming up, next week).
+- `DaySheet` (the only raised sheet), `SideLists` (any time this week, coming up, next week). On a wide screen the sheet's heading stays and the rest scrolls inside it; `day-scroll.css` beside it is that scrolling and how the rows move with it. The animation is on the parts of a row and not the row, because Motion moves the row when the list is reordered.
 - `TaskRow`, `TaskComposer`, `TaskEditor` (its fields; the frame is `ui/EditorFrame`). A row shows a task's link as a small arrow of its own. "Coming up" in `SideLists` counts an assessment's preparation.
 
 **`features/voyage/`**
@@ -288,7 +290,7 @@ Runs 327 browser tests in the installed Chrome, all passing (72 before Aditya's 
 **`features/fitness/`**
 - `FitnessPage` (the frame, the week's controls, the switched-off page, and which session is open).
 - `WeekSheet` (a week's sessions and what can be started today), `SessionSheet` (one open session), `Recent`, `Routines` and `RoutineEditor`, and `Kept` (bests and measures, which share one list and one editor).
-- `TrainingToday` is the day's training on Home; `HabitsToday` places it. `useOpenSession` opens and closes a session by its address.
+- `TrainingToday` is the day's training on Home, under the habits at the foot of the day's sheet; `HabitsToday` places it. `useOpenSession` opens and closes a session by its address.
 - The rules are in `domain/fitness.ts`, and the miles rule is `workoutAward` in `domain/voyage.ts`. In the data a session is a `workout`.
 - `ui/ListRows.tsx` holds the rows that a page's list, a routine's lines and a session's lines share.
 
@@ -306,7 +308,7 @@ Runs 327 browser tests in the installed Chrome, all passing (72 before Aditya's 
 - `LinkList`: the rows that change a list of links, and the row that adds one. Settings uses it for your own links and Study for a subject's.
 
 **`features/habits/`**
-- `HabitsPage`, `HabitEditor`, `HabitTick` (the round tick), and `HabitsToday`, which Home shows as a line from 1280 px and at the foot of the day's sheet below that.
+- `HabitsPage`, `HabitEditor`, `HabitTick` (the round tick), and `HabitsToday`, which is the day's habits at the foot of the day's sheet on Home.
 
 **Other `features/`**
 - `places/`: Settings. No "Not built yet" pages are left. `AreasSettings` and `LinksSettings` are its two lists, and `ListControls` is the move and remove buttons they share. `BackupSettings` downloads a backup and restores one.

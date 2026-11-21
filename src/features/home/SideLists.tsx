@@ -41,7 +41,7 @@ export function ComingUp({ assessments, tasks, subjects, today, onSelect }: { as
             const subject = subjects.find((s) => s.id === a.subjectId), prepared = preparationProgress(tasks, a.id);
             return (
               <li key={a.id} className="border-t border-line first:border-t-0">
-                <button type="button" onClick={() => onSelect(a.date)} className="grid min-h-[58px] w-full cursor-pointer grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-[9px] py-1.5 text-left outline-offset-0 hover:bg-surface-well">
+                <button type="button" onClick={() => onSelect(a.date)} className="grid min-h-[58px] w-full cursor-pointer grid-cols-[46px_minmax(0,1fr)] items-center gap-3 rounded-[9px] py-1.5 text-left outline-offset-0 hover:bg-surface-well lg:min-h-[48px] lg:py-1">
                   <span className="flex flex-col pl-1 leading-[1.05]"><span className="text-[12.5px] font-semibold text-text-muted">{weekdayShort(a.date)}</span><span className="font-display text-[23px] font-medium">{dayOfMonth(a.date)}</span></span>
                   <span className="min-w-0">
                     <span className="block truncate text-[14.5px] font-semibold">{a.title}</span>

@@ -60,7 +60,7 @@ Recommended as the first new destination, ahead of Study, for three reasons. It 
 
 Not built: reordering habits, pausing one without deleting it, and a view of consistency across many weeks.
 
-**Where today's habits sit on Home: decided by Oliver on 16 November.** A line of its own between the week and the lists from 1280 px wide; at the foot of the day's sheet below that, tablets and phones included. Josh and Aditya have not weighed in. The mock is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b.
+**Where today's habits sit on Home: decided by Oliver on 16 November, and changed by him on 21 November.** At the foot of the day's sheet at every width. They had a line of their own between the week and the lists from 1280 px wide; that room went to the sea when Home was made to fit one screen ([home-one-screen-spec.md](home-one-screen-spec.md)). Josh and Aditya have not weighed in. The mock is at https://claude.ai/artifact/MqFDefCBQVsYLmYd8JPm3b.
 
 **Built to the recommendation, and still open to change:** the ticks belong to the selected day, habits log miles and do not change the sea, and up to six show on Home.
 

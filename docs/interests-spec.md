@@ -103,7 +103,7 @@ A form is a page with headed parts. Each part is a box of ordinary writing, kept
 - **A headline** is a title, the address of the article, where it is from, the day it was published, and an optional short tag such as a ticker.
 - **The Headlines page** is in My pages, at `/pages/headlines`: every saved headline, newest first by the day it was published, with "Save a headline". A row's title opens the article in a new tab. "Edit" on a row opens its editor, where it can be changed or deleted, with Undo.
 - **"Save a headline"** opens an editor: Headline, Address, Source, Published and Tag. It is saved once it has a headline and a web address. With no source typed, the site's name is used.
-- **On Home**, under "Any time this week": "Headlines", marked "Saved by you", with the newest three. Each shows its tag, its source and its date. With more than three, "All headlines" goes to the page. With none, Home shows nothing.
+- **On Home**, under "Coming up" (under "Any time this week" until 21 November: see [home-one-screen-spec.md](home-one-screen-spec.md)): "Headlines", marked "Saved by you", with the newest three. Each shows its tag, its source and its date. With more than three, "All headlines" goes to the page. With none, Home shows nothing.
 - **Search** offers "Save a headline".
 
 ## 6. Deleting, and Undo

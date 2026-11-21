@@ -25,15 +25,16 @@ const FULL = `${INTEREST_LIMITS.headlines} headlines are saved, which is the mos
  * One headline, saved or fetched: its title, which opens the article in a new tab, then a small label, who published
  * it and the day. The label is a saved headline's own tag, or the line of the Watchlist that the headline names.
  * Where saved and fetched are shown together (`mixed`), a saved one says that it is. On the Headlines page a saved
- * one can be changed, and a fetched one kept.
+ * one can be changed, and a fetched one kept. On Home the rows sit closer on a wide screen (`dense`), where a pointer
+ * is doing the pressing, so that Home is seen whole.
  */
-export function HeadlineRow({ row, today, mixed = false, onEdit, onKeep }: { row: Shown; today: ISODate; mixed?: boolean; onEdit?: (id: string) => void; onKeep?: (row: Shown) => void }) {
+export function HeadlineRow({ row, today, mixed = false, dense = false, onEdit, onKeep }: { row: Shown; today: ISODate; mixed?: boolean; dense?: boolean; onEdit?: (id: string) => void; onKeep?: (row: Shown) => void }) {
   const mark = row.tag || row.word;
   return (
-    <li data-headline={row.id} data-fetched-row={row.kind === 'fetched' ? '' : undefined} className="border-t border-line py-1.5 first:border-t-0">
+    <li data-headline={row.id} data-fetched-row={row.kind === 'fetched' ? '' : undefined} className={`border-t border-line py-1.5 first:border-t-0 ${dense ? 'lg:py-1' : ''}`}>
       <a href={row.url} target="_blank" rel="noopener noreferrer" aria-label={`${row.title}, opens in a new tab`}
-        className="flex min-h-11 items-center justify-between gap-3 rounded-[9px] text-[14.5px] font-semibold leading-[1.35] outline-offset-0 hover:bg-surface-well">
-        <span className="min-w-0 py-1 [overflow-wrap:anywhere]">{row.title}</span>
+        className={`flex min-h-11 items-center justify-between gap-3 rounded-[9px] text-[14.5px] font-semibold leading-[1.35] outline-offset-0 hover:bg-surface-well ${dense ? 'lg:min-h-9' : ''}`}>
+        <span className={`min-w-0 py-1 [overflow-wrap:anywhere] ${dense ? 'lg:py-0.5' : ''}`}>{row.title}</span>
         <ArrowUpRight size={15} aria-hidden="true" className="shrink-0 text-text-muted" />
       </a>
       <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-text-muted">

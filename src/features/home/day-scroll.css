@@ -1,0 +1,54 @@
+/*
+ * The Today card on a wide screen. A long day scrolls inside the card, so the rest of Home stays where it is.
+ *
+ * What moves is tied to the scroll itself and to nothing else: it plays exactly as far and as fast as the list is
+ * moved, so there is never a wait. A row eases up into place as it comes in at the foot of the card, and tucks away
+ * under the heading as it leaves at the top. A rule appears under the heading once the list has moved, and a fade at
+ * the foot says there is more below. Only opacity and transform change, so nothing is laid out again while scrolling.
+ *
+ * Where a browser has no scroll timelines the card scrolls plainly, and with reduced motion the rows stay still.
+ */
+
+@media (min-width: 1024px) {
+  [data-day-scroll] {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+    /* the list's own progress, by name, for the rule and the fade that sit outside it */
+    scroll-timeline: --day-list block;
+  }
+  /* the name is looked for from the card down, so the rule and the fade can follow a list they are beside, not inside */
+  [data-day-list] { timeline-scope: --day-list; }
+
+  @supports (animation-timeline: scroll()) {
+    /* shown once the list has moved a little from its top */
+    [data-day-rule] { animation: day-rule linear both; animation-timeline: --day-list; animation-range: 0px 24px; }
+    /* shown until the list is within a row of its end. A list too short to scroll has no timeline, so neither shows */
+    [data-day-more] { animation: day-more linear both; animation-timeline: --day-list; animation-range: calc(100% - 40px) 100%; }
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    /*
+     * The parts of a row, and not the row itself: the row is moved by Motion when the list is reordered, and an
+     * animation on it would take that over. The day's habits and training ease in the same way.
+     */
+    [data-day-scroll] li[data-task] > *,
+    [data-day-scroll] [data-habits],
+    [data-day-scroll] [data-training] {
+      animation: day-row linear both;
+      animation-timeline: view(block);
+    }
+  }
+}
+
+/* through the card: in at its foot, at rest across it, and out at its top */
+@keyframes day-row {
+  entry 0% { opacity: 0.15; transform: translateY(14px) scale(0.97); }
+  entry 100% { opacity: 1; transform: none; }
+  exit 0% { opacity: 1; transform: none; }
+  exit 100% { opacity: 0.15; transform: translateY(-10px) scale(0.97); }
+}
+@keyframes day-rule { from { opacity: 0; } to { opacity: 1; } }
+@keyframes day-more { from { opacity: 1; } to { opacity: 0; } }

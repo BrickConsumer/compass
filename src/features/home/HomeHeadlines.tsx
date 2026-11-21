@@ -31,9 +31,9 @@ export function HomeHeadlines({ className = '' }: { className?: string }) {
         {corner && <p data-headlines-updated className="text-[13.5px] font-semibold text-text-muted">{corner}</p>}
       </div>
       {rows.length > 0
-        ? <ul className="mt-1.5">{rows.slice(0, SHOWN).map((row) => <HeadlineRow key={row.key} row={row} today={today} mixed={on} />)}</ul>
+        ? <ul className="mt-1.5 lg:mt-1">{rows.slice(0, SHOWN).map((row) => <HeadlineRow key={row.key} row={row} today={today} mixed={on} dense />)}</ul>
         : <p className="mt-1.5 text-[14.5px] text-text-muted">Compass could not reach the list of headlines just now.</p>}
-      {rows.length > SHOWN && <Link to="/pages/headlines" className="flex min-h-11 w-fit items-center rounded-[9px] text-[14.5px] font-semibold text-text-link">All headlines</Link>}
+      {rows.length > SHOWN && <Link to="/pages/headlines" className="flex min-h-11 w-fit items-center rounded-[9px] text-[14.5px] font-semibold text-text-link lg:min-h-9">All headlines</Link>}
     </section>
   );
 }

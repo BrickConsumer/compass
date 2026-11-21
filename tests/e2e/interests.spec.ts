@@ -259,9 +259,10 @@ test('Home shows the newest three, and "All headlines" when there are more', asy
   const four = [headline('h1', 'Oldest', -9), headline('h2', 'Newest', 0), headline('h3', 'Second', -2), headline('h4', 'Third', -5)];
   await openWith(page, '/', { headlines: four });
   await expect(homeHeadlines(page).locator('li[data-headline]')).toHaveText([/Newest/, /Second/, /Third/]);
-  // it sits under "Any time this week"
-  const week = (await page.locator('section[aria-labelledby="week-title"]').boundingBox())!, box = (await homeHeadlines(page).boundingBox())!;
-  expect(box.y).toBeGreaterThan(week.y + week.height - 1);
+  // it sits under "Coming up", in the same column, so that the two columns beside the day are about as long as each other
+  const coming = (await page.locator('section[aria-labelledby="coming-title"]').boundingBox())!, box = (await homeHeadlines(page).boundingBox())!;
+  expect(box.y).toBeGreaterThan(coming.y + coming.height - 1);
+  expect(Math.abs(box.x - coming.x)).toBeLessThan(2);
   await homeHeadlines(page).getByRole('link', { name: 'All headlines' }).click();
   await expect(page).toHaveURL(/\/pages\/headlines$/);
   await expect(headlineRows(page)).toHaveText([/Newest/, /Second/, /Third/, /Oldest/]);

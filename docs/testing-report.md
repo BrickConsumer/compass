@@ -11,7 +11,7 @@
 
 ## 1. Summary
 
-Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 563 unit tests pass and 327 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18, the small faults put right in section 19, new waters in section 20 and fetched headlines in section 21; before the nine it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
+Home meets every functional line of the brief's section 11 that can be checked on a laptop. The build passes, 563 unit tests pass and 337 browser tests pass. Those counts include the additions in section 13, night and the dark theme in section 14, the Study detail in section 15, Fitness in section 16, interests and headlines in section 17, search and backup in section 18, the small faults put right in section 19, new waters in section 20, fetched headlines in section 21 and Home on one screen in section 22; before the ten it was 225 and 72, and all of those still pass. Both suites pass on every day of the week (section 18).
 
 Two things are **not** verified, and should not be read as passing:
 
@@ -483,7 +483,7 @@ Six smaller findings were left as they are, for the founders to decide:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 24). The rating's segments are 16 px wide on a phone, which needs a thumb on a real one to judge.
 
 ### Found on the way
 
@@ -544,7 +544,7 @@ On 18 November the laptop was installing a system update, and browser runs that 
 ### Calls made in the build that the founders can overrule
 
 - The selection is blue. An ivory block was photographed in its place: `selection-*-blue.png` and `selection-*-ivory.png` in the screenshots folder. **Oliver saw both on 18 November and kept the blue.** Josh and Aditya have not seen either.
-- A storm at night keeps its crests, dimmed. They still read as pale patches (section 23).
+- A storm at night keeps its crests, dimmed. They still read as pale patches (section 24).
 - With the stars out, the water carries a path of light and no moon is in view; the moon is taken to be above the window. At moonrise it is on the horizon.
 
 ### Not checked
@@ -627,7 +627,7 @@ On 18 November, after the piece was committed, `main` was merged into the branch
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 24).
 
 ### Calls made in the build that the founders can overrule
 
@@ -692,7 +692,7 @@ It also noted things that are older than this piece: Home is wider than a 320 px
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 23).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 24).
 - Whether Escape inside a line being changed keeps the editor open in browsers other than Chrome.
 
 ### Calls made in the build that the founders can overrule
@@ -754,7 +754,7 @@ Left as they are, to be decided:
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 23).
+- A real phone, Safari or Firefox, and a screen reader by ear. Spoken names were read from Chrome's accessibility tree. This is the same as for the rest of the build (section 24).
 - A double tap by finger. A mouse says which press of a run it is; a finger may not, so a touch in the same place straight after is treated as one. Tried with a mouse only.
 
 ### Calls made in the build that the founders can overrule
@@ -812,7 +812,7 @@ A fresh reviewer read the whole change against the specification on 19 November,
 
 ### Not checked
 
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 24). The file box and the download in particular behave differently on a phone, and neither has been tried on one.
 - Whether a screen reader announces what a backup holds. The place it is said in is built the way that is announced; nobody has listened.
 
 ### Calls made in the build that the founders can overrule
@@ -960,13 +960,54 @@ A fresh reviewer read the change on 20 November and drove it in a browser, in a 
 
 - **The Guardian against its own service.** There is no key.
 - **A run of the job that fails.** Its scripts' failures were tried here against a throwaway repository, and none has happened on GitHub.
-- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 23).
+- A real phone, Safari or Firefox, and a screen reader by ear. This is the same as for the rest of the build (section 24).
 
 ### Calls made in the build that the founders can overrule
 
 The specification lists them, with the other way each could go, in its sections 10 and 12. The largest: watch words are the lines of a Watchlist page; a backup does not change the switch; and a headline stays in the list for thirty days.
 
-## 22. Built differently from the approved spec
+## 22. Home on one screen
+
+Built on 21 November on the branch `ui-fixes`, to [home-one-screen-spec.md](home-one-screen-spec.md). Oliver was going through the finished app and asked for three things in turn, each on seeing the one before: Home without scrolling, a bigger sea, and a long day that scrolls inside the Today card. Josh and Aditya have not reviewed it.
+
+### What was built
+
+- **Home is as tall as the screen** from 1024 px wide. It was 1,214 px tall in a 922 px window, with 530 px above the first task.
+- **The sea's height follows the screen's:** between 176 and 276 px. It is 226 px in a 922 px window.
+- **The date shares a line with the week's progress, the week strip is shorter, and rows sit closer.**
+- **Habits and training are at the foot of the Today card** at every width, and no longer on a line of their own.
+- **"Next week" is under "Any time this week", and Headlines are under "Coming up",** so the two columns are about as long as each other.
+- **A long day scrolls inside the Today card.** Its heading stays, rows ease in at its foot and tuck away under the heading, and nothing else on the page moves.
+
+### Checked
+
+- **Browser tests, 10 new,** in `tests/e2e/home-fit.spec.ts`. In all 337 pass, in light and in dark; 330 pass and 7 are skipped the way CI runs them. The 563 unit tests pass.
+- **It fits:** a Home with something in every part in a 1420 by 922 window, and the sample in 1440 by 900, with nothing below the screen and nothing sideways.
+- **A day of 33 tasks:** the page is no longer than the screen, every other part is where it was with three tasks, the wheel over the card moves the list and not the page, and the last task, the adding row and the habits are all reached.
+- **By keyboard alone:** N goes to the adding row wherever the list is, and three tasks typed one after another each leave it in view.
+- **How it moves:** at rest the first row is whole; moved 30 px it is fading and has shifted; the rule shows once the list has moved and the fade goes at the end. With reduced motion a row has no animation and does not shift.
+- **A phone is as it was:** a task row 54 px, a day 68 px, the page scrolling, and no animation on a row.
+- **The build made for release** keeps the scroll timelines and the animation's steps, which the stylesheet's own tools could have dropped.
+- Nine older tests were changed, because they held the habits to their line, training to the end of it, and headlines to their place under "Any time this week".
+
+### Found on the way
+
+- **The page's length was one column's length.** The week's tasks and the headlines shared a column that was 160 px longer than the other. Swapping two lists saved more than any amount of tightening.
+- **Moving the habits helps a quiet day and not a busy one.** With five tasks and five habits the Today card is itself the longest column, which is why the sea's height is set by the screen and not by what the page holds.
+- **An animation on a task's row would have broken reordering.** Motion moves the row when the list is reordered, and a stylesheet's animation outranks that. So the animation is on the parts of a row.
+- **A run of every browser test lost its server part-way through,** once, as has happened before. Run again, it passed.
+
+### Not checked
+
+- **By hand.** How the scrolling feels under a trackpad or a wheel is judged by Oliver, in the preview. The tests read positions and styles.
+- **Safari and Firefox.** Where a browser has no scroll timelines the card scrolls plainly, by the stylesheet's own checks; that was not opened in one.
+- A real phone, and a screen reader by ear. This is the same as for the rest of the build (section 24).
+
+### Calls made in the build that the founders can overrule
+
+The specification lists them in its sections 6 and 7. The largest: habits leave their own line for the foot of the Today card; headlines move under "Coming up"; and the sea is shorter on a laptop than it was.
+
+## 23. Built differently from the approved spec
 
 None of these breaks a criterion in the brief. Each is a gap between the build and the approved documents that the founders should know about.
 
@@ -980,7 +1021,7 @@ None of these breaks a criterion in the brief. Each is a gap between the build a
 | Corners use `corner-shape: squircle` where supported | Plain rounded corners |
 | The name is lettered on the transom | It is lettered on the quarter, by Oliver's decision on 16 November, because the transom faces away from the usual view. The still image does not letter it. |
 
-## 23. Known limitations
+## 24. Known limitations
 
 - No manual screen-reader pass.
 - No real-phone test of speed, heat or battery.

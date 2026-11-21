@@ -9,24 +9,26 @@ async function open(page: Page, path = '/') {
 
 const plate = (page: Page) => page.locator('a[aria-label^="Open the voyage."]');
 
-test('on a wide screen the day\'s habits are a line between the week and the lists', async ({ page }) => {
+test('on a wide screen the day\'s habits are at the foot of the day\'s sheet, on the first screen', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page);
-  const line = page.locator('[data-habits="line"]');
-  await expect(line).toBeVisible();
-  await expect(page.locator('[data-habits="foot"]')).toBeHidden();
-  await expect(line).toContainText('Habits, 2 of 4');
-  // below the week strip, above the day's sheet, and on the first screen
-  const strip = (await page.locator('[aria-label="Days of the week"]').boundingBox())!, sheet = (await page.locator('section[aria-labelledby="day-title"]').boundingBox())!, box = (await line.boundingBox())!;
-  expect(box.y).toBeGreaterThanOrEqual(strip.y + strip.height - 1);
-  expect(box.y + box.height).toBeLessThanOrEqual(sheet.y + 1);
-  expect(box.y + box.height).toBeLessThan(900);
+  const foot = page.locator('section[aria-labelledby="day-title"] [data-habits="foot"]');
+  await expect(foot).toBeVisible();
+  await expect(page.locator('[data-habits]')).toHaveCount(1);
+  await expect(foot).toContainText('Habits, 2 of 4');
+  // inside the sheet, under the row that adds a task, and seen without scrolling the page or the sheet
+  const sheet = (await page.locator('section[aria-labelledby="day-title"]').boundingBox())!, add = (await page.locator('#composer-day').boundingBox())!, box = (await foot.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(sheet.x);
+  expect(box.x + box.width).toBeLessThanOrEqual(sheet.x + sheet.width);
+  expect(box.y).toBeGreaterThanOrEqual(add.y + add.height - 1);
+  expect(box.y + box.height).toBeLessThanOrEqual(900);
+  await expect(foot).toBeInViewport({ ratio: 1 });
 });
 
 test('ticking a habit counts it, logs one mile, and unticking takes nothing back', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page);
-  const line = page.locator('[data-habits="line"]'), read = line.getByRole('checkbox', { name: /^Read for 20 minutes/ });
+  const line = page.locator('[data-habits="foot"]'), read = line.getByRole('checkbox', { name: /^Read for 20 minutes/ });
   await expect(plate(page)).toHaveAttribute('aria-label', /412 nautical miles logged/);
   await read.check();
   await expect(line).toContainText('Habits, 3 of 4');
@@ -40,14 +42,14 @@ test('ticking a habit counts it, logs one mile, and unticking takes nothing back
   // the day's tasks are counted apart from its habits
   await expect(page.locator('#day-title + p')).toHaveText('3 of 5 done');
   await page.reload();
-  await expect(page.locator('[data-habits="line"]')).toContainText('Habits, all four done');
+  await expect(page.locator('[data-habits="foot"]')).toContainText('Habits, all four done');
 });
 
 test('a day still to come shows its habits but they cannot be ticked', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page);
   await page.getByRole('button', { name: 'Next week' }).click();
-  const line = page.locator('[data-habits="line"]');
+  const line = page.locator('[data-habits="foot"]');
   await expect(line).toContainText(/Habits, 0 of \d/);
   for (const box of await line.getByRole('checkbox').all()) await expect(box).toBeDisabled();
 });
@@ -58,7 +60,7 @@ test('on a narrower screen and on a phone the habits are at the foot of the day\
     await open(page);
     const foot = page.locator('section[aria-labelledby="day-title"] [data-habits="foot"]');
     await expect(foot).toBeVisible();
-    await expect(page.locator('[data-habits="line"]')).toBeHidden();
+    await expect(page.locator('[data-habits]')).toHaveCount(1);
     await foot.getByRole('checkbox', { name: /^Read for 20 minutes/ }).check();
     await expect(foot).toContainText('Habits, 3 of 4');
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
@@ -127,5 +129,5 @@ test('a new habit shows on Home, and a day with no habits shows nothing', async 
   await page.getByLabel('Add a habit').fill('Read for 20 minutes');
   await page.keyboard.press('Enter');
   await page.goto('/');
-  await expect(page.locator('[data-habits="line"]')).toContainText('Habits, 0 of 1');
+  await expect(page.locator('[data-habits="foot"]')).toContainText('Habits, 0 of 1');
 });

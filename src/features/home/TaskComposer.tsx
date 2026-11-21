@@ -11,7 +11,7 @@ interface Props { date: ISODate; scope: 'day' | 'week'; id?: string; label?: str
 export function TaskComposer({ date, scope, id, label = 'Add a task', hint, subjectId, assessmentId }: Props) {
   const [title, setTitle] = useState(''), add = useCompass((s) => s.addTask);
   return (
-    <m.form layout="position" transition={MOVE} className="flex min-h-[46px] items-center gap-1 border-t border-line max-sm:min-h-[54px]"
+    <m.form layout="position" transition={MOVE} className="flex min-h-[46px] items-center gap-1 border-t border-line max-sm:min-h-[54px] lg:min-h-10"
       onSubmit={(e) => { e.preventDefault(); if (add({ title, date, scope, subjectId, assessmentId })) setTitle(''); }}>
       <span aria-hidden="true" className="-ml-[11px] grid size-11 shrink-0 place-items-center text-text-muted">
         <span className="grid size-[22px] place-items-center rounded-[7px] shadow-[inset_0_0_0_1.5px_var(--color-line-strong)]"><Plus size={13} strokeWidth={2.4} /></span>
